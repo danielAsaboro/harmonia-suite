@@ -1,16 +1,16 @@
 // Here we export some useful types and functions for interacting with the Anchor program.
-import { AnchorProvider, Program } from '@coral-xyz/anchor'
-import { PublicKey } from '@solana/web3.js'
-import BasicIDL from '../target/idl/basic.json'
-import type { Basic } from '../target/types/basic'
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { PublicKey } from "@solana/web3.js";
+import HelmIDL from "../target/idl/helm.json";
+import type { Helm } from "../target/types/helm";
 
 // Re-export the generated IDL and type
-export { Basic, BasicIDL }
+export { Helm, HelmIDL };
 
 // The programId is imported from the program IDL.
-export const BASIC_PROGRAM_ID = new PublicKey(BasicIDL.address)
+export const HELM_PROGRAM_ID = new PublicKey(HelmIDL.address);
 
-// This is a helper function to get the Basic Anchor program.
-export function getBasicProgram(provider: AnchorProvider) {
-  return new Program(BasicIDL as Basic, provider)
+// This is a helper function to get the Helm Anchor program.
+export function getHelmProgram(provider: AnchorProvider) {
+  return new Program(HelmIDL as Helm, provider);
 }

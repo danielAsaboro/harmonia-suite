@@ -1,0 +1,1520 @@
+{
+  "address": "D9nBEe6FjDwub19rBUPUsThMqgBYF4aGCNaYBVcGr2zf",
+  "metadata": {
+    "name": "helm",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "add_admin",
+      "discriminator": [
+        177,
+        236,
+        33,
+        205,
+        124,
+        152,
+        55,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "admin_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "admin",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "add_creator",
+      "discriminator": [
+        120,
+        140,
+        147,
+        174,
+        149,
+        203,
+        237,
+        81
+      ],
+      "accounts": [
+        {
+          "name": "creator_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "creator",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "approve_content",
+      "discriminator": [
+        226,
+        212,
+        140,
+        223,
+        153,
+        34,
+        158,
+        189
+      ],
+      "accounts": [
+        {
+          "name": "content",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  116,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "content.twitter_account",
+                "account": "Content"
+              },
+              {
+                "kind": "account",
+                "path": "content.author",
+                "account": "Content"
+              },
+              {
+                "kind": "account",
+                "path": "content.content_hash",
+                "account": "Content"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_list",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cancel_content",
+      "discriminator": [
+        168,
+        227,
+        134,
+        214,
+        215,
+        48,
+        160,
+        15
+      ],
+      "accounts": [
+        {
+          "name": "content",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  116,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "content.twitter_account",
+                "account": "Content"
+              },
+              {
+                "kind": "account",
+                "path": "content.author",
+                "account": "Content"
+              },
+              {
+                "kind": "account",
+                "path": "content.content_hash",
+                "account": "Content"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_list",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_twitter_account",
+      "discriminator": [
+        4,
+        47,
+        118,
+        85,
+        157,
+        85,
+        181,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "twitter_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "twitter_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "twitter_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "twitter_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "twitter_id",
+          "type": "string"
+        },
+        {
+          "name": "twitter_handle",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "reject_content",
+      "discriminator": [
+        32,
+        251,
+        81,
+        216,
+        95,
+        188,
+        171,
+        42
+      ],
+      "accounts": [
+        {
+          "name": "content",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  116,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "content.twitter_account",
+                "account": "Content"
+              },
+              {
+                "kind": "account",
+                "path": "content.author",
+                "account": "Content"
+              },
+              {
+                "kind": "account",
+                "path": "content.content_hash",
+                "account": "Content"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_list",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "remove_admin",
+      "discriminator": [
+        74,
+        202,
+        71,
+        106,
+        252,
+        31,
+        72,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "admin_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "admin",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "remove_creator",
+      "discriminator": [
+        125,
+        152,
+        5,
+        6,
+        49,
+        239,
+        31,
+        166
+      ],
+      "accounts": [
+        {
+          "name": "creator_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "creator",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "submit_for_approval",
+      "discriminator": [
+        91,
+        188,
+        21,
+        190,
+        3,
+        3,
+        113,
+        133
+      ],
+      "accounts": [
+        {
+          "name": "content",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  116,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "content_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "twitter_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin_list",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  100,
+                  109,
+                  105,
+                  110,
+                  45,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "content_type",
+          "type": {
+            "defined": {
+              "name": "ContentType"
+            }
+          }
+        },
+        {
+          "name": "content_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "scheduled_for",
+          "type": {
+            "option": "i64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "verify_twitter_account",
+      "discriminator": [
+        172,
+        209,
+        187,
+        165,
+        197,
+        92,
+        205,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "twitter_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  119,
+                  105,
+                  116,
+                  116,
+                  101,
+                  114,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "twitter_account.twitter_id",
+                "account": "TwitterAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "signer": true
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AdminList",
+      "discriminator": [
+        253,
+        56,
+        210,
+        167,
+        203,
+        37,
+        230,
+        165
+      ]
+    },
+    {
+      "name": "Content",
+      "discriminator": [
+        3,
+        76,
+        253,
+        21,
+        4,
+        198,
+        52,
+        206
+      ]
+    },
+    {
+      "name": "CreatorList",
+      "discriminator": [
+        101,
+        103,
+        204,
+        188,
+        6,
+        221,
+        70,
+        109
+      ]
+    },
+    {
+      "name": "TwitterAccount",
+      "discriminator": [
+        37,
+        124,
+        30,
+        178,
+        50,
+        255,
+        76,
+        25
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "TwitterAccountNotVerified",
+      "msg": "Twitter account not verified"
+    },
+    {
+      "code": 6001,
+      "name": "AlreadyVerified",
+      "msg": "Twitter account already verified"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidTwitterHandle",
+      "msg": "Invalid Twitter handle format"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidTwitterId",
+      "msg": "Invalid Twitter ID format"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidContentStatus",
+      "msg": "Invalid content status for operation"
+    },
+    {
+      "code": 6005,
+      "name": "ContentInTerminalState",
+      "msg": "Content is in terminal state"
+    },
+    {
+      "code": 6006,
+      "name": "ContentNotActive",
+      "msg": "Content not active"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidStateTransition",
+      "msg": "Invalid state transition"
+    },
+    {
+      "code": 6008,
+      "name": "AlreadySubmitted",
+      "msg": "Content already submitted for approval"
+    },
+    {
+      "code": 6009,
+      "name": "AlreadyApproved",
+      "msg": "Content already approved by this admin"
+    },
+    {
+      "code": 6010,
+      "name": "InsufficientApprovals",
+      "msg": "Insufficient approvals"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidRequiredApprovals",
+      "msg": "Invalid minimum required approvals"
+    },
+    {
+      "code": 6012,
+      "name": "AdminAlreadyExists",
+      "msg": "Admin already exists"
+    },
+    {
+      "code": 6013,
+      "name": "AdminDoesNotExist",
+      "msg": "Admin does not exist"
+    },
+    {
+      "code": 6014,
+      "name": "CannotRemoveLastAdmin",
+      "msg": "Cannot remove last admin"
+    },
+    {
+      "code": 6015,
+      "name": "MaxAdminsReached",
+      "msg": "Maximum number of admins reached"
+    },
+    {
+      "code": 6016,
+      "name": "CreatorAlreadyExists",
+      "msg": "Creator already exists"
+    },
+    {
+      "code": 6017,
+      "name": "CreatorDoesNotExist",
+      "msg": "Creator does not exist"
+    },
+    {
+      "code": 6018,
+      "name": "MaxCreatorsReached",
+      "msg": "Maximum number of creators reached"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidScheduleTime",
+      "msg": "Invalid scheduling time"
+    },
+    {
+      "code": 6020,
+      "name": "ScheduleTimeRequired",
+      "msg": "Schedule time required"
+    },
+    {
+      "code": 6021,
+      "name": "ScheduleTimeInPast",
+      "msg": "Schedule time in past"
+    },
+    {
+      "code": 6022,
+      "name": "Unauthorized",
+      "msg": "Not authorized"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidTwitterAccount",
+      "msg": "Invalid Twitter account"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidContentHash",
+      "msg": "Invalid content hash"
+    },
+    {
+      "code": 6025,
+      "name": "ContentTooLong",
+      "msg": "Content too long"
+    },
+    {
+      "code": 6026,
+      "name": "ThreadTooLong",
+      "msg": "Thread too long"
+    },
+    {
+      "code": 6027,
+      "name": "TooManyRequests",
+      "msg": "Too many requests"
+    }
+  ],
+  "types": [
+    {
+      "name": "AdminList",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "twitter_account",
+            "docs": [
+              "The Twitter account this admin list belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "admins",
+            "docs": [
+              "List of admin public keys that can approve content"
+            ],
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority who can add/remove admins (usually twitter_account owner)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for PDA derivation"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Content",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "twitter_account",
+            "docs": [
+              "Reference to the Twitter account this content belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "author",
+            "docs": [
+              "Content creator's public key"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "content_type",
+            "docs": [
+              "Content type (single tweet or thread)"
+            ],
+            "type": {
+              "defined": {
+                "name": "ContentType"
+              }
+            }
+          },
+          {
+            "name": "content_hash",
+            "docs": [
+              "Keccak256 hash of the content"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "scheduled_for",
+            "docs": [
+              "Unix timestamp for scheduled publication"
+            ],
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Current content status"
+            ],
+            "type": {
+              "defined": {
+                "name": "ContentStatus"
+              }
+            }
+          },
+          {
+            "name": "approvals",
+            "docs": [
+              "List of admin approvals"
+            ],
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "rejection_reason",
+            "docs": [
+              "Reason for rejection if rejected"
+            ],
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "failure_reason",
+            "docs": [
+              "Reason for failure if failed"
+            ],
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "created_at",
+            "docs": [
+              "When the content was created"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "docs": [
+              "Last time content was modified"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for PDA derivation"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContentStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Draft"
+          },
+          {
+            "name": "PendingApproval"
+          },
+          {
+            "name": "Approved"
+          },
+          {
+            "name": "Rejected"
+          },
+          {
+            "name": "Published"
+          },
+          {
+            "name": "Failed"
+          },
+          {
+            "name": "Canceled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ContentType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Tweet"
+          },
+          {
+            "name": "Thread",
+            "fields": [
+              {
+                "name": "tweet_count",
+                "type": "u8"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreatorList",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "twitter_account",
+            "docs": [
+              "The Twitter account this creator list belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creators",
+            "docs": [
+              "List of creator public keys that can create content"
+            ],
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority who can add/remove creators (usually twitter_account owner)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for PDA derivation"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TwitterAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "The wallet that initialized this Twitter account integration"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "twitter_id",
+            "docs": [
+              "Twitter account identifier (off-chain)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "twitter_handle",
+            "docs": [
+              "Twitter handle (off-chain verification)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "required_approvals",
+            "docs": [
+              "Required number of approvals for this account"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "is_verified",
+            "docs": [
+              "Whether the Twitter account is verified with the service"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "created_at",
+            "docs": [
+              "When this integration was created"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump for PDA derivation"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
