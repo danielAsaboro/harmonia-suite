@@ -19,6 +19,7 @@ function ApplicationContainer({ children }: { children: React.ReactNode }) {
       <main className="flex-1 bg-background">
         <Header
           userName={userAccount.name}
+          profile_image_url={userAccount.profileImageUrl}
           className="sticky top-0 z-10 w-full bg-card border-b border-border bg-background"
         />
         <div className="p-6">{children}</div>

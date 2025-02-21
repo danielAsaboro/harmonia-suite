@@ -64,15 +64,15 @@ export default function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>First Name</Label>
-              <Input placeholder="Enter first name" />
+              <Input placeholder={name.split(" ")[0]} />
             </div>
             <div className="space-y-2">
               <Label>Last Name</Label>
-              <Input placeholder="Enter last name" />
+              <Input placeholder={name.split(" ")[1]} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" placeholder="Enter email" />
+              <Input type="email" placeholder={`${name}@gmail.com...`} />
             </div>
           </div>
         </CardContent>
