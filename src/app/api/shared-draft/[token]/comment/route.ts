@@ -1,17 +1,10 @@
 // /app/api/shared-draft/[token]/comment/route.ts
 import { NextRequest, NextResponse } from "next/server";
-// import { db } from "@/lib/db/sqlite_db_service";
 import {
-  draftTweetsService,
-  draftThreadsService,
-  scheduledThreadsService,
   sharedDraftCommentsService,
   sharedDraftsService,
-  scheduledTweetsService,
-  userTokensService,
 } from "@/lib/services";
 import { nanoid } from "nanoid";
-import { cookies } from "next/headers";
 import { getUserFromSession } from "@/lib/session";
 
 export async function POST(

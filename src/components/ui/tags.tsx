@@ -126,7 +126,12 @@ const MentionInput: React.FC = () => {
 
     // Validate all mentions in the text
     const mentionRegex = /@(\w+)/g;
-    const mentions = [...newText.matchAll(mentionRegex)];
+    // const mentions = [...newText.matchAll(mentionRegex)];
+    const mentions = [];
+    let match;
+    while ((match = mentionRegex.exec(newText)) !== null) {
+      mentions.push(match);
+    }
     const newValidMentions = new Set(validMentions);
 
     for (const match of mentions) {
@@ -155,6 +160,7 @@ const MentionInput: React.FC = () => {
     const newText = `${beforeMention}${spaceBefore}@${username}${spaceAfter}${afterMention}`;
     setInputText(newText);
     setValidMentions((prev) => new Set([...prev, username]));
+
     setShowSuggestions(false);
     inputRef.current?.focus();
   };

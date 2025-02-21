@@ -1,11 +1,8 @@
 // /app/api/shared-draft/[token]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-// import { db } from "@/lib/db/sqlite_db_service";
 import {
   draftTweetsService,
   draftThreadsService,
-  scheduledThreadsService,
-  scheduledTweetsService,
   userTokensService,
   sharedDraftsService,
   sharedDraftCommentsService,

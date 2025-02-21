@@ -43,3 +43,40 @@ export async function getUserFromSession(): Promise<TwitterUserData | null> {
     return null;
   }
 }
+
+export async function getUserData(request: NextRequest): Promise<{
+  userId: string;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: string;
+  };
+  userData: {
+    id: string;
+    name: string;
+    username: string;
+    profile_image_url: string;
+    verified: boolean;
+    verified_type: string;
+  };
+} | null> {
+  const session = await getSession(request);
+  const twitterSession = session.get("twitter_session");
+
+  if (!twitterSession) return null;
+
+  try {
+    const sessionData = JSON.parse(twitterSession);
+
+    if (!sessionData.userData?.id || !sessionData.tokens) return null;
+
+    return {
+      userId: sessionData.userData.id,
+      tokens: sessionData.tokens,
+      userData: sessionData.userData,
+    };
+  } catch (error) {
+    console.error("Error parsing session:", error);
+    return null;
+  }
+}

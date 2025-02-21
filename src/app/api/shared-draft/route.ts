@@ -1,14 +1,5 @@
-// /app/api/shared-draft/route.ts
 import { NextRequest, NextResponse } from "next/server";
-// import { db } from "@/lib/db/sqlite_db_service";
-import {
-  draftTweetsService,
-  draftThreadsService,
-  scheduledThreadsService,
-  scheduledTweetsService,
-  userTokensService,
-  sharedDraftsService,
-} from "@/lib/services";
+import { sharedDraftsService } from "@/lib/services";
 import { nanoid } from "nanoid";
 import { getSession } from "@/lib/session";
 

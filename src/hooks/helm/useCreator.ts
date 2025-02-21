@@ -25,23 +25,21 @@ export function useCreator(twitterId?: string) {
       setError(null);
 
       try {
-        const tx = await instructions.addCreator(
-          twitterId,
-          newCreator,
-          publicKey
-        );
-
-        await handleTransaction(tx.rpc(), {
-          onSuccess: () => console.log("Creator added successfully"),
-          onError: (error) => {
-            console.error("Failed to add creator:", error);
-            setError(new Error(error.message));
-          },
-        });
-
-        // Return the updated creator list
-        const [creatorListPda] = findCreatorListPDA(twitterId);
-        return await program?.account.creatorList.fetch(creatorListPda);
+        // const tx = await instructions.addCreator(
+        //   twitterId,
+        //   newCreator,
+        //   publicKey
+        // );
+        // await handleTransaction(tx.rpc(), {
+        //   onSuccess: () => console.log("Creator added successfully"),
+        //   onError: (error) => {
+        //     console.error("Failed to add creator:", error);
+        //     setError(new Error(error.message));
+        //   },
+        // });
+        // // Return the updated creator list
+        // const [creatorListPda] = findCreatorListPDA(twitterId);
+        // return await program?.account.creatorList.fetch(creatorListPda);
       } catch (err) {
         setError(err as Error);
         throw err;
@@ -131,31 +129,31 @@ export function useCreator(twitterId?: string) {
   /**
    * Subscribe to creator list changes
    */
-  const watchCreatorList = useCallback(
-    (callback: (creatorList: any) => void) => {
-      if (!program || !twitterId) {
-        throw new Error("Missing required parameters");
-      }
+  // const watchCreatorList = useCallback(
+  //   (callback: (creatorList: any) => void) => {
+  //     if (!program || !twitterId) {
+  //       throw new Error("Missing required parameters");
+  //     }
 
-      const [creatorListPda] = findCreatorListPDA(twitterId);
-      const subscription = program.account.creatorList.subscribe(
-        creatorListPda,
-        callback
-      );
+  //     const [creatorListPda] = findCreatorListPDA(twitterId);
+  //     const subscription = program.account.creatorList.subscribe(
+  //       creatorListPda,
+  //       callback
+  //     );
 
-      return () => {
-        subscription.unsubscribe();
-      };
-    },
-    [program, twitterId]
-  );
+  //     return () => {
+  //       subscription.unsubscribe();
+  //     };
+  //   },
+  //   [program, twitterId]
+  // );
 
   return {
     addCreator,
     removeCreator,
     getCreatorList,
     isCreator,
-    watchCreatorList,
+    // watchCreatorList,
     loading,
     error,
   };

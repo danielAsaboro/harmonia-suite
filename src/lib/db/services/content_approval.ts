@@ -39,7 +39,7 @@ export class PrismaContentApprovalsService {
       approvers: createdApproval.approvers
         ? JSON.parse(createdApproval.approvers)
         : undefined,
-    };
+    } as ContentApproval;
   }
 
   // Get approval by content ID
@@ -62,7 +62,7 @@ export class PrismaContentApprovalsService {
       approvers: approval.approvers
         ? JSON.parse(approval.approvers)
         : undefined,
-    };
+    } as ContentApproval;
   }
 
   // Update approval status

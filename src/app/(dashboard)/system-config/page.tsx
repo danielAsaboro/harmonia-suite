@@ -267,7 +267,7 @@ export default function DashboardPage() {
                 max="1"
                 step="0.1"
                 value={config.llm.temperature}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate(
                     "llm",
                     "temperature",
@@ -284,7 +284,7 @@ export default function DashboardPage() {
               <Input
                 type="number"
                 value={config.llm.maxTokens}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate(
                     "llm",
                     "maxTokens",
@@ -309,7 +309,7 @@ export default function DashboardPage() {
               <Input
                 type="password"
                 value={config.api.telegramToken}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate("api", "telegramToken", e.target.value)
                 }
                 placeholder="Enter Telegram Bot Token"
@@ -323,7 +323,7 @@ export default function DashboardPage() {
               <Input
                 type="password"
                 value={config.api.twitterApiKey}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate("api", "twitterApiKey", e.target.value)
                 }
                 placeholder="Enter Twitter API Key"
@@ -337,7 +337,7 @@ export default function DashboardPage() {
               <Input
                 type="number"
                 value={config.api.rateLimit}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate(
                     "api",
                     "rateLimit",
@@ -364,7 +364,7 @@ export default function DashboardPage() {
                 type="number"
                 className="w-24"
                 value={config.privacy.dataRetentionDays}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate(
                     "privacy",
                     "dataRetentionDays",
@@ -433,7 +433,7 @@ export default function DashboardPage() {
               </label>
               <Input
                 value={config.backup.location}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate("backup", "location", e.target.value)
                 }
                 placeholder="Enter backup path"
@@ -447,7 +447,7 @@ export default function DashboardPage() {
               <Input
                 type="number"
                 value={config.backup.retentionCount}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate(
                     "backup",
                     "retentionCount",

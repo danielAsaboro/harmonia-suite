@@ -85,7 +85,7 @@ const EmailVerification = ({
               type="text"
               placeholder="Enter verification code"
               value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVerificationCode(e.target.value)}
               className="bg-gray-800"
               maxLength={5}
               disabled={status === "verifying"}

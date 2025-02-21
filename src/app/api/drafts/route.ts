@@ -1,53 +1,13 @@
 // src/app/api/drafts/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
-// import { db } from "@/lib/db/sqlite_db_service";
+import { getSession, getUserData } from "@/lib/session";
 import {
   draftTweetsService,
   draftThreadsService,
   userTokensService,
 } from "@/lib/services";
-// import { fileStorage } from "@/lib/storage/fileStorage";
-// import { prismaDb } from "@/lib/db/prisma_service";
 import { fileStorage } from "@/lib/storage";
-
-async function getUserData(request: NextRequest): Promise<{
-  userId: string;
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: string;
-  };
-  userData: {
-    id: string;
-    name: string;
-    username: string;
-    profile_image_url: string;
-    verified: boolean;
-    verified_type: string;
-  };
-} | null> {
-  const session = await getSession(request);
-  const twitterSession = session.get("twitter_session");
-
-  if (!twitterSession) return null;
-
-  try {
-    const sessionData = JSON.parse(twitterSession);
-
-    if (!sessionData.userData?.id || !sessionData.tokens) return null;
-
-    return {
-      userId: sessionData.userData.id,
-      tokens: sessionData.tokens,
-      userData: sessionData.userData,
-    };
-  } catch (error) {
-    console.error("Error parsing session:", error);
-    return null;
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {

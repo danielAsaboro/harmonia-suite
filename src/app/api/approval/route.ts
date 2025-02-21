@@ -1,6 +1,6 @@
 // /app/api/approval/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getSession, getUserData } from "@/lib/session";
 import {
   draftTweetsService,
   draftThreadsService,
@@ -8,26 +8,6 @@ import {
   sharedDraftsService,
 } from "@/lib/services";
 import { nanoid } from "nanoid";
-
-// Helper to get user data from session
-async function getUserData(request: NextRequest) {
-  const session = await getSession(request);
-  const twitterSession = session.get("twitter_session");
-
-  if (!twitterSession) return null;
-
-  try {
-    const sessionData = JSON.parse(twitterSession);
-    return {
-      userId: sessionData.userData?.id,
-      tokens: sessionData.tokens,
-      userData: sessionData.userData,
-    };
-  } catch (error) {
-    console.error("Error parsing session:", error);
-    return null;
-  }
-}
 
 // Submit content for approval
 export async function POST(req: NextRequest) {

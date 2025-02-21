@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Card, CardHeader, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { CalendarEvent } from "./types";
+import { CalendarEvent } from "./calendar";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -97,7 +97,7 @@ export default function EventModal({
               <label className="block text-sm font-medium mb-1">Title</label>
               <Input
                 value={formData.title}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
                 placeholder="Event title"
@@ -117,7 +117,7 @@ export default function EventModal({
                         ? format(formData.start, "yyyy-MM-dd'T'HH:mm")
                         : format(new Date(), "yyyy-MM-dd'T'HH:mm")
                     }
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setFormData({
                         ...formData,
                         start: new Date(e.target.value),
@@ -140,7 +140,7 @@ export default function EventModal({
                         ? format(formData.end, "yyyy-MM-dd'T'HH:mm")
                         : format(new Date(), "yyyy-MM-dd'T'HH:mm")
                     }
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setFormData({
                         ...formData,
                         end: new Date(e.target.value),
@@ -194,11 +194,28 @@ export default function EventModal({
                 ))}
               </div>
               <div className="flex gap-2">
+                {/* <Input
+                  value={newTag}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setNewTag(e.target.value)
+                  }
+                  placeholder="Add a tag"
+                  onKeyPress={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    e.key === "Enter" && handleAddTag()
+                  }
+                /> */}
                 <Input
                   value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setNewTag(e.target.value)
+                  }
                   placeholder="Add a tag"
-                  onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault(); // Prevents form submission if inside a form
+                      handleAddTag();
+                    }
+                  }}
                 />
                 <Button type="button" onClick={handleAddTag} variant="outline">
                   Add

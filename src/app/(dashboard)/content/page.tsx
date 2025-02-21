@@ -318,11 +318,3 @@ export default function ContentStudioPage() {
     </div>
   );
 }
-
-// Content Studio
-
-// Twitter Post Composer [link to /content/compose/twitter]
-// Telegram Response Templates
-// Content Calendar
-// Approval Workflow
-// Post Analytics

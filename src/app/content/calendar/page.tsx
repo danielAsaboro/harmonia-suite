@@ -2,7 +2,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import CalendarView from "@/components/calendar/CalendarView";
-import { CalendarEvent, CalendarEventType } from "@/components/calendar/types";
+import {
+  CalendarEvent,
+  CalendarEventType,
+} from "@/components/calendar/calendar";
 import { tweetStorage } from "@/utils/localStorage";
 import { KeyboardProvider } from "@/contexts/keyboard-context";
 

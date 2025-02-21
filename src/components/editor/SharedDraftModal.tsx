@@ -222,7 +222,7 @@ const SharedDraftModal: React.FC<SharedDraftModalProps> = ({
                     <Input
                       type="number"
                       value={expirationDays}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setExpirationDays(Number(e.target.value))
                       }
                       min={1}

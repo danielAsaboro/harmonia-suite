@@ -1,4 +1,4 @@
-// /components/calendar/types.ts
+// /types/calendar.ts
 
 export type CalendarViewType = "week" | "month";
 

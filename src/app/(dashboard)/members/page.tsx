@@ -157,7 +157,7 @@ const MemberFinder = () => {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
             placeholder="Describe your project needs..."
             className="pl-12 bg-gray-800 border-gray-700 text-white h-14 text-lg"
           />

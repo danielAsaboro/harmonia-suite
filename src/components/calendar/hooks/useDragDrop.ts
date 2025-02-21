@@ -5,7 +5,7 @@ import {
   DraggedEventMetadata,
   DragState,
   DragTarget,
-} from "../types";
+} from "../calendar";
 import { differenceInMinutes, addMinutes, isSameDay } from "date-fns";
 import { useMousePosition } from "./useMousePosition";
 

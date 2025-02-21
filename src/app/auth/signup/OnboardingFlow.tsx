@@ -193,7 +193,7 @@ const OnboardingFlow: React.FC<{ user: TwitterUserData }> = ({ user }) => {
                 type="email"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 className="w-full bg-gray-800"
               />
             </div>

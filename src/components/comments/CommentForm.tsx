@@ -39,7 +39,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
         <CardContent className="space-y-4 pb-6">
           <Input
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewComment(e.target.value)}
             placeholder="Share your thoughts..."
             className="w-full h-24 resize-none rounded-xl"
           />

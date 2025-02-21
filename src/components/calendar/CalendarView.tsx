@@ -9,7 +9,7 @@ import {
   Globe,
   ArrowLeft,
 } from "lucide-react";
-import { CalendarEvent, CalendarViewProps, CalendarViewType } from "./types";
+import { CalendarEvent, CalendarViewProps, CalendarViewType } from "./calendar";
 import {
   addMonths,
   addWeeks,

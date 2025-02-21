@@ -6,7 +6,7 @@ import {
   CalendarEventType,
   DragPosition,
   DragTarget,
-} from "./types";
+} from "./calendar";
 import { Card } from "../ui/card";
 import { cn } from "@/utils/ts-merge";
 import { useMousePosition } from "./hooks/useMousePosition";

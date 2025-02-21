@@ -1,5 +1,4 @@
 import React from "react";
-import { TwitterUserData } from "@/types/auth";
 
 interface WelcomeStepProps {
   user: TwitterUserData;
