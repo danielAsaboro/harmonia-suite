@@ -1,8 +1,8 @@
 "use client";
-// /app/scheduled/scheduled-view.tsx
+// /components/purgatory/scheduled-view.tsx
 import React, { useState } from "react";
-import { ScheduledTable } from "@/components/scheduler/ScheduledTable";
-import { ScheduledItem } from "@/components/scheduler/Columns";
+import { ScheduledTable } from "@/components/purgatory/ScheduledTable";
+import { ScheduledItem } from "@/components/purgatory/Columns";
 import { Card } from "@/components/ui/card";
 import { SortingState } from "@tanstack/react-table";
 

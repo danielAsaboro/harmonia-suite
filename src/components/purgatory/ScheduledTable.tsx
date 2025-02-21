@@ -1,4 +1,4 @@
-// /components/scheduler/ScheduledTable.tsx
+// /components/purgatory/ScheduledTable.tsx
 import React, { useState } from "react";
 import {
   Table,

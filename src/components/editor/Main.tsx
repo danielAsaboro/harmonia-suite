@@ -1,7 +1,12 @@
 // components/editor/Main.tsx
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { Tweet, Thread, UnifiedTweetComposerProps } from "@/types/tweet";
+import {
+  Tweet,
+  Thread,
+  UnifiedTweetComposerProps,
+  TweetStatus,
+} from "@/types/tweet";
 import MediaUpload from "./media/MediaUpload";
 import MediaPreview from "./media/MediaPreview";
 import ThreadPreview from "./ThreadPreview";
@@ -27,7 +32,7 @@ import {
   removeMediaFile,
   storeMediaFile,
 } from "./media/indexedDB";
-import SchedulePicker from "../scheduler/SchedulePicker";
+import SchedulePicker from "../purgatory/SchedulePicker";
 import { cn } from "@/utils/ts-merge";
 import PublishingModal from "./PublishingModal";
 import MentionInput from "./MentionInput";
@@ -978,46 +983,96 @@ export default function PlayGround({
     refreshSidebar,
   ]);
 
-  // Modified handleSubmitForReview function
-  const handleSubmitForReview = (): void => {
+  const handleSubmitForReview = async (): Promise<void> => {
     try {
+      // Validate tweets first
+      if (!validateTweets()) return;
+
       // Generate hash based on content type
       let contentHash: string | null;
+      const contentType = pageContent.isThread ? "thread" : "tweet";
+      const contentId = pageContent.isThread
+        ? pageContent.threadId
+        : pageContent.tweets[0].id;
 
       if (pageContent.isThread && pageContent.threadId) {
         // For thread: hash all tweets in order
         contentHash = hashThread(pageContent.tweets);
         console.log("Thread hash:", contentHash);
-
-        // Example of how you might save the thread with the hash
-        // const thread: Thread = {
-        //   id: pageContent.threadId,
-        //   tweetIds: pageContent.tweets.map(t => t.id),
-        //   createdAt: new Date(),
-        //   status: "draft",
-        //   contentHash: contentHash
-        // };
-        // tweetStorage.saveThread(thread, pageContent.tweets, true);
       } else {
         // For single tweet: hash just that tweet
         contentHash = hashTweet(pageContent.tweets[0]);
         console.log("Tweet hash:", contentHash);
+      }
 
-        // Example of how you might save the tweet with the hash
-        // tweetStorage.saveTweet({
-        //   ...pageContent.tweets[0],
-        //   status: "draft",
-        //   contentHash: contentHash as string
-        // }, true);
+      // Here we would interact with the blockchain
+      // For now, we'll simulate this interaction
+      // In a real implementation, this would call your Solana program
+
+      // Submit to your backend API
+      const response = await fetch("/api/approval", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: contentType,
+          id: contentId,
+          contentHash,
+          // Include any blockchain-specific data like publicKey if needed
+          // publicKey: wallet.publicKey.toString(),
+          // Add transaction signature if you have one
+          // transactionSignature: txSignature
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit for approval");
+      }
+
+      const result = await response.json();
+
+      // Update local state to reflect "pending_approval" status
+      if (pageContent.isThread && pageContent.threadId) {
+        const thread: Thread = {
+          id: pageContent.threadId,
+          tweetIds: pageContent.tweets.map((t) => t.id),
+          createdAt: new Date(),
+          status: "pending_approval",
+        };
+
+        // Update all tweets in the thread
+        const updatedTweets = pageContent.tweets.map((tweet) => ({
+          ...tweet,
+          status: "pending_approval" as TweetStatus,
+        }));
+
+        tweetStorage.saveThread(thread, updatedTweets, true);
+      } else {
+        // Update single tweet
+        tweetStorage.saveTweet(
+          {
+            ...pageContent.tweets[0],
+            status: "pending_approval" as TweetStatus,
+          },
+          true
+        );
       }
 
       // Close the modal and editor
       setSubmitModalOpen(false);
       hideEditor();
       refreshSidebar();
+
+      // Show success message
+      alert("Content submitted for approval successfully!");
     } catch (error) {
       console.error("Error submitting for review:", error);
-      alert("Failed to submit for review. Please try again.");
+      alert(
+        "Failed to submit for review: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     }
   };
 

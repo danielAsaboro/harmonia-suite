@@ -1,4 +1,4 @@
-// /components/scheduler/TablePagination.tsx
+// /components/purgatory/TablePagination.tsx
 import React from "react";
 import { Button } from "@/components/ui/button";
 import {

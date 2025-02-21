@@ -1,4 +1,4 @@
-// /components/scheduler/TweetPreview.tsx
+// /components/purgatory/TweetPreview.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";

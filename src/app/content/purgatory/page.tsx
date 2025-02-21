@@ -1,0 +1,7 @@
+// /app/purgatory/approvals/page.tsx
+
+import PendingApprovalsView from "@/components/purgatory/pending-approvals-view";
+
+export default function PendingApprovalsPage() {
+  return <PendingApprovalsView />;
+}

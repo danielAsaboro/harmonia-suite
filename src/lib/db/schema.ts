@@ -41,12 +41,20 @@ export interface DraftTweet extends Omit<Tweet, "createdAt"> {
   createdAt: string;
   userId: string;
   updatedAt: string;
+  approvalId?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface DraftThread extends Omit<Thread, "createdAt"> {
   createdAt: string;
   userId: string;
   updatedAt: string;
+  approvalId?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface UserTokens {
@@ -98,4 +106,18 @@ export interface SharedDraftInfo {
   canComment: boolean;
   expiresAt: string;
   shareState: "active" | "expired" | "revoked";
+}
+
+export interface ContentApproval {
+  id: string;
+  contentType: "tweet" | "thread";
+  contentId: string;
+  blockchainId: string;
+  submittedAt: string;
+  status: "pending" | "approved" | "rejected";
+  requiredApprovals: number;
+  currentApprovals: number;
+  approvers?: string[]; // JSON serialized array of public keys
+  rejectionReason?: string;
+  transactionSignature?: string;
 }

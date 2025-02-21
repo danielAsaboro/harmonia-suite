@@ -196,6 +196,58 @@ export class PrismaDraftThreadsService {
       }),
     ]);
   }
+
+  async submitThreadForApproval(
+    id: string,
+    userId: string,
+    approvalId: string
+  ): Promise<void> {
+    await this.prisma.draft_threads.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        status: "pending_approval",
+        approvalId,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  // Add these methods as well for consistency with the tweet service
+  async approveThread(id: string, userId: string): Promise<void> {
+    await this.prisma.draft_threads.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        status: "approved",
+        approvedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  async rejectThread(
+    id: string,
+    userId: string,
+    reason?: string
+  ): Promise<void> {
+    await this.prisma.draft_threads.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        status: "rejected",
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: reason || null,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
 }
 
 // Helper function to create the service with a singleton-like approach

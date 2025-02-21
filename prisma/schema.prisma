@@ -71,6 +71,10 @@ model draft_tweets {
   userId      String
   user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
   thread      draft_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  approvalId  String?
+  approvedAt  String?
+  rejectedAt  String?
+  rejectionReason String?
 
   @@index([threadId])
   @@index([userId])
@@ -86,6 +90,10 @@ model draft_threads {
   userId      String
   user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
   tweets      draft_tweets[]
+  approvalId  String?
+  approvedAt  String?
+  rejectedAt  String?
+  rejectionReason String?
 
   @@index([userId])
 }
@@ -129,4 +137,21 @@ model shared_draft_comments {
   @@index([resolved])
   @@index([authorId])
   @@index([sharedDraftId])
+}
+
+model content_approvals {
+  id            String   @id
+  contentType   String   // "tweet" or "thread"
+  contentId     String   // draft_tweet or draft_thread id
+  blockchainId  String   // On-chain content identifier (hash)
+  submittedAt   String
+  status        String   // "pending", "approved", "rejected"
+  requiredApprovals Int
+  currentApprovals Int
+  approvers     String?  // JSON array of approver publicKeys
+  rejectionReason String?
+  transactionSignature String?
+
+  @@index([contentId])
+  @@index([blockchainId])
 }

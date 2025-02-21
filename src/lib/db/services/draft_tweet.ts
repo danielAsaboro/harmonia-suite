@@ -38,6 +38,10 @@ export class PrismaDraftTweetsService {
         position: tweet.position || null,
         tags: JSON.stringify(tweet.tags || []),
         userId: tweet.userId,
+        approvalId: tweet.approvalId || null,
+        approvedAt: tweet.approvedAt || null,
+        rejectedAt: tweet.rejectedAt || null,
+        rejectionReason: tweet.rejectionReason || null,
       },
       create: {
         id: tweet.id,
@@ -50,6 +54,10 @@ export class PrismaDraftTweetsService {
         position: tweet.position || null,
         tags: JSON.stringify(tweet.tags || []),
         userId: tweet.userId,
+        approvalId: tweet.approvalId || null,
+        approvedAt: tweet.approvedAt || null,
+        rejectedAt: tweet.rejectedAt || null,
+        rejectionReason: tweet.rejectionReason || null,
       },
     });
   }
@@ -87,6 +95,59 @@ export class PrismaDraftTweetsService {
       where: {
         id: id,
         userId: userId,
+      },
+    });
+  }
+
+  // for submitting a tweet for approval
+  async submitTweetForApproval(
+    id: string,
+    userId: string,
+    approvalId: string
+  ): Promise<void> {
+    await this.prisma.draft_tweets.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        status: "pending_approval",
+        approvalId,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  // Add methods for handling approval outcomes
+  async approveTweet(id: string, userId: string): Promise<void> {
+    await this.prisma.draft_tweets.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        status: "approved",
+        approvedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  async rejectTweet(
+    id: string,
+    userId: string,
+    reason?: string
+  ): Promise<void> {
+    await this.prisma.draft_tweets.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        status: "rejected",
+        rejectedAt: new Date().toISOString(),
+        rejectionReason: reason || null,
+        updatedAt: new Date().toISOString(),
       },
     });
   }

@@ -1,4 +1,5 @@
-// /app/scheduled/page.tsx
+// /app/content/purgatory/page.tsx
+import ScheduledView from "@/components/purgatory/scheduled-view";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -6,7 +7,6 @@ export const metadata: Metadata = {
   description: "View and manage your scheduled tweets and threads.",
 };
 
-import ScheduledView from "../../../components/scheduler/scheduled-view";
 
 export default function ScheduledPage() {
   return <ScheduledView />;
