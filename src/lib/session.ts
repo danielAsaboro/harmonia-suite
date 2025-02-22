@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { type NextRequest } from "next/server";
 
 export async function getSession(request: NextRequest) {
-  const cookieStore = await cookies();
+  const cookieStore =  cookies();
 
   return {
     get: (key: string) => {
@@ -31,7 +31,7 @@ export async function getSession(request: NextRequest) {
 }
 
 export async function getUserFromSession(): Promise<TwitterUserData | null> {
-  const cookieStore = await cookies();
+  const cookieStore =  cookies();
   const sessionCookie = cookieStore.get("twitter_session");
 
   if (!sessionCookie?.value) return null;

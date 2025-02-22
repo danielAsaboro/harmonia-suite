@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const { type } = body;
 
     // Get user tokens from cookie
-    const cookieStore = await cookies();
+    const cookieStore =  cookies();
     const sessionData = cookieStore.get("twitter_session");
 
     if (!sessionData?.value) {

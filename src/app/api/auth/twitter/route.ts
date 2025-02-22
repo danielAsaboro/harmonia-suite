@@ -1,4 +1,5 @@
 // app/api/auth/twitter/route.ts
+export const dynamic = "force-dynamic";
 import { TwitterApi } from "twitter-api-v2";
 import { getSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";

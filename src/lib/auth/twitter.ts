@@ -24,7 +24,7 @@ function safeJSONParse(str: string) {
 
 async function setAuthStateCookie(stateData: OAuth2State) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore =  cookies();
     const serializedData = JSON.stringify(stateData);
 
     cookieStore.set("twitter_auth_state", serializedData, {
@@ -111,7 +111,7 @@ export async function handleOAuth1Callback(request: NextRequest) {
       throw new Error("Missing OAuth 1.0a tokens");
     }
 
-    const cookieStore = await cookies();
+    const cookieStore =  cookies();
     const stateCookie = cookieStore.get("twitter_auth_state");
 
     if (!stateCookie?.value) {
@@ -119,6 +119,10 @@ export async function handleOAuth1Callback(request: NextRequest) {
     }
 
     const stateData = safeJSONParse(stateCookie.value);
+
+    console.log(" about to log stuff for issues");
+    console.dir(stateData, {depth: null})
+    console.dir(oauth_token, {depth: null})
 
     if (!stateData || stateData.oauth1Token !== oauth_token) {
       throw new Error("Invalid state or OAuth1 token mismatch");
@@ -235,7 +239,7 @@ export async function handleOAuth2Callback(request: NextRequest) {
       });
     }
 
-    const cookieStore = await cookies();
+    const cookieStore =  cookies();
     const stateCookie = cookieStore.get("twitter_auth_state");
 
     if (!stateCookie?.value) {
