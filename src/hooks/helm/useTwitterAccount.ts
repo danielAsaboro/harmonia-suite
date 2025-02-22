@@ -1,6 +1,6 @@
 // File: src/hooks/helm/useTwitterAccount.ts
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useHelm } from "./useHelm";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { findTwitterAccountPDA } from "../../services/helm";
@@ -16,8 +16,6 @@ export function useTwitterAccount(twitterId?: string) {
   const registerAccount = useCallback(
     async (twitterId: string, twitterHandle: string) => {
       if (!instructions || !publicKey) throw new Error("Not connected");
-      // setLoading(true);
-      // setError(null);
 
       try {
         const tx = instructions.registerTwitterAccount(
@@ -32,7 +30,6 @@ export function useTwitterAccount(twitterId?: string) {
           },
           onError: (error) => {
             console.error("Failed to register Twitter account:", error);
-            // setError(new Error(error.message));
             throw error;
           },
         });
@@ -49,7 +46,6 @@ export function useTwitterAccount(twitterId?: string) {
 
         return result;
       } catch (err) {
-        // setError(err as Error);
         throw err;
       }
     },
@@ -62,8 +58,6 @@ export function useTwitterAccount(twitterId?: string) {
   const verifyAccount = useCallback(
     async (twitterId: string) => {
       if (!instructions || !publicKey) throw new Error("Not connected");
-      // setLoading(true);
-      // setError(null);
 
       try {
         const tx = instructions.verifyTwitterAccount(twitterId, publicKey);
@@ -72,7 +66,6 @@ export function useTwitterAccount(twitterId?: string) {
           onSuccess: () => console.log("Twitter account verified successfully"),
           onError: (error) => {
             console.error("Failed to verify Twitter account:", error);
-            // setError(new Error(error.message));
             return error;
           },
         });
@@ -85,10 +78,7 @@ export function useTwitterAccount(twitterId?: string) {
         const [accountPda] = findTwitterAccountPDA(twitterId);
         return await getTwitterAccount(accountPda);
       } catch (err) {
-        // setError(err as Error);
         return err;
-      } finally {
-        // setLoading(false);
       }
     },
     [instructions, publicKey, handleTransaction, getTwitterAccount]
@@ -99,8 +89,6 @@ export function useTwitterAccount(twitterId?: string) {
    */
   const fetchAccount = useCallback(async () => {
     if (!twitterId) return null;
-    // setLoading(true);
-    // setError(null);
 
     try {
       const [accountPda] = findTwitterAccountPDA(twitterId);
@@ -108,10 +96,7 @@ export function useTwitterAccount(twitterId?: string) {
       // CHECK; does this work? i hope so
       return account as unknown as TwitterAccount;
     } catch (err) {
-      // setError(err as Error);
       throw err;
-    } finally {
-      // setLoading(false);
     }
   }, [twitterId, getTwitterAccount]);
 
@@ -119,7 +104,5 @@ export function useTwitterAccount(twitterId?: string) {
     registerAccount,
     verifyAccount,
     fetchAccount,
-    // loading,
-    // error,
   };
 }

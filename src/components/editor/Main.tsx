@@ -919,39 +919,40 @@ export default function PlayGround({
 
   // // Initialize editor with proper state
   useEffect(() => {
-    console.log(" initialized called here");
     const initializeEditor = async () => {
-      if (draftId) {
-        const isScheduled =
-          editorState.selectedItemStatus === "scheduled" ||
-          editorState.selectedItemStatus === "published";
-        const content = isScheduled ? loadScheduledItem() : loadDraft();
+      try {
+        setIsLoading(true);
 
-        if (content) {
-          // Reset thread state before setting new content
-          // setIsThread(false);
+        if (draftId) {
+          const isScheduled =
+            editorState.selectedItemStatus === "scheduled" ||
+            editorState.selectedItemStatus === "published";
+          const content = isScheduled ? loadScheduledItem() : loadDraft();
 
-          if ("tweets" in content) {
-            setPageContent((prev) => ({
-              isThread: true,
-              threadId: content.id,
-              tweets: content.tweets.map((tweet) => ({
-                ...tweet,
-                status: content.status,
-                scheduledFor: content.scheduledFor,
-              })),
-            }));
-          } else {
-            setPageContent((prev) => ({
-              isThread: prev.isThread,
-              threadId: undefined,
-              tweets: [content as Tweet],
-            }));
+          // Wait a tick to ensure state is synchronized
+          await new Promise((resolve) => setTimeout(resolve, 0));
+
+          if (content) {
+            if ("tweets" in content && Array.isArray(content.tweets)) {
+              setPageContent({
+                isThread: true,
+                threadId: content.id,
+                tweets: content.tweets.map((tweet) => ({
+                  ...tweet,
+                  status: content.status,
+                  scheduledFor: content.scheduledFor,
+                })),
+              });
+            } else {
+              setPageContent({
+                isThread: false,
+                threadId: undefined,
+                tweets: [content as Tweet],
+              });
+            }
           }
-        }
-      } else {
-        // Only create new tweets in draft mode
-        if (activeTab === "drafts") {
+        } else if (activeTab === "drafts" && !editorState.selectedDraftId) {
+          // Only create new tweet if we're in drafts tab AND no draft is selected
           const newTweet: Tweet = {
             id: `tweet-${uuidv4()}`,
             content: "",
@@ -959,16 +960,19 @@ export default function PlayGround({
             createdAt: new Date(),
             status: "draft",
           };
-          setPageContent((prev) => ({
+          setPageContent({
             isThread: false,
             threadId: undefined,
             tweets: [newTweet],
-          }));
+          });
           tweetStorage.saveTweet(newTweet, true);
           refreshSidebar();
         }
+      } catch (error) {
+        console.error("Error initializing editor:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initializeEditor();
@@ -1066,7 +1070,6 @@ export default function PlayGround({
       refreshSidebar();
 
       // Show success message
-      alert("Content submitted for approval successfully!");
     } catch (error) {
       console.error("Error submitting for review:", error);
       alert(
@@ -1076,12 +1079,17 @@ export default function PlayGround({
     }
   };
 
-  // Add effect to manage threadId
+  // // Add effect to manage threadId
   // useEffect(() => {
   //   // If it's a thread draft, use its existing threadId
   //   if (draftType === "thread" && draftId) {
   //     const thread = tweetStorage.getThreads().find((t) => t.id === draftId);
   //     setThreadId(thread?.id || `thread-${uuidv4()}`);
+  //     setPageContent((prev)=>{
+  //       return {
+  //         isThread: prev.threadId
+  //       }
+  //     })
   //   }
   //   // For new tweets or single tweets, set threadId to null
   //   else {

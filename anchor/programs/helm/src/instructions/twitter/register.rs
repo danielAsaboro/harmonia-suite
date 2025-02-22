@@ -1,9 +1,7 @@
-// /src/instructions/twitter/register.rs
+// File: src/instructions/twitter/register.rs
 
 use anchor_lang::prelude::*;
 use crate::contexts::twitter::{ RegisterTwitterAccount, TwitterAccountValidator };
-
-// File: src/instructions/twitter/register.rs
 
 pub fn register(
     ctx: Context<RegisterTwitterAccount>,
@@ -28,11 +26,7 @@ pub fn register(
         ctx.bumps.twitter_account
     );
 
-    admin_list.initialize(
-        twitter_account.key(), 
-        ctx.accounts.owner.key(), 
-        ctx.bumps.admin_list
-    )?;
+    admin_list.initialize(twitter_account.key(), ctx.accounts.owner.key(), ctx.bumps.admin_list)?;
 
     // Initialize admin list
 
@@ -44,3 +38,5 @@ pub fn register(
 
     Ok(())
 }
+
+// TODO: need to implement a name upgrade

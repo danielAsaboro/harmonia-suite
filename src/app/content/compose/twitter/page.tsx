@@ -1,6 +1,9 @@
-// app/content/compose/twitter/page.tsx
+// // app/content/compose/twitter/page.tsx
+
 "use client";
 
+import { useState } from "react";
+import { Menu, X, Settings, ChevronLeft } from "lucide-react";
 import {
   UserAccountProvider,
   useUserAccount,
@@ -10,109 +13,21 @@ import LoadingState from "@/components/editor/LoadingState";
 import PlayGround from "@/components/editor/Main";
 import MetadataTab from "@/components/editor/MetadataTab";
 import ActionsMenu from "@/components/editor/PowerTab";
-import { tweetStorage } from "@/utils/localStorage";
-import { PenSquare } from "lucide-react";
-
-function WelcomeScreen() {
-  const { showEditor } = useEditor();
-
-  // Check for existing tweets across different statuses
-  const existingDrafts = tweetStorage
-    .getTweets()
-    .filter(
-      (t) =>
-        t.status === "draft" ||
-        t.status === "scheduled" ||
-        t.status === "published"
-    );
-
-  // Determine the appropriate welcome message
-  const getWelcomeTitle = () => {
-    if (existingDrafts.length === 0) {
-      return "Create Your First Draft";
-    }
-
-    const draftsCount = tweetStorage
-      .getTweets()
-      .filter((t) => t.status === "draft")
-      .filter((t) => !t.position || t.position == 0).length;
-    const scheduledCount = tweetStorage
-      .getTweets()
-      .filter((t) => t.status === "scheduled").length;
-
-    if (draftsCount > 0) {
-      return draftsCount === 1
-        ? "Continue Working on Your Draft"
-        : `You Have ${draftsCount} Drafts Ready`;
-    }
-
-    if (scheduledCount > 0) {
-      return scheduledCount === 1
-        ? "You Have a Scheduled Tweet"
-        : `You Have ${scheduledCount} Scheduled Tweets`;
-    }
-
-    return "Compose Your Next Tweet";
-  };
-
-  const getWelcomeDescription = () => {
-    if (existingDrafts.length === 0) {
-      return "Start composing your tweet or thread. Your drafts will be saved automatically.";
-    }
-
-    const draftsCount = tweetStorage
-      .getTweets()
-      .filter((t) => t.status === "draft").length;
-    const scheduledCount = tweetStorage
-      .getTweets()
-      .filter((t) => t.status === "scheduled").length;
-
-    if (draftsCount > 0) {
-      return draftsCount === 1
-        ? "You have an existing draft waiting to be completed."
-        : `You have multiple drafts in progress. Pick up where you left off.`;
-    }
-
-    if (scheduledCount > 0) {
-      return scheduledCount === 1
-        ? "You have a tweet scheduled for future publication."
-        : `You have multiple tweets scheduled for future publication.`;
-    }
-
-    return "Create a new tweet or start a thread to engage your audience.";
-  };
-
-  // Find the latest draft
-  const latestDraft = tweetStorage
-    .getTweets()
-    .filter((t) => t.status === "draft")
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
-
-  return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <div className="text-center space-y-6">
-        <PenSquare size={48} className="text-blue-400 mx-auto" />
-        <h1 className="text-2xl font-bold text-white">{getWelcomeTitle()}</h1>
-        <p className="text-gray-400 max-w-md">{getWelcomeDescription()}</p>
-        <button
-          onClick={() => showEditor(latestDraft?.id)}
-          className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors font-medium"
-        >
-          {existingDrafts.length === 0
-            ? "Create New Draft"
-            : "Continue Drafting"}
-        </button>
-      </div>
-    </div>
-  );
-}
+import WelcomeScreen from "./WelcomeScreen";
+import EditorSidebar from "@/components/editor/EditorSideBar";
+import { cn } from "@/utils/ts-merge";
 
 function TwitterEditorContent() {
-  const { editorState, isMetadataTabVisible } = useEditor();
+  const {
+    editorState,
+    isMetadataTabVisible,
+    isSidebarVisible,
+    toggleMetadataTab,
+  } = useEditor();
   const { isLoading } = useUserAccount();
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  // Use editor context for metadata visibility
+  const isMobileMetadataVisible = isSidebarVisible && isMetadataTabVisible;
 
   if (isLoading) {
     return <LoadingState />;
@@ -120,18 +35,76 @@ function TwitterEditorContent() {
 
   return (
     <div className="flex min-h-screen bg-black text-white">
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
       <div
-        className={`relative transition-all duration-300 ease-in-out ${
-          isMetadataTabVisible && editorState.isVisible
-            ? "w-[calc(100%-320px)]" // Width adjusted to make room for metadata panel
-            : "w-full" // Full width when metadata is hidden
-        }`}
+        className={`
+        fixed md:relative md:flex-shrink-0 transition-all duration-300 h-full z-50
+        ${
+          isMobileSidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0"
+        }
+      `}
       >
+        <EditorSidebar />
+      </div>
+
+      {/* Main Content */}
+      <div
+        className={`
+        flex-1 transition-all duration-300 ease-in-out relative
+        ${
+          isMetadataTabVisible && editorState.isVisible
+            ? "md:w-[calc(100%-20rem)]"
+            : "w-full"
+        }
+      `}
+      >
+        {/* Mobile Header - Now with transforming menu button */}
+        {editorState.isVisible && (
+          <div className="sticky top-0 z-40 bg-black md:hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+              <button
+                onClick={() => setMobileSidebarOpen(!isMobileSidebarOpen)}
+                className="p-1 transition-transform duration-200"
+              >
+                {isMobileSidebarOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </button>
+              <h1 className="text-lg font-medium">Compose Tweet</h1>
+              <button
+                onClick={toggleMetadataTab}
+                className={cn(
+                  "p-1 transition-transform duration-200",
+                  isMetadataTabVisible && "text-blue-500"
+                )}
+              >
+                {isMetadataTabVisible ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Settings className="w-6 h-6" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         {editorState.isVisible ? (
-          <div className="flex flex-col h-screen relative">
+          <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen relative">
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto pb-24">
-              <div className="max-w-4xl mx-auto pt-5 p-4">
+              <div className="max-w-4xl mx-auto pt-5 p-4 pb-40">
                 <PlayGround
                   draftId={editorState.selectedDraftId}
                   draftType={editorState.selectedDraftType}
@@ -139,9 +112,11 @@ function TwitterEditorContent() {
               </div>
             </div>
 
-            {/* Sticky Actions Menu that maintains responsive width */}
-            <div className="absolute bottom-14 w-full flex justify-center">
-              <ActionsMenu />
+            {/* Actions Menu */}
+            <div className="fixed bottom-0 left-0 right-0 md:relative md:bottom-10 flex justify-center bg-black md:bg-transparent">
+              <div className="w-full md:w-auto md:relative md:bottom-14">
+                <ActionsMenu />
+              </div>
             </div>
           </div>
         ) : (
@@ -149,15 +124,57 @@ function TwitterEditorContent() {
         )}
       </div>
 
-      <div
-        className={`right-0 top-0 h-screen transition-all duration-300 ease-in-out ${
-          isMetadataTabVisible && editorState.isVisible
-            ? "translate-x-0 w-[320px]"
-            : "translate-x-full w-0"
-        }`}
-      >
-        <MetadataTab />
-      </div>
+      {/* Metadata Panel */}
+      {isMetadataTabVisible && editorState.isVisible && (
+        <>
+          {/* Mobile Metadata Panel */}
+          <div
+            className={`
+            fixed inset-y-0 right-0 w-[80%] max-w-md z-50 md:hidden
+            transition-transform duration-300 ease-in-out bg-gray-900
+            ${isMetadataTabVisible ? "translate-x-0" : "translate-x-full"}
+          `}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-800">
+              <h2 className="text-lg font-medium">Metadata</h2>
+              <button
+                onClick={toggleMetadataTab}
+                className="p-2 hover:bg-gray-800 rounded-full"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+              <MetadataTab />
+            </div>
+          </div>
+
+          {/* Desktop Metadata Panel */}
+          <div
+            className={`
+            hidden md:block w-80 right-0 top-0 h-screen
+            transition-all duration-300 ease-in-out border-l border-gray-800
+            ${isMetadataTabVisible ? "translate-x-0" : "translate-x-full"}
+          `}
+          >
+            <MetadataTab />
+          </div>
+
+          {/* Mobile Backdrop */}
+          <div
+            className={`
+              fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden
+              transition-opacity duration-300
+              ${
+                isMetadataTabVisible
+                  ? "opacity-100"
+                  : "opacity-0 pointer-events-none"
+              }
+            `}
+            onClick={toggleMetadataTab}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -25,32 +25,35 @@ export function UiLayout({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="navbar bg-base-300 dark:text-neutral-content flex-col md:flex-row space-y-2 md:space-y-0">
-        <div className="flex-1">
-          <Link className="btn btn-ghost normal-case text-xl" href="/">
-            Harmoniasuite
-          </Link>
-          <ul className="menu menu-horizontal px-1 space-x-2">
-            {links.map(({ label, path }) => (
-              <li key={path}>
-                <Link
-                  className={pathname.startsWith(path) ? "active" : ""}
-                  href={path}
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+      {/* <div>
+        <div className="navbar bg-base-300 dark:text-neutral-content flex-col md:flex-row space-y-2 md:space-y-0">
+          <div className="flex-1">
+            <Link className="btn btn-ghost normal-case text-xl" href="/">
+              Harmoniasuite
+            </Link>
+            <ul className="menu menu-horizontal px-1 space-x-2">
+              {links.map(({ label, path }) => (
+                <li key={path}>
+                  <Link
+                    className={pathname.startsWith(path) ? "active" : ""}
+                    href={path}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex-none space-x-2">
+            <WalletButton />
+            <ClusterUiSelect />
+          </div>
         </div>
-        <div className="flex-none space-x-2">
-          <WalletButton />
-          <ClusterUiSelect />
-        </div>
-      </div>
-      <ClusterChecker>
-        <AccountChecker />
-      </ClusterChecker>
+        <ClusterChecker>
+          <AccountChecker />
+        </ClusterChecker>
+      </div> */}
+
       {/* <div className="lg:mx-auto"> */}
       <>
         <Suspense
@@ -65,11 +68,12 @@ export function UiLayout({
         <Toaster position="bottom-right" />
       </>
       {/* </div> */}
-      <footer className="footer footer-center p-4 bg-base-300 text-base-content">
+      {/* TODO: Reshow it */}
+      {/* <footer className="footer footer-center p-4 bg-base-300 text-base-content">
         <aside>
           <p>Built with Sweat, Blood, and most importantly, Love</p>
         </aside>
-      </footer>
+      </footer> */}
     </div>
   );
 }

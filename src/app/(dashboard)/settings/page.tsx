@@ -119,6 +119,8 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
+                {/* TODO: needs to create a config for each registered user */}
+                {/* And as such remove things like Solana Wallet to a name betterd */}
                 <p className="font-semibold text-white">Solana Wallet</p>
                 <p className="text-gray-400">
                   {wallet.connected ? (

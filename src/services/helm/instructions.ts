@@ -16,6 +16,10 @@ export class HelmInstructions {
   constructor(private program: Program<Helm>) {}
 
   /**
+   * Twitter Management
+   */
+
+  /**
    * Register a new Twitter account
    */
   registerTwitterAccount(
@@ -51,6 +55,10 @@ export class HelmInstructions {
   }
 
   /**
+   * Admin Instructions
+   */
+
+  /**
    * Add an admin to a Twitter account
    */
   addAdmin(twitterId: string, newAdmin: PublicKey, owner: PublicKey) {
@@ -64,8 +72,6 @@ export class HelmInstructions {
     });
   }
 
-  // TODO:
-
   removeAdmin(twitterId: string, adminToRemove: PublicKey, owner: PublicKey) {
     //
     const [twitterAccountPda] = findTwitterAccountPDA(twitterId);
@@ -76,6 +82,41 @@ export class HelmInstructions {
       owner,
     });
   }
+
+  /**
+   * Creator Instructions
+   */
+
+  /**
+   * Creator
+   */
+  addCreator(twitterId: string, creator: PublicKey) {
+    const [twitterAccountPda] = findTwitterAccountPDA(twitterId);
+    const [adminListPda] = findAdminListPDA(twitterId);
+    const [creatorListPda] = findCreatorListPDA(twitterId);
+
+    return this.program.methods.addCreator(creator).accountsPartial({
+      creatorList: creatorListPda,
+      twitterAccount: twitterAccountPda,
+      owner: adminListPda,
+    });
+  }
+
+  removeCreator(twitterId: string, creator: PublicKey) {
+    const [twitterAccountPda] = findTwitterAccountPDA(twitterId);
+    const [adminListPda] = findAdminListPDA(twitterId);
+    const [creatorListPda] = findCreatorListPDA(twitterId);
+
+    return this.program.methods.removeCreator(creator).accountsPartial({
+      creatorList: creatorListPda,
+      twitterAccount: twitterAccountPda,
+      owner: adminListPda,
+    });
+  }
+
+  /**
+   * Content Instructions
+   */
 
   /**
    * Submit content for approval
@@ -152,10 +193,25 @@ export class HelmInstructions {
     });
   }
 
-  // Add other instruction builders as needed...
-
   /**
-   * Creator
+   * Cancel content
    */
-  // addCreator
+  cancelContent(
+    twitterId: string,
+    content: string,
+    author: PublicKey,
+    authority: PublicKey
+  ) {
+    const [twitterAccountPda] = findTwitterAccountPDA(twitterId);
+    const [adminListPda] = findAdminListPDA(twitterId);
+    const contentHash = createContentHash(content);
+    const [contentPda] = findContentPDA(twitterAccountPda, author, contentHash);
+
+    return this.program.methods.cancelContent().accountsPartial({
+      content: contentPda,
+      twitterAccount: twitterAccountPda,
+      adminList: adminListPda,
+      authority,
+    });
+  }
 }

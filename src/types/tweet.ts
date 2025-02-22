@@ -93,3 +93,31 @@ export interface SidebarContentProps {
   selectedPostId: string | null;
   setSelectedPostId: (id: string | null) => void;
 }
+
+export interface Tag {
+  id: string;
+  name: string;
+  color?: string;
+}
+
+export interface DraftStats {
+  wordCount: number;
+  characterCount: number;
+  readingTime: string;
+  threadLength: number;
+}
+
+export interface DraftMetadata {
+  title: string;
+  createdAt: Date;
+  lastEdited: Date;
+  tags: Tag[];
+  stats: DraftStats;
+}
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: number;
+}

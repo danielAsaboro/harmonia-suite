@@ -1,44 +1,13 @@
+// src/components/editor/MetadataTab.tsx
+
 import { Badge } from "@/components/ui/badge";
-import React, {
-  useState,
-  useRef,
-  KeyboardEvent,
-  useEffect,
-  useCallback,
-} from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect, useCallback } from "react";
 import { useEditor } from "./context/Editor";
 import { tweetStorage } from "@/utils/localStorage";
 import { FileCheck } from "lucide-react";
-
-interface Tag {
-  id: string;
-  name: string;
-  color?: string;
-}
-
-interface DraftStats {
-  wordCount: number;
-  characterCount: number;
-  readingTime: string;
-  threadLength: number;
-}
-
-interface DraftMetadata {
-  title: string;
-  createdAt: Date;
-  lastEdited: Date;
-  tags: Tag[];
-  stats: DraftStats;
-}
-
-interface ChecklistItem {
-  id: string;
-  text: string;
-  completed: boolean;
-  createdAt: number;
-}
+import { DraftMetadata, Tag } from "@/types/tweet";
+import { UnifiedChecklist } from "./UnifiedChecklist";
+import { cn } from "@/utils/ts-merge";
 
 const formatTimeAgo = (date: Date): string => {
   const minutes = Math.floor((new Date().getTime() - date.getTime()) / 60000);
@@ -66,93 +35,20 @@ const TagBadge: React.FC<{ tag: Tag }> = ({ tag }) => {
   );
 };
 
-const UnifiedChecklist: React.FC = () => {
-  const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [currentInput, setCurrentInput] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+interface MetadataTabProps {
+  className?: string;
+}
 
-  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && currentInput.trim()) {
-      setItems((prev) => [
-        ...prev,
-        {
-          id: `item-${Date.now()}`,
-          text: currentInput.trim(),
-          completed: false,
-          createdAt: Date.now(),
-        },
-      ]);
-      setCurrentInput("");
-    }
-  };
-
-  const toggleItem = (itemId: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      )
-    );
-  };
-
-  const removeItem = (itemId: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
-  };
-
-  return (
-    <Card className="w-full max-w-md">
-      <div className="p-2 rounded-none">
-        <input
-          ref={inputRef}
-          type="text"
-          value={currentInput}
-          onChange={(e) => setCurrentInput(e.target.value)}
-          onKeyUp={handleKeyPress}
-          placeholder="Add a Tip or Todo and press enter..."
-          className="w-full p-2 text-base bg-transparent border-b border-gray-200 focus:outline-none focus:border-gray-400 transition-colors rounded-none"
-        />
-      </div>
-      <CardContent>
-        <div className="pt-2 space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="group flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-md transition-colors"
-            >
-              <Checkbox
-                id={item.id}
-                checked={item.completed}
-                onCheckedChange={() => toggleItem(item.id)}
-              />
-              <label
-                htmlFor={item.id}
-                className={`flex-grow text-sm ${
-                  item.completed ? "line-through text-gray-500" : ""
-                }`}
-              >
-                {item.text}
-              </label>
-              <button
-                onClick={() => removeItem(item.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const MetadataTab: React.FC = () => {
+const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
   const {
     editorState,
     loadDraft: loadDrafts,
     loadScheduledItem: loadScheduledItems,
     activeTab,
     setSubmitModalOpen,
+    refreshCounter,
   } = useEditor();
+
   const [draftData, setDraftData] = useState<DraftMetadata>({
     title: "Draft title...",
     createdAt: new Date(Date.now() - 13 * 60000),
@@ -170,12 +66,11 @@ const MetadataTab: React.FC = () => {
     },
   });
 
-  // Calculate stats based on draft content
   const calculateStats = useCallback(
     (content: string): DraftMetadata["stats"] => {
       const words = content.trim().split(/\s+/).length;
       const chars = content.length;
-      const readingTime = `${Math.ceil(words / 200)}m`; // Assuming 200 words per minute
+      const readingTime = `${Math.ceil(words / 200)}m`;
 
       return {
         wordCount: words,
@@ -184,7 +79,7 @@ const MetadataTab: React.FC = () => {
         threadLength: 1,
       };
     },
-    []
+    [editorState.selectedDraftType]
   );
 
   useEffect(() => {
@@ -192,17 +87,15 @@ const MetadataTab: React.FC = () => {
       const drafts =
         activeTab === "scheduled" ? loadScheduledItems() : loadDrafts();
 
-      tweetStorage.getLastSaveTime();
-
       if (!drafts) return;
 
-      // Handle both single tweets and threads
       const content =
         "tweets" in drafts
           ? drafts.tweets.map((t) => t.content).join("\n")
           : drafts.content;
 
       const stats = calculateStats(content);
+
       if ("tweets" in drafts) {
         stats.threadLength = drafts.tweets.length;
       }
@@ -221,11 +114,25 @@ const MetadataTab: React.FC = () => {
     };
 
     getContentData();
-  }, [tweetStorage.getLastSaveTime()]);
+  }, [
+    activeTab,
+    loadDrafts,
+    loadScheduledItems,
+    editorState.selectedDraftType,
+    editorState.selectedDraftId,
+    refreshCounter,
+  ]);
 
   return (
-    <div className="w-full h-full max-w-xs rounded-none bg-transparent border-l border-gray-800">
-      <div className="p-4 pb-4 border-b border-gray-800 ">
+    <div
+      className={cn(
+        "w-full h-full bg-transparent",
+        "md:border-l md:border-gray-800",
+        className
+      )}
+    >
+      {/* Title Section */}
+      <div className="p-4 border-b border-gray-800">
         <input
           type="text"
           placeholder={draftData.title}
@@ -242,8 +149,10 @@ const MetadataTab: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="p-4 py-2 border-b border-gray-800 ">
-        <div className="space-y-1">
+
+      {/* Stats Section */}
+      <div className="p-4 border-b border-gray-800">
+        <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">Words</span>
             <span className="font-medium text-gray-500">
@@ -271,7 +180,8 @@ const MetadataTab: React.FC = () => {
         </div>
       </div>
 
-      <div className="p-4 py-2 border-b border-gray-800 ">
+      {/* Tags Section */}
+      <div className="p-4 border-b border-gray-800">
         <div className="space-y-2">
           <p className="text-sm text-gray-500">Tags</p>
           <div className="flex flex-wrap">
@@ -282,15 +192,16 @@ const MetadataTab: React.FC = () => {
         </div>
       </div>
 
-      <div className="p-4 py-4">
+      {/* Checklist Section */}
+      <div className="p-4 border-b border-gray-800">
         <UnifiedChecklist />
       </div>
-      <div className="flex p-4 justify-center">
+
+      {/* Submit Button Section */}
+      <div className="sticky bottom-0 p-4 bg-gray-900 border-t border-gray-800">
         <button
           onClick={() => setSubmitModalOpen(true)}
-          className={
-            "px-4 py-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center gap-2"
-          }
+          className="w-full px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center gap-2"
         >
           <FileCheck size={18} />
           Submit for review

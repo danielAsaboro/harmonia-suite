@@ -101,24 +101,6 @@ export function useHelm() {
     [program]
   );
 
-  /**
-   * Subscribe to content updates
-   */
-  // const subscribeToContent = useCallback(
-  //   (contentPda: PublicKey, callback: (account: any) => void) => {
-  //     if (!program) throw new Error("Program not initialized");
-
-  //     const subscription = program.account.content.subscribe(
-  //       contentPda,
-  //       callback
-  //     );
-  //     return () => {
-  //       subscription.unsubscribe();
-  //     };
-  //   },
-  //   [program]
-  // );
-
   return {
     program,
     instructions,
@@ -128,6 +110,5 @@ export function useHelm() {
     handleTransaction,
     getTwitterAccount,
     getContent,
-    // subscribeToContent,
   };
 }

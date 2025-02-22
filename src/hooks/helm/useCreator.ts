@@ -9,8 +9,6 @@ import { PublicKey } from "@solana/web3.js";
 export function useCreator(twitterId?: string) {
   const { program, instructions, handleTransaction } = useHelm();
   const { publicKey } = useWallet();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
   /**
    * Add a new creator
@@ -20,31 +18,21 @@ export function useCreator(twitterId?: string) {
       if (!instructions || !publicKey || !twitterId) {
         throw new Error("Missing required parameters");
       }
-
-      setLoading(true);
-      setError(null);
-
       try {
-        // const tx = await instructions.addCreator(
-        //   twitterId,
-        //   newCreator,
-        //   publicKey
-        // );
-        // await handleTransaction(tx.rpc(), {
-        //   onSuccess: () => console.log("Creator added successfully"),
-        //   onError: (error) => {
-        //     console.error("Failed to add creator:", error);
-        //     setError(new Error(error.message));
-        //   },
-        // });
+        // TODO: flesh out the main instructions;
+        const tx = instructions.addCreator(twitterId, newCreator);
+        await handleTransaction(tx.rpc(), {
+          onSuccess: () => console.log("Creator added successfully"),
+          onError: (error) => {
+            console.error("Failed to add creator:", error);
+            throw error;
+          },
+        });
         // // Return the updated creator list
-        // const [creatorListPda] = findCreatorListPDA(twitterId);
-        // return await program?.account.creatorList.fetch(creatorListPda);
+        const [creatorListPda] = findCreatorListPDA(twitterId);
+        return await program?.account.creatorList.fetch(creatorListPda);
       } catch (err) {
-        setError(err as Error);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
     [instructions, publicKey, twitterId, program, handleTransaction]
@@ -59,22 +47,13 @@ export function useCreator(twitterId?: string) {
         throw new Error("Missing required parameters");
       }
 
-      setLoading(true);
-      setError(null);
-
       try {
-        const tx = await program?.methods
-          .removeCreator(creatorToRemove)
-          .accountsPartial({
-            owner: publicKey,
-          })
-          .rpc();
-
-        await handleTransaction(Promise.resolve(tx!), {
+        const tx = instructions.removeCreator(twitterId, creatorToRemove);
+        await handleTransaction(tx.rpc(), {
           onSuccess: () => console.log("Creator removed successfully"),
           onError: (error) => {
-            console.error("Failed to remove creator:", error);
-            setError(new Error(error.message));
+            console.error("Failed to  creator:", error);
+            throw error;
           },
         });
 
@@ -82,10 +61,7 @@ export function useCreator(twitterId?: string) {
         const [creatorListPda] = findCreatorListPDA(twitterId);
         return await program?.account.creatorList.fetch(creatorListPda);
       } catch (err) {
-        setError(err as Error);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
     [instructions, publicKey, twitterId, program, handleTransaction]
@@ -126,35 +102,10 @@ export function useCreator(twitterId?: string) {
     [getCreatorList]
   );
 
-  /**
-   * Subscribe to creator list changes
-   */
-  // const watchCreatorList = useCallback(
-  //   (callback: (creatorList: any) => void) => {
-  //     if (!program || !twitterId) {
-  //       throw new Error("Missing required parameters");
-  //     }
-
-  //     const [creatorListPda] = findCreatorListPDA(twitterId);
-  //     const subscription = program.account.creatorList.subscribe(
-  //       creatorListPda,
-  //       callback
-  //     );
-
-  //     return () => {
-  //       subscription.unsubscribe();
-  //     };
-  //   },
-  //   [program, twitterId]
-  // );
-
   return {
     addCreator,
     removeCreator,
     getCreatorList,
     isCreator,
-    // watchCreatorList,
-    loading,
-    error,
   };
 }

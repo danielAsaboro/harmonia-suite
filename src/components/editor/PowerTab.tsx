@@ -5,16 +5,8 @@ import {
   Reply,
   Heart,
   Eye,
-  Expand,
   Sparkles,
   Quote,
-  QuoteIcon,
-  TextQuoteIcon,
-  FileQuestionIcon,
-  ZoomIn,
-  ZoomOut,
-  ExpandIcon,
-  MoveDiagonal2,
   MoveDiagonal,
 } from "lucide-react";
 

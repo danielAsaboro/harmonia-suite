@@ -9,8 +9,6 @@ import { findAdminListPDA } from "@/services/helm";
 export function useAdmin(twitterId?: string) {
   const { program, instructions, handleTransaction } = useHelm();
   const { publicKey: currentUserPublicKey } = useWallet();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
   /**
    * Add a new admin
@@ -20,9 +18,6 @@ export function useAdmin(twitterId?: string) {
       if (!instructions || !currentUserPublicKey || !twitterId) {
         throw new Error("Missing required parameters");
       }
-
-      setLoading(true);
-      setError(null);
 
       try {
         const tx = instructions.addAdmin(
@@ -35,7 +30,7 @@ export function useAdmin(twitterId?: string) {
           onSuccess: () => console.log("Admin added successfully"),
           onError: (error) => {
             console.error("Failed to add admin:", error);
-            setError(new Error(error.message));
+            throw error;
           },
         });
 
@@ -43,10 +38,7 @@ export function useAdmin(twitterId?: string) {
         const [adminListPda] = findAdminListPDA(twitterId);
         return await program?.account.adminList.fetch(adminListPda);
       } catch (err) {
-        setError(err as Error);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
     [instructions, currentUserPublicKey, twitterId, program, handleTransaction]
@@ -61,22 +53,17 @@ export function useAdmin(twitterId?: string) {
         throw new Error("Missing required parameters");
       }
 
-      setLoading(true);
-      setError(null);
-
       try {
-        const tx = await program?.methods
-          .removeAdmin(adminToRemove)
-          .accountsPartial({
-            owner: currentUserPublicKey,
-          })
-          .rpc();
-
-        await handleTransaction(Promise.resolve(tx!), {
+        const tx = instructions.removeAdmin(
+          twitterId,
+          adminToRemove,
+          currentUserPublicKey
+        );
+        await handleTransaction(tx.rpc(), {
           onSuccess: () => console.log("Admin removed successfully"),
           onError: (error) => {
             console.error("Failed to remove admin:", error);
-            setError(new Error(error.message));
+            throw error;
           },
         });
 
@@ -84,10 +71,7 @@ export function useAdmin(twitterId?: string) {
         const [adminListPda] = findAdminListPDA(twitterId);
         return await program?.account.adminList.fetch(adminListPda);
       } catch (err) {
-        setError(err as Error);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
     [instructions, currentUserPublicKey, twitterId, program, handleTransaction]
@@ -133,7 +117,5 @@ export function useAdmin(twitterId?: string) {
     removeAdmin,
     getAdminList,
     isAdmin,
-    loading,
-    error,
   };
 }
