@@ -1,4 +1,5 @@
 // /app/shared/[token]/page.tsx
+
 "use client";
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -9,8 +10,10 @@ import {
   DraftResponse,
   CommentMetadata,
   Comment,
+  TwitterUserData,
 } from "@/types/tweet";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ReadOnlyTweetViewer from "../../../components/editor/ReadOnlyTweetViewer";
 import { CommentList } from "@/components/comments/CommentList";
 import { CommentForm } from "@/components/comments/CommentForm";
@@ -32,6 +35,7 @@ export default function SharedDraftPage() {
     null
   );
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [activeView, setActiveView] = useState<"draft" | "comments">("draft");
 
   const filteredComments = comments.filter((comment) => {
     if (filter === "all") return true;
@@ -206,49 +210,81 @@ export default function SharedDraftPage() {
 
   const isThread = draft && "tweetIds" in draft;
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex gap-6">
-        {/* Left side: Draft content */}
-        <div className="w-7/12">
-          <Card className="mb-8 sticky top-4">
-            <CardHeader>
-              <h1 className="text-2xl font-bold">
-                Shared {isThread ? "Thread" : "Tweet"} Draft
-              </h1>
-            </CardHeader>
-            <CardContent>
-              {draft && author && (
-                <ReadOnlyTweetViewer
-                  tweets={
-                    isThread
-                      ? (draft as ThreadWithTweets).tweets
-                      : [draft as Tweet]
-                  }
-                  isThread={isThread!}
-                  author={author}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right side: Comments */}
-        <div className="w-5/12 relative">
-          <CommentList
-            comments={[...filteredComments]}
-            filter={filter}
-            canComment={canComment}
-            onFilterChange={setFilter}
-            canModifyComment={canModifyComment}
-            onResolveComment={handleResolveComment}
-            onDeleteComment={handleDeleteComment}
+  const DraftContent = () => (
+    <Card className="mb-8 lg:sticky lg:top-4">
+      <CardHeader>
+        <h1 className="text-xl md:text-2xl font-bold">
+          Shared {isThread ? "Thread" : "Tweet"} Draft
+        </h1>
+      </CardHeader>
+      <CardContent>
+        {draft && author && (
+          <ReadOnlyTweetViewer
+            tweets={
+              isThread ? (draft as ThreadWithTweets).tweets : [draft as Tweet]
+            }
+            isThread={isThread!}
+            author={author}
           />
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const CommentsSection = () => (
+    <div className="w-full">
+      <CommentList
+        comments={[...filteredComments]}
+        filter={filter}
+        canComment={canComment}
+        onFilterChange={setFilter}
+        canModifyComment={canModifyComment}
+        onResolveComment={handleResolveComment}
+        onDeleteComment={handleDeleteComment}
+      />
+    </div>
+  );
+
+  return (
+    <div className="container mx-auto px-4 py-4 md:py-8">
+      {/* Mobile View: Tab Navigation */}
+      <div className="lg:hidden mb-4">
+        <Tabs
+          defaultValue="draft"
+          onValueChange={(value) =>
+            setActiveView(value as "draft" | "comments")
+          }
+        >
+          <TabsList className="w-full">
+            <TabsTrigger value="draft" className="w-1/2">
+              Draft
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="w-1/2">
+              Comments ({filteredComments.length})
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="draft">
+            <DraftContent />
+          </TabsContent>
+          <TabsContent value="comments">
+            <CommentsSection />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Desktop View: Side-by-side Layout */}
+      <div className="hidden lg:flex gap-6">
+        <div className="w-7/12">
+          <DraftContent />
+        </div>
+        <div className="w-5/12">
+          <CommentsSection />
         </div>
       </div>
 
+      {/* Comment Form Modal */}
       {showCommentForm && selectedText && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => {
@@ -256,14 +292,16 @@ export default function SharedDraftPage() {
               setSelectedText(null);
             }}
           />
-          <CommentForm
-            selectedText={selectedText}
-            onSubmit={handleAddComment}
-            onCancel={() => {
-              setShowCommentForm(false);
-              setSelectedText(null);
-            }}
-          />
+          <div className="relative w-full max-w-lg">
+            <CommentForm
+              selectedText={selectedText}
+              onSubmit={handleAddComment}
+              onCancel={() => {
+                setShowCommentForm(false);
+                setSelectedText(null);
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
