@@ -23,7 +23,7 @@ function TwitterEditorContent() {
     isMetadataTabVisible,
     isSidebarVisible,
     toggleMetadataTab,
-  } = useEditor();
+  } = useEditor();ActionsMenu
   const { isLoading } = useUserAccount();
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   // Use editor context for metadata visibility
