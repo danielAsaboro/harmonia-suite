@@ -8,7 +8,6 @@ import {
   Plus,
   Search,
   ChevronLeft,
-  Link,
   Calendar,
   ChevronRight,
 } from "lucide-react";
@@ -18,6 +17,7 @@ import { useEditor } from "./context/Editor";
 import { SidebarItem } from "./SidebarItem";
 import Image from "next/image";
 import EditorSideBarBottomOverlay from "./EditorSideBarBottomOverlay";
+import Link from "next/link";
 
 export default function EditorSidebar() {
   const {
@@ -174,7 +174,7 @@ export default function EditorSidebar() {
 
   return (
     <div
-      className={`transition-all duration-300 bg-black ${
+      className={`transition-all duration-300 bg-black max-h-full ${
         isSidebarVisible ? "w-72 border-r border-gray-800" : "w-0"
       }`}
     >
@@ -378,7 +378,7 @@ export default function EditorSidebar() {
             )}
 
             {/* Middle scrollable content area */}
-            <div className="flex-1 overflow-y-auto pb-36">
+            <div className="flex-1 overflow-y-auto pb-96">
               {activeTab === "scheduled" && (
                 <Link
                   href="/content/calendar"

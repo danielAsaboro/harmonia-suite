@@ -23,7 +23,7 @@ function TwitterEditorContent() {
     isMetadataTabVisible,
     isSidebarVisible,
     toggleMetadataTab,
-  } = useEditor();ActionsMenu
+  } = useEditor();
   const { isLoading } = useUserAccount();
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   // Use editor context for metadata visibility
@@ -34,7 +34,7 @@ function TwitterEditorContent() {
   }
 
   return (
-    <div className="flex min-h-screen bg-black text-white">
+    <div className="flex h-screen overflow-hidden bg-black text-white">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -46,7 +46,7 @@ function TwitterEditorContent() {
       {/* Sidebar */}
       <div
         className={`
-        fixed md:relative md:flex-shrink-0 transition-all duration-300 h-full z-50
+        fixed md:relative md:flex-shrink-0 transition-all duration-300 z-50
         ${
           isMobileSidebarOpen
             ? "translate-x-0"
@@ -101,9 +101,11 @@ function TwitterEditorContent() {
         )}
 
         {editorState.isVisible ? (
-          <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen relative">
+          // <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen relative">
+          <div className="flex flex-col h-full relative">
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto pb-24">
+            {/* <div className="flex-1 overflow-y-auto pb-24"> */}
+            <div className="flex-1 overflow-y-auto">
               <div className="max-w-4xl mx-auto pt-5 p-4 pb-40">
                 <PlayGround
                   draftId={editorState.selectedDraftId}

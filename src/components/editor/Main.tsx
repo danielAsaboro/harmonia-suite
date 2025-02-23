@@ -1273,7 +1273,7 @@ export default function PlayGround({
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto ">
       {/* Header Controls */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">

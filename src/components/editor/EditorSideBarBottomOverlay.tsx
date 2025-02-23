@@ -14,7 +14,12 @@ export default function EditorSideBarBottomOverlay({
           ${isVisible ? "w-72 opacity-100" : "w-0 opacity-0"}
         `}
     >
-      <nav className={`${!isVisible ? "hidden" : ""}`}>
+      {/* <nav className={`${!isVisible ? "hidden" : ""}`}> */}
+      <nav
+        className={`
+    ${!isVisible ? "hidden" : ""}
+    h-72 md:h-48  mb-safe backdrop-blur-sm  `}
+      >
         <Link
           href="/settings"
           className="flex items-center py-4 px-6 border-b border-gray-800 text-gray-400 hover:text-blue-400 transition-colors"
