@@ -1,4 +1,5 @@
 // /content/page.tsx
+"use client";
 
 import React from "react";
 import {
@@ -21,6 +22,7 @@ import {
   LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 // Type definitions
 interface PendingPost {
@@ -70,6 +72,7 @@ interface PlatformAnalytics {
 }
 
 export default function ContentStudioPage() {
+  const router = useRouter();
   const pendingPosts: PendingPost[] = [
     {
       id: "1",
@@ -193,7 +196,10 @@ export default function ContentStudioPage() {
             <Plus className="w-4 h-4" />
             New Template
           </Button>
-          <Button className="flex items-center gap-2">
+          <Button
+            onClick={() => router.push("/content/compose/twitter")}
+            className="flex items-center gap-2"
+          >
             <Twitter className="w-4 h-4" />
             New Tweet
           </Button>

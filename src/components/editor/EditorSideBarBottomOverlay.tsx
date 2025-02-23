@@ -14,7 +14,6 @@ export default function EditorSideBarBottomOverlay({
           ${isVisible ? "w-72 opacity-100" : "w-0 opacity-0"}
         `}
     >
-      {/* <nav className={`${!isVisible ? "hidden" : ""}`}> */}
       <nav
         className={`
     ${!isVisible ? "hidden" : ""}

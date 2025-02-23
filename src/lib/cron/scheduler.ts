@@ -2,7 +2,11 @@
 import cron from "node-cron";
 import { publishTweet, publishThread } from "../twitter/publisher";
 import { logToFile, logError } from "../utils/logger";
-import { scheduledThreadsService, scheduledTweetsService } from "../services";
+import {
+  scheduledThreadsService,
+  scheduledTweetsService,
+  teamInvitesService,
+} from "../services";
 
 export function startScheduler() {
   cron.schedule("* * * * *", async () => {
@@ -78,4 +82,15 @@ export function startScheduler() {
   });
 
   logToFile("Tweet scheduler started");
+}
+
+export function startCleanupJobs() {
+  // Run every hour
+  cron.schedule("0 * * * *", async () => {
+    try {
+      await teamInvitesService.cleanupExpiredInvites();
+    } catch (error) {
+      console.error("Error cleaning up invites:", error);
+    }
+  });
 }

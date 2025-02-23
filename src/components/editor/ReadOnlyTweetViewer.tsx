@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Tweet } from "@/types/tweet";
 import MediaPreview from "@/components/editor/media/MediaPreview";
+import DraftApproval from "@/app/shared/[token]/DraftApproval";
 
 interface ReadOnlyTweetViewerProps {
   tweets: Tweet[];

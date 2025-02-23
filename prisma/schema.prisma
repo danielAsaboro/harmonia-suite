@@ -21,6 +21,9 @@ model user_tokens {
   scheduledTweets   scheduled_tweets[]
   sharedDraftComments shared_draft_comments[]
   sharedDrafts      shared_drafts[]
+  teamMemberships     team_members[]
+  createdInvites      team_invites[] @relation("inviteCreator")
+  acceptedInvites     team_invites[] @relation("inviteAcceptor")
 
   @@unique([accessToken])
 }
@@ -154,4 +157,50 @@ model content_approvals {
 
   @@index([contentId])
   @@index([blockchainId])
+}
+
+
+model teams {
+  id          String       @id
+  name        String
+  createdAt   String
+  updatedAt   String
+  members     team_members[]
+  invites     team_invites[]
+}
+
+model team_members {
+  id          String       @id
+  teamId      String
+  userId      String
+  role        String      // "admin" or "creator"
+  joinedAt    String
+  team        teams       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([userId])
+}
+
+model team_invites {
+  id          String       @id
+  teamId      String
+  email       String
+  role        String      // "admin" or "creator"
+  token       String      @unique
+  status      String      // "pending", "accepted", "expired", "revoked"
+  createdAt   String
+  expiresAt   String
+  createdBy   String
+  acceptedAt  String?
+  acceptedBy  String?     // userId of person who accepted the invite
+  team        teams       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator     user_tokens @relation(name: "inviteCreator", fields: [createdBy], references: [userId], onDelete: Cascade)
+  acceptor    user_tokens? @relation(name: "inviteAcceptor", fields: [acceptedBy], references: [userId], onDelete: SetNull)
+
+  @@index([teamId])
+  @@index([email])
+  @@index([token])
+  @@index([status])
+  @@index([createdBy])
 }

@@ -121,3 +121,16 @@ export interface ContentApproval {
   rejectionReason?: string;
   transactionSignature?: string;
 }
+
+export interface TeamInvite {
+  id: string;
+  teamId: string;
+  email: string;
+  role: "admin" | "creator";
+  status: "pending" | "accepted" | "expired" | "revoked";
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  createdBy: string; // User ID who created the invite
+}

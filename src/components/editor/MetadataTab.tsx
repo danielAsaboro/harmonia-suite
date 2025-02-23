@@ -127,7 +127,7 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
   return (
     <div
       className={cn(
-        "w-full h-full bg-transparent",
+        "w-full  bg-transparent",
         "md:border-l md:border-gray-800",
         className
       )}
@@ -190,14 +190,18 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
       </div>
 
       {/* Submit Button Section */}
-      <div className="sticky bottom-0 p-4 bg-gray-900 border-t border-gray-800">
-        <button
-          onClick={() => setSubmitModalOpen(true)}
-          className="w-full px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center gap-2"
-        >
-          <FileCheck size={18} />
-          Submit for review
-        </button>
+      <div className="relative w-full h-40">
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="p-4">
+            <button
+              onClick={() => setSubmitModalOpen(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center gap-2"
+            >
+              <FileCheck size={18} />
+              Submit for review
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

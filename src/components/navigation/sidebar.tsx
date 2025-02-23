@@ -16,6 +16,7 @@ import {
   HelpCircle,
   LogOut,
   BanknoteIcon,
+  User,
 } from "lucide-react";
 import Image from "next/image";
 // import LogoutModal from "@/components/auth/LogoutModal";
@@ -122,17 +123,17 @@ const Sidebar = ({ className }: SidebarProps) => {
       </nav>
 
       <Link
-        href="/project/start"
+        href="/team"
         className={cn(
           "mt-6 flex items-center gap-2 rounded-lg px-3 py-2 outline-0",
           "border-2 border-green-400 bg-transparent text-green-400 hover:bg-green-400 hover:text-white",
           "transition-colors duration-200",
-          pathname === "/project/start" &&
+          pathname === "/team" &&
             "bg-green-400 text-white hover:bg-green-500"
         )}
       >
-        <Plus className="h-5 w-5" />
-        <span>New Project</span>
+        <User className="h-5 w-5" />
+        <span>Manage Team</span>
       </Link>
 
       <div className="mt-auto space-y-2">

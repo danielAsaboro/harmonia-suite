@@ -49,7 +49,7 @@ export const UnifiedChecklist: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-4 min-h-24">
+    <div className="w-full space-y-4 max-h-44 overflow-auto">
       {/* Input Section */}
       <div className="relative flex items-center">
         <input

@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ReadOnlyTweetViewer from "../../../components/editor/ReadOnlyTweetViewer";
 import { CommentList } from "@/components/comments/CommentList";
 import { CommentForm } from "@/components/comments/CommentForm";
+import DraftApproval from "./DraftApproval";
 
 export default function SharedDraftPage() {
   const params = useParams();
@@ -227,6 +228,18 @@ export default function SharedDraftPage() {
             author={author}
           />
         )}
+      </CardContent>
+      {/* Add the approval component at the bottom */}
+      <CardContent>
+        <div className="px-4 pb-4">
+          <DraftApproval
+            draftId={
+              (isThread
+                ? (draft as ThreadWithTweets).tweets
+                : [draft as Tweet])[0].id
+            }
+          />
+        </div>
       </CardContent>
     </Card>
   );

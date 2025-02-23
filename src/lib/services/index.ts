@@ -32,6 +32,10 @@ import {
   createContentApprovalsService,
   PrismaContentApprovalsService,
 } from "../db/services/content_approval";
+import {
+  createTeamInvitesService,
+  PrismaTeamInvitesService,
+} from "../db/services/team_invite";
 
 // Service instances
 let draftTweetsService: PrismaDraftTweetsService;
@@ -42,6 +46,7 @@ let scheduledThreadsService: PrismaScheduledThreadsService;
 let sharedDraftsService: PrismaSharedDraftsService;
 let sharedDraftCommentsService: PrismaSharedDraftCommentsService;
 let contentApprovalsService: PrismaContentApprovalsService;
+let teamInvitesService: PrismaTeamInvitesService;
 
 // Initialize all services
 function initializeServices() {
@@ -69,6 +74,9 @@ function initializeServices() {
   if (!contentApprovalsService) {
     contentApprovalsService = createContentApprovalsService(prismaDb);
   }
+  if (!teamInvitesService) {
+    teamInvitesService = createTeamInvitesService(prismaDb);
+  }
 }
 
 // Initialize services on module import
@@ -84,6 +92,7 @@ export {
   sharedDraftsService,
   sharedDraftCommentsService,
   contentApprovalsService,
+  teamInvitesService,
 };
 
 // Types export
@@ -96,6 +105,7 @@ export type {
   PrismaSharedDraftsService,
   PrismaSharedDraftCommentsService,
   PrismaContentApprovalsService,
+  PrismaTeamInvitesService,
 };
 
 // Optional: Export a function to reinitialize services (useful for testing)
@@ -108,4 +118,5 @@ export function reinitializeServices() {
   sharedDraftsService = createSharedDraftsService(prismaDb);
   sharedDraftCommentsService = createSharedDraftCommentsService(prismaDb);
   contentApprovalsService = createContentApprovalsService(prismaDb);
+  teamInvitesService = createTeamInvitesService(prismaDb);
 }
