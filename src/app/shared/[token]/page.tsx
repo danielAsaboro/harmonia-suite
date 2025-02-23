@@ -246,7 +246,7 @@ export default function SharedDraftPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-4 md:py-8">
+    <div className="min-h-screen container mx-auto px-4 py-4 md:py-8">
       {/* Mobile View: Tab Navigation */}
       <div className="lg:hidden mb-4">
         <Tabs

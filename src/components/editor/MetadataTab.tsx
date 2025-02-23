@@ -8,6 +8,7 @@ import { FileCheck } from "lucide-react";
 import { DraftMetadata, Tag } from "@/types/tweet";
 import { UnifiedChecklist } from "./UnifiedChecklist";
 import { cn } from "@/utils/ts-merge";
+import TagsSection from "./TagsSection";
 
 const formatTimeAgo = (date: Date): string => {
   const minutes = Math.floor((new Date().getTime() - date.getTime()) / 60000);
@@ -181,16 +182,7 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
       </div>
 
       {/* Tags Section */}
-      <div className="p-4 border-b border-gray-800">
-        <div className="space-y-2">
-          <p className="text-sm text-gray-500">Tags</p>
-          <div className="flex flex-wrap">
-            {draftData.tags.map((tag) => (
-              <TagBadge key={tag.id} tag={tag} />
-            ))}
-          </div>
-        </div>
-      </div>
+      <TagsSection />
 
       {/* Checklist Section */}
       <div className="p-4 border-b border-gray-800">

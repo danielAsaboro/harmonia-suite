@@ -1,9 +1,14 @@
-// src/components/editor/UnifiedChecklist.tsx
+// // src/components/editor/UnifiedChecklist.tsx
 
-import { ChecklistItem } from "@/types/tweet";
-import { Checkbox } from "@radix-ui/react-checkbox";
-import { useState, useRef, KeyboardEvent } from "react";
-import { Card, CardContent } from "../ui/card";
+import React, { useState, useRef, KeyboardEvent } from "react";
+import { Check, X, Plus } from "lucide-react";
+
+interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: number;
+}
 
 export const UnifiedChecklist: React.FC = () => {
   const [items, setItems] = useState<ChecklistItem[]>([]);
@@ -12,17 +17,23 @@ export const UnifiedChecklist: React.FC = () => {
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && currentInput.trim()) {
-      setItems((prev) => [
-        ...prev,
-        {
-          id: `item-${Date.now()}`,
-          text: currentInput.trim(),
-          completed: false,
-          createdAt: Date.now(),
-        },
-      ]);
-      setCurrentInput("");
+      addItem();
     }
+  };
+
+  const addItem = () => {
+    if (!currentInput.trim()) return;
+
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `item-${Date.now()}`,
+        text: currentInput.trim(),
+        completed: false,
+        createdAt: Date.now(),
+      },
+    ]);
+    setCurrentInput("");
   };
 
   const toggleItem = (itemId: string) => {
@@ -38,48 +49,65 @@ export const UnifiedChecklist: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <div className="p-2 rounded-none">
+    <div className="w-full space-y-4 min-h-24">
+      {/* Input Section */}
+      <div className="relative flex items-center">
         <input
           ref={inputRef}
           type="text"
           value={currentInput}
           onChange={(e) => setCurrentInput(e.target.value)}
           onKeyUp={handleKeyPress}
-          placeholder="Add a Tip or Todo and press enter..."
-          className="w-full p-2 text-base bg-transparent border-b border-gray-200 focus:outline-none focus:border-gray-400 transition-colors rounded-none"
+          placeholder="Add checklist item..."
+          className="w-full bg-transparent text-sm text-gray-300 placeholder-gray-500 border-0 border-b border-gray-700 focus:border-gray-500 focus:ring-0 transition-colors pb-2"
         />
+        <button
+          onClick={addItem}
+          className="absolute right-0 p-1 text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          <Plus size={16} />
+        </button>
       </div>
-      <CardContent>
-        <div className="pt-2 space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="group flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-md transition-colors"
+
+      {/* Checklist Items */}
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="group flex items-center space-x-3 py-2 px-1 hover:bg-gray-800/50 rounded-md transition-all"
+          >
+            <button
+              onClick={() => toggleItem(item.id)}
+              className={`flex-shrink-0 w-5 h-5 rounded border ${
+                item.completed
+                  ? "bg-blue-500 border-blue-500"
+                  : "border-gray-600 hover:border-gray-500"
+              } transition-colors`}
             >
-              <Checkbox
-                id={item.id}
-                checked={item.completed}
-                onCheckedChange={() => toggleItem(item.id)}
-              />
-              <label
-                htmlFor={item.id}
-                className={`flex-grow text-sm ${
-                  item.completed ? "line-through text-gray-500" : ""
-                }`}
-              >
-                {item.text}
-              </label>
-              <button
-                onClick={() => removeItem(item.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+              {item.completed && (
+                <Check size={16} className="text-white m-auto" />
+              )}
+            </button>
+
+            <span
+              className={`flex-grow text-sm ${
+                item.completed ? "text-gray-500 line-through" : "text-gray-300"
+              }`}
+            >
+              {item.text}
+            </span>
+
+            <button
+              onClick={() => removeItem(item.id)}
+              className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-300 transition-all"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
+
+export default UnifiedChecklist;

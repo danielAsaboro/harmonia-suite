@@ -44,19 +44,19 @@ export const CommentList: React.FC<CommentListProps> = ({
         </div>
         <div className="flex gap-2 mt-4">
           <Button
-            variant={filter !== "all" ? "default" : "outline"}
+            variant={filter == "all" ? "default" : "outline"}
             onClick={() => onFilterChange("all")}
           >
             All
           </Button>
           <Button
-            variant={filter !== "resolved" ? "default" : "outline"}
+            variant={filter == "resolved" ? "default" : "outline"}
             onClick={() => onFilterChange("resolved")}
           >
             Resolved
           </Button>
           <Button
-            variant={filter !== "unresolved" ? "default" : "outline"}
+            variant={filter == "unresolved" ? "default" : "outline"}
             onClick={() => onFilterChange("unresolved")}
           >
             Unresolved

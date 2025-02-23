@@ -92,7 +92,7 @@ export default function WelcomeScreen() {
         >
           {existingDrafts.length === 0
             ? "Create New Draft"
-            : "Continue Drafting"}
+            : "Continue Scribbling"}
         </button>
       </div>
     </div>
