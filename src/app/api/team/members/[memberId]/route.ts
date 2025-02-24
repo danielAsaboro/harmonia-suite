@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserData } from "@/lib/session";
 import { teamInvitesService } from "@/lib/services";
+import { prismaDb } from "@/lib/db/prisma_service";
 
 // Update member role
 export async function PATCH(
@@ -52,21 +53,29 @@ export async function DELETE(
     }
 
     const { memberId } = params;
-    const { searchParams } = new URL(req.url);
-    const teamId = searchParams.get("teamId");
 
-    if (!teamId) {
+    // First, find the member record to get its teamId
+    const memberRecord = await prismaDb.team_members.findUnique({
+      where: { id: memberId },
+      select: { teamId: true, userId: true },
+    });
+
+    if (!memberRecord) {
       return NextResponse.json(
-        { error: "Team ID is required" },
-        { status: 400 }
+        { error: "Team member not found" },
+        { status: 404 }
       );
     }
 
-    // Verify that the user making the request is an admin
-    const isAdmin = await teamInvitesService.isTeamAdmin(
-      teamId,
-      userData.userId
-    );
+    // Verify that the user making the request is an admin of this team
+    const isAdmin = await prismaDb.team_members.findFirst({
+      where: {
+        teamId: memberRecord.teamId,
+        userId: userData.userId,
+        role: "admin",
+      },
+    });
+
     if (!isAdmin) {
       return NextResponse.json(
         { error: "Only team admins can remove members" },
@@ -74,7 +83,29 @@ export async function DELETE(
       );
     }
 
-    await teamInvitesService.removeMember(memberId);
+    // Prevent removing yourself (the last admin)
+    if (memberRecord.userId === userData.userId) {
+      // Check if you're the only admin
+      const adminCount = await prismaDb.team_members.count({
+        where: {
+          teamId: memberRecord.teamId,
+          role: "admin",
+        },
+      });
+
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { error: "Cannot remove yourself as the last admin" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Remove the member
+    await prismaDb.team_members.delete({
+      where: { id: memberId },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error removing team member:", error);

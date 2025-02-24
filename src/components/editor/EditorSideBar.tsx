@@ -34,7 +34,13 @@ export default function EditorSidebar() {
   const [items, setItems] = useState<(Tweet | Thread)[]>([]);
   const [currentDraft, setCurrentDraft] = useState<Tweet | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { name, handle, profileImageUrl, teamMemberships } = useUserAccount();
+  const {
+    name,
+    handle,
+    profileImageUrl,
+    teamMemberships,
+    id: userId,
+  } = useUserAccount();
   const { showSearch, setShowSearch } = useKeyboard();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -233,20 +239,24 @@ export default function EditorSidebar() {
                         role="menuitem"
                       >
                         <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                        {name}
+                        {name} {}
                       </div>
 
                       {/* Other accounts would be mapped here */}
                       {teamMemberships.length > 0 ? (
-                        teamMemberships.map(() => (
-                          <div
-                            className="px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 cursor-pointer"
-                            role="menuitem"
-                            tabIndex={0}
-                          >
-                            Another Account
-                          </div>
-                        ))
+                        teamMemberships.map((eachTeam) => {
+                          if (eachTeam.team.id == userId) return;
+                          return (
+                            <div
+                              className="px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 cursor-pointer"
+                              role="menuitem"
+                              tabIndex={0}
+                              key={eachTeam.team.id}
+                            >
+                              {eachTeam.team.name}
+                            </div>
+                          );
+                        })
                       ) : (
                         <div
                           className="px-4 py-2 text-sm text-gray-400 cursor-default"

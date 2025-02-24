@@ -61,6 +61,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // console.log(userProfile)
+
     return NextResponse.json(userProfile);
   } catch (error) {
     console.error("Error fetching user profile:", error);

@@ -14,6 +14,23 @@ import Image from "next/image";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+interface TeamMembership {
+  team: {
+    id: string;
+    name: string;
+    members: {
+      role: string;
+      userId: string;
+      user: {
+        name: string;
+        username: string;
+        profileImageUrl: string | null;
+      };
+    }[];
+  };
+  role: string;
+}
+
 interface UserAccountType {
   id: string;
   name: string;
@@ -26,7 +43,7 @@ interface UserAccountType {
   walletAddress?: string;
   timezone?: string;
   contentPreferences?: any;
-  teamMemberships: any[];
+  teamMemberships: TeamMembership[];
   isLoading: boolean;
   error?: string;
   reloadUserData?: () => void;

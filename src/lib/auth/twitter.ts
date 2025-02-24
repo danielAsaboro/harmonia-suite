@@ -210,7 +210,7 @@ export async function handleOAuth2Callback(request: NextRequest) {
 
     // Retrieve the return URL from cookies
     const returnUrl =
-      request.cookies.get("returnUrl")?.value || "/content/compose/twitter";
+      request.cookies.get("returnUrl")?.value || "/onboarding";
 
     if (!codeVerifier || !state || !sessionState || !code) {
       console.error(

@@ -17,10 +17,7 @@ export default function TwitterAuthPage() {
 
 function TwitterAuthPageContent() {
   const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl") || "/content/compose/twitter";
 
-  console.log('   dfdfd', returnUrl)
   const handleTwitterSignIn = async () => {
     try {
       setIsLoading(true);

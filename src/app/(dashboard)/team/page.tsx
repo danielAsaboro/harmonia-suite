@@ -46,14 +46,39 @@ interface PendingInvite {
 
 interface TeamMember {
   id: string;
+  handle: string;
   publicKey: string;
   role: "admin" | "creator";
   addedAt: Date;
   lastActive: Date;
 }
 
-// Simulate API delay
-const simulateDelay = () => new Promise((resolve) => setTimeout(resolve, 1000));
+interface TeamInvite {
+  id: string;
+  email: string;
+  role: TeamRole;
+  teamId: string;
+  status: "pending" | "accepted" | "expired" | "revoked";
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  createdBy: string;
+}
+
+interface TeamMemberData {
+  id: string;
+  teamId: string;
+  userId: string;
+  role: "admin" | "creator";
+  joinedAt: string;
+  user: {
+    name: string;
+    username: string;
+    profileImageUrl?: string;
+    walletAddress?: string;
+  };
+}
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -183,6 +208,8 @@ export default function TeamManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isDeletingMember, setIsDeletingMember] = useState(false);
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
+
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     memberId: string;
@@ -194,39 +221,66 @@ export default function TeamManagementPage() {
   const [isInviting, setIsInviting] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
 
-  // Simulate initial data fetching
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetchTeamData = async () => {
+      setIsLoading(true);
       try {
-        await simulateDelay();
-        setTeamMembers([
-          {
-            id: "1",
-            publicKey: "GZx4Fq...j9u",
-            role: "admin",
-            addedAt: new Date("2024-01-01"),
-            lastActive: new Date("2024-02-20"),
-          },
-          {
-            id: "2",
-            publicKey: "7LP9i2...k3m",
-            role: "creator",
-            addedAt: new Date("2024-02-01"),
-            lastActive: new Date("2024-02-22"),
-          },
-        ]);
+        // Fetch team members
+        const membersResponse = await fetch("/api/team/members");
+        if (!membersResponse.ok)
+          throw new Error("Failed to fetch team members");
+        const membersData = await membersResponse.json();
+
+        // NEW: Extract team ID from the response
+        const teamId = membersData.team?.id;
+
+        // Store team ID in state
+        setCurrentTeamId(teamId);
+
+        // Transform API data to match your component's expected format
+        const formattedMembers = membersData.members.map(
+          (member: TeamMemberData) => ({
+            id: member.id,
+            publicKey: member.user.walletAddress, //
+            handle: member.user.username,
+            role: member.role,
+            addedAt: new Date(member.joinedAt),
+            lastActive: new Date(),
+          })
+        );
+
+        setTeamMembers(formattedMembers);
+
+        // Fetch pending invites
+        const invitesResponse = await fetch("/api/team/invite");
+        if (!invitesResponse.ok) throw new Error("Failed to fetch invites");
+        const invitesData = await invitesResponse.json();
+
+        // Transform invites data
+        const formattedInvites = invitesData.invites.map(
+          (invite: TeamInvite) => ({
+            id: invite.id,
+            email: invite.email,
+            role: invite.role,
+            sentAt: new Date(invite.createdAt),
+            expiresAt: new Date(invite.expiresAt),
+            status: invite.status,
+          })
+        );
+
+        setPendingInvites(formattedInvites);
       } catch (error) {
-        console.error("Error fetching members:", error);
+        console.error("Error fetching team data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMembers();
+    fetchTeamData();
   }, []);
 
   const filteredMembers = teamMembers.filter((member) => {
-    const matchesSearch = member.publicKey
+    const matchesSearch = member.handle
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
@@ -239,14 +293,33 @@ export default function TeamManagementPage() {
   ) => {
     setIsAddingMember(true);
     try {
-      await simulateDelay();
+      const response = await fetch("/api/team/members", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: publicKey,
+          role,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add team member");
+      }
+
+      const data = await response.json();
+
+      // Format the new member data and add to state
       const newMember: TeamMember = {
-        id: Math.random().toString(),
-        publicKey,
-        role,
-        addedAt: new Date(),
+        id: data.member.id,
+        handle: data.member.user.username,
+        publicKey: data.member.user.username,
+        role: data.member.role,
+        addedAt: new Date(data.member.joinedAt),
         lastActive: new Date(),
       };
+
       setTeamMembers([...teamMembers, newMember]);
       setShowAddMember(false);
     } catch (error) {
@@ -256,21 +329,36 @@ export default function TeamManagementPage() {
     }
   };
 
-  const handleRemoveMember = async (id: string) => {
+  const handleRemoveMember = async (memberId: string) => {
     setIsDeletingMember(true);
     try {
-      await simulateDelay();
-      setTeamMembers(teamMembers.filter((member) => member.id !== id));
+      const response = await fetch(`/api/team/members/${memberId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to remove team member");
+      }
+
+      // If successful, update the local state
+      setTeamMembers(teamMembers.filter((member) => member.id !== memberId));
       setDeleteModal({ isOpen: false, memberId: "", memberKey: "" });
     } catch (error) {
       console.error("Error removing member:", error);
+      // You might want to add error notification here
     } finally {
       setIsDeletingMember(false);
     }
   };
 
-  // Handle invite submission
   const handleInviteMember = async (email: string, role: TeamRole) => {
+    // Check if team ID is available
+    if (!currentTeamId) {
+      console.error("No team ID available");
+      return;
+    }
+
     setIsInviting(true);
     try {
       const response = await fetch("/api/team/invite", {
@@ -281,18 +369,19 @@ export default function TeamManagementPage() {
         body: JSON.stringify({
           email,
           role,
-          teamId: "your-team-id", // You'll need to get this from your app context
+          teamId: currentTeamId,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
+        console.log(" data invite , ", data);
         // Add to pending invites
         setPendingInvites((prev) => [
           ...prev,
           {
-            id: data.invite.id,
+            id: data.invite.teamId,
             email: data.invite.email,
             role: data.invite.role,
             sentAt: new Date(),
@@ -426,7 +515,8 @@ export default function TeamManagementPage() {
           </div>
 
           <div className="rounded-lg border border-border">
-            <div className="grid grid-cols-5 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
+            <div className="grid grid-cols-6 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
+              <div>Twitter Handle</div>
               <div>Public Key</div>
               <div>Role</div>
               <div>Added</div>
@@ -445,10 +535,13 @@ export default function TeamManagementPage() {
                   {filteredMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-gray-50/5"
+                      className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50/5"
                     >
+                      <div className="text-sm text-gray-500">
+                        {member.handle}
+                      </div>
                       <div className="font-mono text-sm">
-                        {member.publicKey}
+                        {`${member.publicKey.slice(0, 6)}` + '...' + `${member.publicKey.slice(-4)}`}
                       </div>
                       <div>
                         <Badge

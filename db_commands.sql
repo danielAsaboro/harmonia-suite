@@ -6,3 +6,6 @@ select * from shared_draft_comments;
 select * from shared_drafts;
 select * from user_tokens;
 select * from content_approvals;
+select * from team_invites;
+select * from team_members;
+select * from teams;

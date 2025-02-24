@@ -1,3 +1,5 @@
+// // src/components/editor/VerificationBadge.tsx
+
 export type BadgeVariant =
   | "none"
   | "blue"

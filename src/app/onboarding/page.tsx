@@ -6,6 +6,7 @@ import OnboardingFlow from "./OnboardingFlow";
 import { SignupState } from "@/types/onboarding";
 import { useTwitterAccount } from "@/hooks/helm";
 import { useUserAccount } from "@/components/editor/context/account";
+import toast from "react-hot-toast";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -73,6 +74,14 @@ export default function OnboardingPage() {
           return;
         }
         console.error("OnboardingPage: Error during onboarding check:", error);
+
+        if ((error as Error).message.includes("Failed to fetch")) {
+          toast.error(
+            "there's a problem connecting with the solana network at the moment"
+          );
+          return;
+          // TODO: need a good ui to try again or something
+        }
         router.push("/auth/twitter");
       } finally {
         setIsLoading(false);
