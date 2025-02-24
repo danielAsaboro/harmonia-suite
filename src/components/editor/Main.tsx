@@ -31,14 +31,13 @@ import {
   getMediaFile,
   removeMediaFile,
   storeMediaFile,
-} from "./media/indexedDB";
+} from "../../lib/storage/indexedDB";
 import SchedulePicker from "../purgatory/SchedulePicker";
 import { cn } from "@/utils/ts-merge";
 import PublishingModal from "./PublishingModal";
 import MentionInput from "./MentionInput";
 import SubmissionModal from "@/app/content/compose/twitter/SubmissionModal";
 import { hashThread, hashTweet } from "./utils";
-import Image from "next/image";
 import VerificationBadge, { BadgeVariant } from "./VerificationBadge";
 
 const DEFAULT_TEXTAREA_HEIGHT = "60px";
@@ -1627,4 +1626,3 @@ export default function PlayGround({
     </div>
   );
 }
-

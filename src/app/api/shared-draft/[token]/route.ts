@@ -7,7 +7,7 @@ import {
   sharedDraftsService,
   sharedDraftCommentsService,
 } from "@/lib/services";
-import { getMediaUrls } from "@/lib/utils/mediaUrl";
+import { getMediaUrls } from "@/utils/mediaUrl";
 
 export async function GET(
   req: NextRequest,

@@ -1,6 +1,6 @@
 // /app/api/team/invite/accept/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { verifyInviteToken } from "@/lib/utils/jwt";
+import { verifyInviteToken } from "@/utils/jwt";
 import { teamInvitesService } from "@/lib/services";
 import { getUserData } from "@/lib/session";
 

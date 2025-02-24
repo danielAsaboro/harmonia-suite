@@ -1,7 +1,7 @@
 // /app/api/team/invite/[token]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { teamInvitesService } from "@/lib/services";
-import { verifyInviteToken } from "@/lib/utils/jwt";
+import { verifyInviteToken } from "@/utils/jwt";
 import { getUserData } from "@/lib/session";
 
 // Verify invite token

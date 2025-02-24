@@ -1,6 +1,6 @@
 // /app/api/team/invite/verify/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { verifyInviteToken } from "@/lib/utils/jwt";
+import { verifyInviteToken } from "@/utils/jwt";
 import { prismaDb } from "@/lib/db/prisma_service";
 
 export async function GET(req: NextRequest) {

@@ -1,7 +1,7 @@
 // /lib/twitter/publisher.ts
 import { ScheduledTweet, ScheduledThread, TokenData } from "../db/schema";
 import { TwitterApi } from "twitter-api-v2";
-import { getMediaFile } from "@/components/editor/media/indexedDB";
+import { getMediaFile } from "@/lib/storage/indexedDB";
 import { userTokensService } from "../services";
 
 async function refreshTokenIfNeeded(userTokens: TokenData): Promise<string> {
@@ -20,7 +20,7 @@ async function refreshTokenIfNeeded(userTokens: TokenData): Promise<string> {
         await client.refreshOAuth2Token(userTokens.refreshToken);
 
       // Update tokens in database
-     await userTokensService.updateUserTokens(
+      await userTokensService.updateUserTokens(
         userTokens.userId,
         accessToken,
         new Date(Date.now() + expiresIn * 1000).toISOString()
@@ -96,7 +96,7 @@ export async function publishTweet(tweet: ScheduledTweet) {
             string,
             string,
             string,
-            string
+            string,
           ],
         };
       return undefined;
@@ -174,7 +174,7 @@ export async function publishThread(
               string,
               string,
               string,
-              string
+              string,
             ],
           };
         return undefined;

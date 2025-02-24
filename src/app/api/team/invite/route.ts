@@ -1,6 +1,6 @@
 // /app/api/team/invite/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { generateInviteToken } from "@/lib/utils/jwt";
+import { generateInviteToken } from "@/utils/jwt";
 import { teamInvitesService } from "@/lib/services";
 import { getUserData } from "@/lib/session";
 import { prismaDb } from "@/lib/db/prisma_service";

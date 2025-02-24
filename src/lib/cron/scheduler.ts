@@ -1,7 +1,7 @@
 // /lib/cron/scheduler.ts
 import cron from "node-cron";
 import { publishTweet, publishThread } from "../twitter/publisher";
-import { logToFile, logError } from "../utils/logger";
+import { logToFile, logError } from "../../utils/logger";
 import {
   scheduledThreadsService,
   scheduledTweetsService,
