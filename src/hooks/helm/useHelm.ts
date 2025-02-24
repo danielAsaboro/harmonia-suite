@@ -21,6 +21,7 @@ export function useHelm() {
       try {
         console.log("About to process the transaction");
         console.log("sending to user and awaiting it");
+        // console.log(" program ::::", program);
         const txId = await transaction;
 
         // Early return if transaction was cancelled
@@ -43,7 +44,7 @@ export function useHelm() {
         // First, check if error has a message property
         if (error instanceof Error) {
           if (error.message.includes("failed to get recent blockhash")) {
-            throw new Error("Lost Connection to the Solana Network");
+            throw new Error("Can't Connect to the Solana Network");
           }
         }
 

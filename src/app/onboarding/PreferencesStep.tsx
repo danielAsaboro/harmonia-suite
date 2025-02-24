@@ -1,32 +1,35 @@
+// /app/onboarding/PreferencesStep.tsx
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContentType } from "@/types/onboarding";
 
 interface PreferencesStepProps {
-  contentTypes: string[];
-  onPreferencesChange: (types: string[]) => void;
+  contentTypes: ContentType[];
+  onPreferencesChange: (types: ContentType[]) => void;
 }
 
 const PreferencesStep = ({
   contentTypes,
   onPreferencesChange,
 }: PreferencesStepProps) => {
-  const options = [
-    {
-      value: "tweets",
-      label: "Single Tweets",
-      description: "Quick thoughts and updates",
-    },
-    {
-      value: "threads",
-      label: "Thread Builder",
-      description: "Create engaging tweet threads",
-    },
-    {
-      value: "scheduled",
-      label: "Scheduled Posts",
-      description: "Plan your content ahead",
-    },
-  ];
+  const options: { value: ContentType; label: string; description: string }[] =
+    [
+      {
+        value: "tweets",
+        label: "Single Tweets",
+        description: "Quick thoughts and updates",
+      },
+      {
+        value: "threads",
+        label: "Thread Builder",
+        description: "Create engaging tweet threads",
+      },
+      {
+        value: "scheduled",
+        label: "Scheduled Posts",
+        description: "Plan your content ahead",
+      },
+    ];
 
   return (
     <div className="space-y-2">

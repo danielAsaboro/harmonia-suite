@@ -1,7 +1,7 @@
 // app/(dashboard)/settings/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -33,6 +33,18 @@ export default function SettingsPage() {
   const { handle, name, profileImageUrl } = useUserAccount();
   const [activeTab, setActiveTab] = useState("account");
   const wallet = useWallet();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const response = await fetch("/api/users/profile");
+      if (!response.ok) {
+        throw new Error("Failed to update onboarding data");
+      }
+      console.log(" fetched details", await response.json());
+    };
+
+    fetchUserData();
+  }, []);
 
   const AccountSection = () => (
     <div className="space-y-6">

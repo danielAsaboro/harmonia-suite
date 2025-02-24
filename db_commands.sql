@@ -5,3 +5,4 @@ select * from scheduled_tweets;
 select * from shared_draft_comments;
 select * from shared_drafts;
 select * from user_tokens;
+select * from content_approvals;

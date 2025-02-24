@@ -15,6 +15,8 @@ model user_tokens {
   username          String
   name              String
   profileImageUrl   String?
+  verified          Boolean   @default(false)  // Adding verified field
+  verifiedType      String?   // Adding verified_type field as optional
   draftThreads      draft_threads[]
   draftTweets       draft_tweets[]
   scheduledThreads  scheduled_threads[]
@@ -24,6 +26,13 @@ model user_tokens {
   teamMemberships     team_members[]
   createdInvites      team_invites[] @relation("inviteCreator")
   acceptedInvites     team_invites[] @relation("inviteAcceptor")
+
+  email             String?  @unique
+  emailVerified     Boolean  @default(false)
+  walletAddress     String?  @unique
+  timezone          String?  @default("UTC")
+  contentPreferences Json?   // For storing content type preferences
+  onboardingCompleted Boolean @default(false)
 
   @@unique([accessToken])
 }
@@ -178,6 +187,7 @@ model team_members {
   team        teams       @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
+  @@unique([teamId, userId])
   @@index([teamId])
   @@index([userId])
 }

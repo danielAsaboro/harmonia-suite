@@ -32,6 +32,7 @@ import {
   StatCardProps,
   StepCardProps,
 } from "@/types/landing";
+import { useRouter } from "next/navigation";
 
 const StatCard = ({ value, label, icon: Icon }: StatCardProps) => {
   const [count, setCount] = useState(0);
@@ -144,6 +145,7 @@ const IntegrationCard = ({
 );
 
 export default function LandingPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-green-50">
       {/* Hero Section */}
@@ -185,19 +187,19 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link href="/overview">
-                <Button
-                  size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-xl text-lg font-semibold"
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-xl text-lg font-semibold"
+                onClick={() => router.push("/overview")}
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-2 border-blue-200 hover:border-blue-300 px-8 py-6 rounded-xl text-lg font-semibold"
+                onClick={() => router.push("/content/compose/twitter")}
               >
                 View Demo
               </Button>

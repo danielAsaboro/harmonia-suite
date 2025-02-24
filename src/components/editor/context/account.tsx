@@ -12,6 +12,8 @@ import { User, UserSquare2, Loader2 } from "lucide-react";
 import { tweetStorage } from "@/utils/localStorage";
 import Image from "next/image";
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 interface UserAccountType {
   id: string;
   name: string;
@@ -19,11 +21,20 @@ interface UserAccountType {
   profileImageUrl: string;
   verified: boolean;
   verifiedType: string | null;
+  email?: string;
+  emailVerified?: boolean;
+  walletAddress?: string;
+  timezone?: string;
+  contentPreferences?: any;
+  teamMemberships: any[];
   isLoading: boolean;
   error?: string;
   reloadUserData?: () => void;
   getAvatar: () => JSX.Element;
 }
+
+// Define a separate type for state without the getAvatar function
+type UserAccountState = Omit<UserAccountType, "getAvatar">;
 
 const UserAccountContext = createContext<UserAccountType | undefined>(
   undefined
@@ -42,8 +53,6 @@ export function UserAccountProvider({
     </div>
   );
 
-  // console.log("number of times user endpoint called, ", count);
-
   // Error avatar component
   const ErrorAvatar = () => (
     <div className="w-12 h-12 rounded-full bg-red-900/20 border-2 border-red-500/20 flex items-center justify-center">
@@ -58,9 +67,8 @@ export function UserAccountProvider({
     </div>
   );
 
-  const [userAccount, setUserAccount] = useState<
-    Omit<UserAccountType, "getAvatar">
-  >({
+  // Use the state type in useState
+  const [userAccount, setUserAccount] = useState<UserAccountState>({
     id: "",
     name: "",
     handle: "",
@@ -68,6 +76,7 @@ export function UserAccountProvider({
     verified: false,
     verifiedType: null,
     isLoading: true,
+    teamMemberships: [],
   });
 
   const fetchUserData = useCallback(async () => {
@@ -75,9 +84,11 @@ export function UserAccountProvider({
       // First check localStorage
       const cachedDetails = tweetStorage.getUserDetails();
 
-      // console.log("cached details gotten ", cachedDetails);
-
-      if (cachedDetails) {
+      if (
+        cachedDetails &&
+        cachedDetails.cachedAt &&
+        Date.now() - cachedDetails.cachedAt < ONE_DAY_MS
+      ) {
         setUserAccount({
           id: cachedDetails.id,
           name: cachedDetails.name,
@@ -85,28 +96,40 @@ export function UserAccountProvider({
           profileImageUrl: cachedDetails.profileImageUrl,
           verified: cachedDetails.verified,
           verifiedType: cachedDetails.verifiedType,
+          email: cachedDetails.email,
+          emailVerified: cachedDetails.emailVerified,
+          walletAddress: cachedDetails.walletAddress,
+          timezone: cachedDetails.timezone,
+          contentPreferences: cachedDetails.contentPreferences,
+          teamMemberships: cachedDetails.teamMemberships!,
           isLoading: false,
         });
         return;
       } else {
-        console.log("no user found in cache, making request");
-        const response = await fetch("/api/auth/twitter/user");
+        console.log("Cache expired or not found, making request");
+        const response = await fetch("/api/users/profile");
         setCount((prev) => prev + 1);
         if (!response.ok) {
-          throw new Error("Failed to get user data");
+          throw new Error("Failed to get user profile data");
         }
 
-        const userData = await response.json();
+        const profileData = await response.json();
 
-        console.log("user info gottent ", userData);
+        console.log("profile data received:", profileData);
 
         const userDetails = {
-          id: userData.id,
-          name: userData.name,
-          handle: userData.username,
-          profileImageUrl: userData.profile_image_url,
-          verified: userData.verified,
-          verifiedType: userData.verified_type,
+          id: profileData.userId,
+          name: profileData.name,
+          handle: profileData.username,
+          profileImageUrl: profileData.profileImageUrl,
+          verified: profileData.verified || false,
+          verifiedType: profileData.verifiedType || null,
+          email: profileData.email,
+          emailVerified: profileData.emailVerified,
+          walletAddress: profileData.walletAddress,
+          timezone: profileData.timezone || "UTC",
+          contentPreferences: profileData.contentPreferences,
+          teamMemberships: profileData.teamMemberships,
         };
 
         // Save to localStorage
@@ -119,18 +142,20 @@ export function UserAccountProvider({
         });
       }
     } catch (error) {
-      setUserAccount((prev) => ({
-        ...prev,
+      setUserAccount((prevState) => ({
+        ...prevState,
         isLoading: false,
         error:
-          error instanceof Error ? error.message : "Failed to load user data",
+          error instanceof Error
+            ? error.message
+            : "Failed to load user profile data",
       }));
     }
   }, []);
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
   useEffect(() => {
     const checkAndRefreshToken = async () => {

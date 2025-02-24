@@ -29,7 +29,6 @@ export function HelmProvider({ children }: { children: ReactNode }) {
   const connected = wallet.connected;
 
   const program = useMemo(() => {
-    if (!connected) return null;
     try {
       return getHelmProgramWithWallet(connection, wallet);
     } catch (error) {

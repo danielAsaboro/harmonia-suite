@@ -3,6 +3,7 @@ import { TwitterApi } from "twitter-api-v2";
 import { getSession } from "../session";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { prismaDb } from "../db/prisma_service";
 
 interface OAuth2State {
   oauth1Token: string;
@@ -24,7 +25,7 @@ function safeJSONParse(str: string) {
 
 async function setAuthStateCookie(stateData: OAuth2State) {
   try {
-    const cookieStore =  cookies();
+    const cookieStore = cookies();
     const serializedData = JSON.stringify(stateData);
 
     cookieStore.set("twitter_auth_state", serializedData, {
@@ -111,7 +112,7 @@ export async function handleOAuth1Callback(request: NextRequest) {
       throw new Error("Missing OAuth 1.0a tokens");
     }
 
-    const cookieStore =  cookies();
+    const cookieStore = cookies();
     const stateCookie = cookieStore.get("twitter_auth_state");
 
     if (!stateCookie?.value) {
@@ -121,8 +122,8 @@ export async function handleOAuth1Callback(request: NextRequest) {
     const stateData = safeJSONParse(stateCookie.value);
 
     console.log(" about to log stuff for issues");
-    console.dir(stateData, {depth: null})
-    console.dir(oauth_token, {depth: null})
+    console.dir(stateData, { depth: null });
+    console.dir(oauth_token, { depth: null });
 
     if (!stateData || stateData.oauth1Token !== oauth_token) {
       throw new Error("Invalid state or OAuth1 token mismatch");
@@ -239,7 +240,7 @@ export async function handleOAuth2Callback(request: NextRequest) {
       });
     }
 
-    const cookieStore =  cookies();
+    const cookieStore = cookies();
     const stateCookie = cookieStore.get("twitter_auth_state");
 
     if (!stateCookie?.value) {
@@ -282,6 +283,32 @@ export async function handleOAuth2Callback(request: NextRequest) {
         "verified",
         "verified_type",
       ],
+    });
+
+    // Add this new code to create/update user record
+    await prismaDb.user_tokens.upsert({
+      where: { userId: userData.id },
+      update: {
+        accessToken: oauth2AccessToken,
+        refreshToken: oauth2RefreshToken,
+        expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+        username: userData.username,
+        name: userData.name,
+        profileImageUrl: userData.profile_image_url || null,
+        verified: userData.verified || false,
+        verifiedType: userData.verified_type || null
+      },
+      create: {
+        userId: userData.id,
+        accessToken: oauth2AccessToken,
+        refreshToken: oauth2RefreshToken!,
+        expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+        username: userData.username,
+        name: userData.name,
+        profileImageUrl: userData.profile_image_url || null,
+        verified: userData.verified || false,
+        verifiedType: userData.verified_type || null
+      },
     });
 
     // Create session data

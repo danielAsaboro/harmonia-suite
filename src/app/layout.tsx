@@ -4,6 +4,7 @@ import { SolanaProvider } from "@/components/solana/solana-provider";
 import { UiLayout } from "@/components/ui/ui-layout";
 import { ReactQueryProvider } from "./react-query-provider";
 import { HelmProvider } from "@/contexts/helm/HelmContext";
+import { UserAccountProvider } from "@/components/editor/context/account";
 
 export const metadata = {
   title: "Harmoniasuite",
@@ -30,7 +31,9 @@ export default function RootLayout({
           <ClusterProvider>
             <SolanaProvider>
               <HelmProvider>
-                <UiLayout links={links}>{children}</UiLayout>
+                <UserAccountProvider>
+                  <UiLayout links={links}>{children}</UiLayout>
+                </UserAccountProvider>
               </HelmProvider>
             </SolanaProvider>
           </ClusterProvider>

@@ -1,4 +1,4 @@
-// // /utils/localStorage.ts
+// // // /utils/localStorage.ts
 
 import { draftSync } from "@/lib/sync/draftSync";
 import { Tweet, Thread, ThreadWithTweets } from "@/types/tweet";
@@ -11,13 +11,19 @@ interface TwitterUserDetails {
   profileImageUrl: string;
   verified: boolean;
   verifiedType: string | null;
+  email?: string;
+  emailVerified?: boolean;
+  walletAddress?: string;
+  timezone?: string;
+  contentPreferences?: any;
+  teamMemberships?: any[];
+  cachedAt?: number;
 }
 
 export class TweetStorageService {
   private static instance: TweetStorageService;
-  private readonly TWEETS_KEY = "tweets";
-  private readonly THREADS_KEY = "threads";
-  private readonly USER_DETAILS_KEY = "twitter_user_details";
+  private readonly BASE_KEY = "helm_app";
+  private readonly USER_KEY = "current_user_id";
   private lastSave: number = Date.now();
 
   private constructor() {}
@@ -29,9 +35,33 @@ export class TweetStorageService {
     return TweetStorageService.instance;
   }
 
+  // Helper method to get the current user ID
+  private getCurrentUserId(): string | null {
+    return localStorage.getItem(this.USER_KEY);
+  }
+
+  // Helper method to set the current user ID
+  public setCurrentUserId(userId: string): void {
+    localStorage.setItem(this.USER_KEY, userId);
+  }
+
+  // Generate namespaced keys for user data
+  private getNamespacedKey(key: string): string {
+    const userId = this.getCurrentUserId();
+    if (!userId) {
+      throw new Error("No user ID found. User must be logged in.");
+    }
+    return `${this.BASE_KEY}_${userId}_${key}`;
+  }
+
   getUserDetails(): TwitterUserDetails | null {
     try {
-      const details = localStorage.getItem(this.USER_DETAILS_KEY);
+      const userId = this.getCurrentUserId();
+      if (!userId) return null;
+
+      const details = localStorage.getItem(
+        this.getNamespacedKey("user_details")
+      );
       if (details) {
         const parsedDetails = JSON.parse(details);
         if (parsedDetails && Object.keys(parsedDetails).length > 0) {
@@ -47,7 +77,22 @@ export class TweetStorageService {
 
   saveUserDetails(details: TwitterUserDetails) {
     try {
-      localStorage.setItem(this.USER_DETAILS_KEY, JSON.stringify(details));
+      if (!details.id) {
+        throw new Error("User ID is required");
+      }
+
+      // Set this user as the current user
+      this.setCurrentUserId(details.id);
+
+      const dataToStore = {
+        ...details,
+        cachedAt: Date.now(),
+      };
+
+      localStorage.setItem(
+        this.getNamespacedKey("user_details"),
+        JSON.stringify(dataToStore)
+      );
     } catch (error) {
       console.error("Error saving user details:", error);
     }
@@ -55,7 +100,7 @@ export class TweetStorageService {
 
   getTweets(): Tweet[] {
     try {
-      const tweets = localStorage.getItem(this.TWEETS_KEY);
+      const tweets = localStorage.getItem(this.getNamespacedKey("tweets"));
       return tweets ? JSON.parse(tweets) : [];
     } catch (error) {
       console.error("Error getting tweets:", error);
@@ -65,7 +110,7 @@ export class TweetStorageService {
 
   getThreads(): Thread[] {
     try {
-      const threads = localStorage.getItem(this.THREADS_KEY);
+      const threads = localStorage.getItem(this.getNamespacedKey("threads"));
       return threads ? JSON.parse(threads) : [];
     } catch (error) {
       console.error("Error getting threads:", error);
@@ -106,8 +151,11 @@ export class TweetStorageService {
         tweets.push(tweet);
       }
 
-      // Always save to localStorage with debounce
-      localStorage.setItem(this.TWEETS_KEY, JSON.stringify(tweets));
+      // Always save to localStorage with namespace
+      localStorage.setItem(
+        this.getNamespacedKey("tweets"),
+        JSON.stringify(tweets)
+      );
       this.lastSave = Date.now();
 
       // Queue for backend sync if it's a draft
@@ -135,8 +183,11 @@ export class TweetStorageService {
         threads.push(thread);
       }
 
-      // Save thread to localStorage first
-      localStorage.setItem(this.THREADS_KEY, JSON.stringify(threads));
+      // Save thread to localStorage with namespace
+      localStorage.setItem(
+        this.getNamespacedKey("threads"),
+        JSON.stringify(threads)
+      );
       this.lastSave = Date.now();
 
       // Save associated tweets to localStorage
@@ -164,7 +215,10 @@ export class TweetStorageService {
   deleteTweet(tweetId: string) {
     try {
       const tweets = this.getTweets().filter((t) => t.id !== tweetId);
-      localStorage.setItem(this.TWEETS_KEY, JSON.stringify(tweets));
+      localStorage.setItem(
+        this.getNamespacedKey("tweets"),
+        JSON.stringify(tweets)
+      );
 
       // Send delete request to backend immediately
       fetch(`/api/drafts?type=tweet&id=${tweetId}&cleanup=true`, {
@@ -180,10 +234,16 @@ export class TweetStorageService {
   deleteThread(threadId: string) {
     try {
       const threads = this.getThreads().filter((t) => t.id !== threadId);
-      localStorage.setItem(this.THREADS_KEY, JSON.stringify(threads));
+      localStorage.setItem(
+        this.getNamespacedKey("threads"),
+        JSON.stringify(threads)
+      );
 
       const tweets = this.getTweets().filter((t) => t.threadId !== threadId);
-      localStorage.setItem(this.TWEETS_KEY, JSON.stringify(tweets));
+      localStorage.setItem(
+        this.getNamespacedKey("tweets"),
+        JSON.stringify(tweets)
+      );
 
       // Send delete request to backend immediately
       fetch(`/api/drafts?type=thread&id=${threadId}&cleanup=true`, {
@@ -193,6 +253,24 @@ export class TweetStorageService {
       });
     } catch (error) {
       console.error("Error deleting thread:", error);
+    }
+  }
+
+  // Clear all data for the current user
+  clearUserData() {
+    try {
+      const userId = this.getCurrentUserId();
+      if (!userId) return;
+
+      // Clear all namespaced data
+      localStorage.removeItem(this.getNamespacedKey("user_details"));
+      localStorage.removeItem(this.getNamespacedKey("tweets"));
+      localStorage.removeItem(this.getNamespacedKey("threads"));
+
+      // Clear current user reference
+      localStorage.removeItem(this.USER_KEY);
+    } catch (error) {
+      console.error("Error clearing user data:", error);
     }
   }
 

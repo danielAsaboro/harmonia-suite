@@ -2,20 +2,13 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight, CheckCircle2, RefreshCcw } from "lucide-react";
+import { VerificationStatus } from "@/types/onboarding";
 
 interface EmailVerificationProps {
   email: string;
   onVerified: () => void;
   onBack: () => void;
 }
-
-type VerificationStatus =
-  | "idle"
-  | "sending"
-  | "sent"
-  | "verifying"
-  | "verified"
-  | "error";
 
 const EmailVerification = ({
   email,
@@ -85,7 +78,9 @@ const EmailVerification = ({
               type="text"
               placeholder="Enter verification code"
               value={verificationCode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVerificationCode(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setVerificationCode(e.target.value)
+              }
               className="bg-gray-800"
               maxLength={5}
               disabled={status === "verifying"}

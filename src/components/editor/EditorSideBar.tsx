@@ -34,7 +34,7 @@ export default function EditorSidebar() {
   const [items, setItems] = useState<(Tweet | Thread)[]>([]);
   const [currentDraft, setCurrentDraft] = useState<Tweet | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { name, handle, profileImageUrl } = useUserAccount();
+  const { name, handle, profileImageUrl, teamMemberships } = useUserAccount();
   const { showSearch, setShowSearch } = useKeyboard();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -237,31 +237,24 @@ export default function EditorSidebar() {
                       </div>
 
                       {/* Other accounts would be mapped here */}
-                      <div
-                        className="px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 cursor-pointer"
-                        role="menuitem"
-                        tabIndex={0}
-                      >
-                        Another Account
-                      </div>
-                      <div
-                        className="px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 cursor-pointer"
-                        role="menuitem"
-                        tabIndex={0}
-                      >
-                        Team Account
-                      </div>
-
-                      {/* Add account option */}
-                      <div className="border-t border-gray-800 mt-1"></div>
-                      <div
-                        className="px-4 py-2 text-sm text-blue-400 hover:bg-gray-800 cursor-pointer flex items-center gap-2"
-                        role="menuitem"
-                        tabIndex={0}
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add another account
-                      </div>
+                      {teamMemberships.length > 0 ? (
+                        teamMemberships.map(() => (
+                          <div
+                            className="px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 cursor-pointer"
+                            role="menuitem"
+                            tabIndex={0}
+                          >
+                            Another Account
+                          </div>
+                        ))
+                      ) : (
+                        <div
+                          className="px-4 py-2 text-sm text-gray-400 cursor-default"
+                          role="menuitem"
+                        >
+                          Teams you are in will also appear here
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

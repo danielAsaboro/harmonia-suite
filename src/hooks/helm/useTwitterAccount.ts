@@ -1,18 +1,18 @@
-// File: src/hooks/helm/useTwitterAccount.ts
+// // File: src/hooks/helm/useTwitterAccount.ts
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useHelm } from "./useHelm";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { findTwitterAccountPDA } from "../../services/helm";
 import { TwitterAccount } from "../../services/helm";
 
-export function useTwitterAccount(twitterId?: string) {
+export function useTwitterAccount(twitterId: string | undefined) {
   const { instructions, handleTransaction, getTwitterAccount } = useHelm();
   const { publicKey } = useWallet();
+  const [cachedRegistrationStatus, setCachedRegistrationStatus] = useState<
+    boolean | null
+  >(null);
 
-  /**
-   * Register a new Twitter account
-   */
   const registerAccount = useCallback(
     async (twitterId: string, twitterHandle: string) => {
       if (!instructions || !publicKey) throw new Error("Not connected");
@@ -34,7 +34,7 @@ export function useTwitterAccount(twitterId?: string) {
           },
         });
 
-        console.log(" the result, ", result);
+        console.log("Registration result:", result);
 
         if (!result) {
           throw new Error("Failed to Register your account with Helm");
@@ -42,8 +42,8 @@ export function useTwitterAccount(twitterId?: string) {
 
         // Fetch and return the new account
         const [accountPda] = findTwitterAccountPDA(twitterId);
-        await getTwitterAccount(accountPda);
-
+        const account = await getTwitterAccount(accountPda);
+        setCachedRegistrationStatus(true);
         return result;
       } catch (err) {
         throw err;
@@ -52,9 +52,6 @@ export function useTwitterAccount(twitterId?: string) {
     [instructions, publicKey, handleTransaction, getTwitterAccount]
   );
 
-  /**
-   * Verify a Twitter account
-   */
   const verifyAccount = useCallback(
     async (twitterId: string) => {
       if (!instructions || !publicKey) throw new Error("Not connected");
@@ -76,7 +73,9 @@ export function useTwitterAccount(twitterId?: string) {
 
         // Fetch and return the updated account
         const [accountPda] = findTwitterAccountPDA(twitterId);
-        return await getTwitterAccount(accountPda);
+        const account = await getTwitterAccount(accountPda);
+        setCachedRegistrationStatus(true);
+        return account;
       } catch (err) {
         return err;
       }
@@ -84,25 +83,63 @@ export function useTwitterAccount(twitterId?: string) {
     [instructions, publicKey, handleTransaction, getTwitterAccount]
   );
 
-  /**
-   * Fetch account data if twitterId is provided
-   */
   const fetchAccount = useCallback(async () => {
-    if (!twitterId) return null;
+    console.log("Fetching account for twitter ID:", twitterId);
+    if (!twitterId) {
+      console.log("No twitter ID provided, skipping fetch");
+      return null;
+    }
 
     try {
       const [accountPda] = findTwitterAccountPDA(twitterId);
       const account = await getTwitterAccount(accountPda);
-      // CHECK; does this work? i hope so
+      console.log("Fetched account:", account);
       return account as unknown as TwitterAccount;
     } catch (err) {
+      console.error("Error fetching account:", err);
       throw err;
     }
   }, [twitterId, getTwitterAccount]);
+
+  // Modify isRegistered to use cached value
+  const isRegistered = useCallback(async () => {
+    if (!twitterId) {
+      console.log(
+        "No twitter ID provided, returning false for registration check"
+      );
+      return false;
+    }
+
+    try {
+      const retrievedAccount = await fetchAccount();
+      console.log(
+        "Retrieved account for registration check:",
+        retrievedAccount
+      );
+      const isRegistered = retrievedAccount != null;
+      setCachedRegistrationStatus(isRegistered);
+      return isRegistered;
+    } catch (err) {
+      console.error("Error checking registration:", err);
+      throw err;
+    }
+  }, [twitterId, fetchAccount]);
+
+  // Effect to check registration status when twitterId changes
+  useEffect(() => {
+    if (twitterId) {
+      console.log("Checking registration status for twitter ID:", twitterId);
+      isRegistered().catch((err) => {
+        console.error("Error in registration check effect:", err);
+      });
+    }
+  }, [twitterId, isRegistered]);
 
   return {
     registerAccount,
     verifyAccount,
     fetchAccount,
+    isRegistered,
+    isRegisteredValue: cachedRegistrationStatus,
   };
 }
