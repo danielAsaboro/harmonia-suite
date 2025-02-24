@@ -38,6 +38,8 @@ import PublishingModal from "./PublishingModal";
 import MentionInput from "./MentionInput";
 import SubmissionModal from "@/app/content/compose/twitter/SubmissionModal";
 import { hashThread, hashTweet } from "./utils";
+import Image from "next/image";
+import VerificationBadge, { BadgeVariant } from "./VerificationBadge";
 
 const DEFAULT_TEXTAREA_HEIGHT = "60px";
 
@@ -155,6 +157,7 @@ export default function PlayGround({
     handle: userTwitterHandle,
     isLoading: isUserAccountDetailsLoading,
     getAvatar,
+    verifiedType,
   } = useUserAccount();
   const {
     hideEditor,
@@ -1392,6 +1395,7 @@ export default function PlayGround({
                     >
                       {userName}
                     </span>
+                    <VerificationBadge variant={verifiedType as BadgeVariant} />
                     <span
                       className={cn(
                         isUserAccountDetailsLoading
@@ -1623,3 +1627,4 @@ export default function PlayGround({
     </div>
   );
 }
+
