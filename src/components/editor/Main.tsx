@@ -929,7 +929,7 @@ export default function PlayGround({
           const isScheduled =
             editorState.selectedItemStatus === "scheduled" ||
             editorState.selectedItemStatus === "published";
-          const content = isScheduled ? loadScheduledItem() : loadDraft();
+          const content = isScheduled ? loadScheduledItem() : await loadDraft();
 
           // Wait a tick to ensure state is synchronized
           await new Promise((resolve) => setTimeout(resolve, 0));

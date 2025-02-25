@@ -84,9 +84,9 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
   );
 
   useEffect(() => {
-    const getContentData = () => {
+    const getContentData = async () => {
       const drafts =
-        activeTab === "scheduled" ? loadScheduledItems() : loadDrafts();
+        activeTab === "scheduled" ? loadScheduledItems() : await loadDrafts();
 
       if (!drafts) return;
 

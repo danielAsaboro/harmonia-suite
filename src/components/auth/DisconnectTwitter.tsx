@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Twitter, Check, X } from "lucide-react";
 import { useUserAccount } from "@/components/editor/context/account";
-import Image from "next/image"
+import Image from "next/image";
 
 interface DisconnectTwitterProps {
   onDisconnectSuccess?: () => void;

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X, Settings, ChevronLeft } from "lucide-react";
 import {
   UserAccountProvider,

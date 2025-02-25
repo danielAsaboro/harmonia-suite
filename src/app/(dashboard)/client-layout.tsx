@@ -7,9 +7,14 @@ import {
   UserAccountProvider,
   useUserAccount,
 } from "@/components/editor/context/account";
+import { syncAllDraftsFromServer } from "@/utils/sync";
+import { useEffect } from "react";
 
 function ApplicationContainer({ children }: { children: React.ReactNode }) {
   const userAccount = useUserAccount();
+  useEffect(() => {
+    syncAllDraftsFromServer();
+  });
 
   return (
     <>

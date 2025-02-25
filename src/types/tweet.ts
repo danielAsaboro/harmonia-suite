@@ -19,6 +19,7 @@ export interface Tweet {
   position?: number;
   lastSaved?: string;
   tags?: string[];
+  lastModified?: string;
 }
 
 export interface Thread {
@@ -28,6 +29,7 @@ export interface Thread {
   status: TweetStatus;
   scheduledFor?: Date;
   tags?: string[];
+  lastModified?: string;
 }
 
 export interface ThreadWithTweets extends Thread {

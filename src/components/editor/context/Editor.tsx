@@ -10,6 +10,11 @@ import React, {
 import { Tweet, Thread, ThreadWithTweets } from "@/types/tweet";
 import { v4 as uuidv4 } from "uuid";
 import { tweetStorage } from "@/utils/localStorage";
+import {
+  getMediaFile,
+  removeMediaFile,
+  storeMediaFile,
+} from "@/lib/storage/indexedDB";
 
 type Tab = "drafts" | "scheduled" | "published";
 
@@ -26,7 +31,8 @@ type EditorContextType = {
   editorState: EditorState;
   showEditor: (draftId?: string, type?: "tweet" | "thread") => void;
   hideEditor: () => void;
-  loadDraft: () => Tweet | ThreadWithTweets | null;
+  loadDraft: () => Tweet | ThreadWithTweets | null | undefined;
+  // loadDraft: () => Promise<Tweet | ThreadWithTweets | null>;
   loadScheduledItem: () => Tweet | ThreadWithTweets | null;
   refreshSidebar: () => void;
   refreshCounter: number;
@@ -177,17 +183,147 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, [editorState.selectedDraftId, editorState.selectedDraftType]);
 
+  // // syncing but without media
+
+  // const loadDraft = useCallback(async () => {
+  //   if (!editorState.selectedDraftId || !editorState.selectedDraftType) {
+  //     return null;
+  //   }
+
+  //   const draftId = editorState.selectedDraftId;
+  //   const draftType = editorState.selectedDraftType;
+
+  //   try {
+  //     // First, check if there's a newer version on the server
+  //     const response = await fetch(
+  //       `/api/drafts?type=${draftType}&id=${draftId}`
+  //     );
+
+  //     if (response.ok) {
+  //       const serverData = await response.json();
+
+  //       // Compare timestamps to see if server version is newer
+  //       if (draftType === "tweet") {
+  //         const localTweet = tweetStorage
+  //           .getTweets()
+  //           .find((t) => t.id === draftId);
+
+  //         if (localTweet && serverData) {
+  //           const serverTime = new Date(serverData.updatedAt).getTime();
+  //           const localTime = new Date(
+  //             localTweet.lastModified || localTweet.createdAt
+  //           ).getTime();
+
+  //           // If server version is newer, update local storage
+  //           if (serverTime > localTime) {
+  //             tweetStorage.saveTweet(serverData, false);
+  //           }
+  //         }
+  //       } else if (draftType === "thread") {
+  //         const localThread = tweetStorage.getThreadWithTweets(draftId);
+
+  //         if (localThread && serverData?.thread) {
+  //           const serverTime = new Date(serverData.thread.updatedAt).getTime();
+  //           const localTime = new Date(
+  //             localThread.lastModified || localThread.createdAt
+  //           ).getTime();
+
+  //           // If server version is newer, update local storage
+  //           if (serverTime > localTime) {
+  //             tweetStorage.saveThread(
+  //               serverData.thread,
+  //               serverData.tweets,
+  //               false
+  //             );
+  //           }
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error checking for newer draft version:", error);
+  //     // If we can't reach the server, we'll fall back to the local version
+  //   }
+
+  //   // Now load the potentially updated local version
+  //   if (draftType === "tweet") {
+  //     const tweets = tweetStorage.getTweets();
+  //     return (
+  //       tweets.find((t) => t.id === draftId && t.status === "draft") || null
+  //     );
+  //   } else {
+  //     const threads = tweetStorage.getThreads();
+  //     const thread = threads.find((t) => t.id === draftId);
+
+  //     if (thread && thread.status === "draft") {
+  //       const tweets = tweetStorage
+  //         .getTweets()
+  //         .filter((t) => t.threadId === thread.id)
+  //         .sort((a, b) => (a.position || 0) - (b.position || 0));
+
+  //       return {
+  //         ...thread,
+  //         tweets: tweets.map((t) => ({
+  //           ...t,
+  //           status: thread.status,
+  //         })),
+  //       } as ThreadWithTweets;
+  //     }
+  //     return null;
+  //   }
+  // }, [editorState.selectedDraftId, editorState.selectedDraftType]);
+
+  // // initial version
+  // const loadDraft = useCallback(() => {
+  //   if (!editorState.selectedDraftId || !editorState.selectedDraftType) {
+  //     return null;
+  //   }
+
+  //   if (editorState.selectedDraftType === "tweet") {
+  //     const tweets = tweetStorage.getTweets();
+  //     return (
+  //       tweets.find(
+  //         (t) => t.id === editorState.selectedDraftId && t.status === "draft"
+  //       ) || null
+  //     );
+  //   } else {
+  //     const threads = tweetStorage.getThreads();
+  //     const thread = threads.find((t) => t.id === editorState.selectedDraftId);
+
+  //     if (thread && thread.status === "draft") {
+  //       const tweets = tweetStorage
+  //         .getTweets()
+  //         .filter((t) => t.threadId === thread.id)
+  //         .sort((a, b) => (a.position || 0) - (b.position || 0));
+
+  //       // Important: Preserve the thread's status when loading
+  //       return {
+  //         ...thread,
+  //         tweets: tweets.map((t) => ({
+  //           ...t,
+  //           status: thread.status,
+  //         })),
+  //       } as ThreadWithTweets;
+  //     }
+  //     return null;
+  //   }
+  // }, [editorState.selectedDraftId, editorState.selectedDraftType]);
+
+  const refreshSidebar = useCallback(() => {
+    setRefreshCounter((prev) => prev + 1);
+  }, []);
+
   const loadDraft = useCallback(() => {
     if (!editorState.selectedDraftId || !editorState.selectedDraftType) {
       return null;
     }
 
+    // First load the local draft immediately to prevent UI errors
+    let localDraft = null;
+
     if (editorState.selectedDraftType === "tweet") {
       const tweets = tweetStorage.getTweets();
-      return (
-        tweets.find(
-          (t) => t.id === editorState.selectedDraftId && t.status === "draft"
-        ) || null
+      localDraft = tweets.find(
+        (t) => t.id === editorState.selectedDraftId && t.status === "draft"
       );
     } else {
       const threads = tweetStorage.getThreads();
@@ -199,8 +335,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
           .filter((t) => t.threadId === thread.id)
           .sort((a, b) => (a.position || 0) - (b.position || 0));
 
-        // Important: Preserve the thread's status when loading
-        return {
+        localDraft = {
           ...thread,
           tweets: tweets.map((t) => ({
             ...t,
@@ -208,13 +343,139 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
           })),
         } as ThreadWithTweets;
       }
-      return null;
     }
-  }, [editorState.selectedDraftId, editorState.selectedDraftType]);
 
-  const refreshSidebar = useCallback(() => {
-    setRefreshCounter((prev) => prev + 1);
-  }, []);
+    // After returning the local draft, check for newer versions on the server
+    const checkForNewerVersion = async () => {
+      try {
+        const response = await fetch(
+          `/api/drafts?type=${editorState.selectedDraftType}&id=${editorState.selectedDraftId}`
+        );
+
+        if (!response.ok) return;
+
+        const serverData = await response.json();
+
+        if (!serverData) return;
+
+        let shouldUpdate = false;
+
+        // For tweets, compare timestamps
+        if (editorState.selectedDraftType === "tweet" && localDraft) {
+          const serverTime = new Date(serverData.updatedAt).getTime();
+          const localTime = new Date(
+            localDraft.lastModified || localDraft.createdAt
+          ).getTime();
+
+          if (serverTime > localTime) {
+            shouldUpdate = true;
+
+            // Sync media files before saving the tweet
+            await syncMediaFiles(serverData.mediaIds || []);
+
+            tweetStorage.saveTweet(serverData, false);
+          }
+        }
+        // For threads, handle the thread and its tweets
+        else if (editorState.selectedDraftType === "thread" && localDraft) {
+          const serverTime = new Date(serverData.thread.updatedAt).getTime();
+          const localTime = new Date(
+            localDraft.lastModified || localDraft.createdAt
+          ).getTime();
+
+          if (serverTime > localTime) {
+            shouldUpdate = true;
+
+            // Collect all media IDs from all tweets in the thread
+            const allMediaIds = serverData.tweets.reduce((ids, tweet) => {
+              return ids.concat(tweet.mediaIds || []);
+            }, []);
+
+            // Sync all media files before saving the thread
+            await syncMediaFiles(allMediaIds);
+
+            tweetStorage.saveThread(
+              serverData.thread,
+              serverData.tweets,
+              false
+            );
+          }
+        }
+
+        // If we updated local storage, refresh the sidebar
+        if (shouldUpdate) {
+          refreshSidebar();
+        }
+      } catch (error) {
+        console.error("Error checking for newer draft version:", error);
+      }
+    };
+
+    // Function to sync media files from server to IndexedDB
+    const syncMediaFiles = async (mediaIds: string[]) => {
+      if (!mediaIds.length) return;
+
+      // For each media ID, check if it exists in IndexedDB
+      // If not, fetch it from the server and store it
+      const syncPromises = mediaIds.map(async (mediaId) => {
+        try {
+          // First check if media already exists in IndexedDB
+          const existingMedia = await getMediaFile(mediaId);
+
+          // Only fetch from server if we don't have it locally
+          if (!existingMedia) {
+            // Use a proper media fetch endpoint - NOT the upload endpoint
+            const response = await fetch(`/api/media/get?id=${mediaId}`);
+
+            if (!response.ok) {
+              throw new Error(`Failed to fetch media ${mediaId}`);
+            }
+
+            // Get the media as a blob
+            const blob = await response.blob();
+
+            // Create a proper File object with the media's MIME type
+            const file = new File([blob], mediaId, { type: blob.type });
+
+            try {
+              // First try to remove any existing entry to avoid constraint errors
+              await removeMediaFile(mediaId).catch(() => {
+                // Ignore errors here - it might not exist yet
+              });
+
+              // Then store the new file
+              await storeMediaFile(mediaId, file);
+              console.log(`Media ${mediaId} synced from server to IndexedDB`);
+            } catch (storageError) {
+              // If there's a constraint error, the file is already there
+              if ((storageError as Error).name === "ConstraintError") {
+                console.log(`Media ${mediaId} already exists in IndexedDB`);
+              } else {
+                throw storageError;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error syncing media ${mediaId}:`, error);
+          // Continue with other media files even if this one fails
+        }
+      });
+
+      // Wait for all media sync operations to complete
+      await Promise.allSettled(syncPromises);
+    };
+
+    // Start the check but don't wait for it
+
+    checkForNewerVersion();
+
+    // Return the local draft immediately
+    return localDraft;
+  }, [
+    editorState.selectedDraftId,
+    editorState.selectedDraftType,
+    refreshSidebar,
+  ]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

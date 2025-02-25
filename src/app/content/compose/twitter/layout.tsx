@@ -1,17 +1,15 @@
 // app/content/compose/twitter/layout.tsx
 "use client";
 import { Suspense } from "react";
-import React, { useState, useEffect, useRef } from "react";
-import { EditorProvider, useEditor } from "@/components/editor/context/Editor";
-import {
-  UserAccountProvider,
-  useUserAccount,
-} from "@/components/editor/context/account";
+import React, { useEffect } from "react";
+import { EditorProvider } from "@/components/editor/context/Editor";
+import { UserAccountProvider } from "@/components/editor/context/account";
 
 import LoadingState from "@/components/editor/LoadingState";
 import { KeyboardProvider, useKeyboard } from "@/contexts/keyboard-context";
 import KeyboardShortcutsDialog from "@/components/keyboard/KeyboardShortcutsDialog";
 import SearchModal from "@/components/search/SearchModal";
+import { syncAllDraftsFromServer } from "@/utils/sync";
 
 function WholeEditor({ children }: { children: React.ReactNode }) {
   const { showSearch, setShowSearch, showShortcuts, setShowShortcuts } =
@@ -23,6 +21,10 @@ function WholeEditor({ children }: { children: React.ReactNode }) {
     if (showSearch && showShortcuts) {
       setShowShortcuts(false);
     }
+  });
+
+  useEffect(() => {
+    syncAllDraftsFromServer();
   });
 
   // Monitor showShortcuts changes
@@ -76,27 +78,11 @@ export default function RootLayout({
     <KeyboardProvider>
       <UserAccountProvider>
         <EditorProvider>
-          {/* <AuthErrorHandler> */}
           <Suspense fallback={<LoadingState />}>
             <WholeEditor>{children}</WholeEditor>
           </Suspense>
-          {/* </AuthErrorHandler> */}
         </EditorProvider>
       </UserAccountProvider>
     </KeyboardProvider>
   );
-}
-
-// New component to handle auth errors within the provider context
-function AuthErrorHandler({ children }: { children: React.ReactNode }) {
-  const { error } = useUserAccount();
-
-  // If there's an auth error, redirect to login
-  useEffect(() => {
-    if (error) {
-      window.location.href = "/auth/twitter";
-    }
-  }, [error]);
-
-  return <>{children}</>;
 }

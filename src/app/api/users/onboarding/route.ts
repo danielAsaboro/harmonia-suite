@@ -1,26 +1,7 @@
-// import { NextResponse } from "next/server";
-
-// // src/app/api/onboarding/route.ts
-// export async function POST(req: NextRequest) {
-//   // Handle onboarding data submission
-//   // ...
-
-//   // Set onboarding cookie
-//   const response = NextResponse.json({ success: true });
-//   response.cookies.set("onboarding_complete", "true", {
-//     path: "/",
-//     httpOnly: true,
-//     sameSite: "lax",
-//   });
-
-//   return response;
-// }
-
 // src/app/api/users/onboarding/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
 import { prismaDb } from "@/lib/db/prisma_service";
-import { OnboardingPreferences } from "@/types/onboarding";
 import { cookies } from "next/headers";
 
 // Get current onboarding state
@@ -120,7 +101,7 @@ export async function POST(req: NextRequest) {
       const cookieStore = cookies();
       cookieStore.set("onboarding_complete", "true", {
         path: "/",
-        httpOnly: true,
+        httpOnly: false,
         sameSite: "lax",
       });
     }
