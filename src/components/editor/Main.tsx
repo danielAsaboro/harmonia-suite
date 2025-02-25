@@ -1277,7 +1277,8 @@ export default function PlayGround({
   return (
     <div className="w-full max-w-2xl mx-auto ">
       {/* Header Controls */}
-      <div className="flex justify-between items-center mb-4">
+      {/* Header Controls - Responsive Version */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0">
         <div className="flex items-center gap-2">
           <button
             onClick={hideEditor}
@@ -1288,16 +1289,15 @@ export default function PlayGround({
         </div>
 
         {/* Show different controls based on tab */}
-
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {activeTab === "drafts" && (
             <>
               <SaveStatus saveState={saveState} />
 
               <button
                 className={cn(
-                  "px-4 py-1.5 rounded-full flex items-center gap-2",
-                  "text-gray-400 hover:bg-gray-800",
+                  "px-3 sm:px-4 py-1.5 rounded-full flex items-center gap-1 sm:gap-2",
+                  "text-gray-400 hover:bg-gray-800 text-sm sm:text-base",
                   !isValidToPublish &&
                     "opacity-50 cursor-not-allowed hover:bg-transparent"
                 )}
@@ -1309,15 +1309,15 @@ export default function PlayGround({
                     : undefined
                 }
               >
-                <Clock size={18} />
-                Schedule
+                <Clock size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span>Schedule</span>
               </button>
 
               <button
                 onClick={handlePublish}
                 className={cn(
-                  "px-4 py-1.5 bg-blue-500 text-white rounded-full",
-                  "hover:bg-blue-600 flex items-center gap-2",
+                  "px-3 sm:px-4 py-1.5 bg-blue-500 text-white rounded-full",
+                  "hover:bg-blue-600 flex items-center gap-1 sm:gap-2 text-sm sm:text-base",
                   !isValidToPublish &&
                     "opacity-50 cursor-not-allowed hover:bg-blue-500"
                 )}
@@ -1328,14 +1328,15 @@ export default function PlayGround({
                     : undefined
                 }
               >
-                <Send size={18} />
-                Publish
+                <Send size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span>Publish</span>
               </button>
               <button
-                className="transition-all duration-200"
+                className="transition-all duration-200 p-1.5 sm:p-2 hover:bg-gray-800 rounded-full"
                 onClick={toggleMetadataTab}
+                aria-label="Show metadata"
               >
-                <Info />
+                <Info size={16} className="sm:w-[18px] sm:h-[18px]" />
               </button>
             </>
           )}
@@ -1344,8 +1345,8 @@ export default function PlayGround({
             <button
               onClick={handlePublish}
               className={cn(
-                "px-4 py-1.5 bg-blue-500 text-white rounded-full",
-                "hover:bg-blue-600 flex items-center gap-2",
+                "px-3 sm:px-4 py-1.5 bg-blue-500 text-white rounded-full",
+                "hover:bg-blue-600 flex items-center gap-1 sm:gap-2 text-sm sm:text-base",
                 !isValidToPublish &&
                   "opacity-50 cursor-not-allowed hover:bg-blue-500"
               )}
@@ -1356,8 +1357,8 @@ export default function PlayGround({
                   : undefined
               }
             >
-              <Send size={18} />
-              Publish
+              <Send size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span>Publish</span>
             </button>
           )}
         </div>
@@ -1366,11 +1367,11 @@ export default function PlayGround({
       {/* content */}
       <div className="bg-gray-900 rounded-lg">
         {tweetsWithUniqueIds.map((tweet, index) => (
-          <div key={tweet.id} className="relative p-4">
-            {/* Thread line */}
+          <div key={tweet.id} className="relative p-2 sm:p-4">
+            {/* Thread line - made responsive with proper spacing */}
             {index < pageContent.tweets.length - 1 && (
               <div
-                className="absolute left-10 w-0.5 bg-gray-800"
+                className="absolute left-8 sm:left-10 w-0.5 bg-gray-800"
                 style={{
                   top: "4rem",
                   bottom: "-1rem",
@@ -1378,16 +1379,18 @@ export default function PlayGround({
               />
             )}
 
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
+              {/* Avatar with responsive sizing */}
               <div className="flex-shrink-0">{getAvatar()}</div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col gap-1 text-gray-400 items-start">
-                    <div className="flex">
+                {/* User info header with improved responsive behavior */}
+                <div className="flex items-start sm:items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 text-gray-400">
+                    <div className="flex items-center">
                       <span
                         className={cn(
-                          "font-bold",
+                          "font-bold text-sm sm:text-base",
                           isUserAccountDetailsLoading
                             ? "text-gray-600 animate-pulse"
                             : "text-white"
@@ -1402,6 +1405,7 @@ export default function PlayGround({
 
                     <span
                       className={cn(
+                        "text-xs sm:text-sm sm:ml-2",
                         isUserAccountDetailsLoading
                           ? "text-gray-700 animate-pulse"
                           : "text-gray-400"
@@ -1410,17 +1414,21 @@ export default function PlayGround({
                       {userTwitterHandle}
                     </span>
                   </div>
+
+                  {/* Delete button with responsive touch target */}
                   {(pageContent.tweets.length === 1 || index > 0) &&
                     activeTab === "drafts" && (
                       <button
                         onClick={() => handleDeleteTweet(index)}
-                        className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-red-500"
+                        className="p-1.5 sm:p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-red-500"
+                        aria-label="Delete tweet"
                       >
-                        <X size={18} />
+                        <X size={16} className="sm:w-[18px] sm:h-[18px]" />
                       </button>
                     )}
                 </div>
-                {/* Make textarea readonly if not in drafts */}
+
+                {/* Mention input with responsive text size */}
                 <MentionInput
                   value={tweet.content}
                   onFocus={() => setCurrentlyEditedTweet(index)}
@@ -1432,7 +1440,7 @@ export default function PlayGround({
                   placeholder={
                     index === 0 ? "What's happening?" : "Add to thread..."
                   }
-                  className="text-white min-h-[60px] mt-2"
+                  className="text-white text-sm sm:text-base min-h-[60px] mt-2 w-full"
                   onKeyDown={(e) => {
                     if (
                       activeTab === "drafts" &&
@@ -1452,9 +1460,9 @@ export default function PlayGround({
                   }}
                 />
 
-                {/* Media Preview */}
+                {/* Media Preview with responsive grid */}
                 {tweet.mediaIds && tweet.mediaIds.length > 0 && (
-                  <div className="mt-2">
+                  <div className="mt-2 w-full">
                     <MediaPreview
                       mediaIds={tweet.mediaIds}
                       onRemove={(mediaIndex) => {
@@ -1467,21 +1475,21 @@ export default function PlayGround({
                     />
                   </div>
                 )}
-                {/* Extra Options*/}
-                <div className="mt-4 flex items-center justify-between">
-                  {/* Front Side */}
+
+                {/* Extra Options - made responsive */}
+                <div className="mt-3 sm:mt-4 flex items-center justify-between">
+                  {/* Media upload button - responsive sizing */}
                   <MediaUpload
                     onUpload={(files) => handleMediaUpload(index, files)}
                     maxFiles={4 - (tweet.mediaIds?.length || 0)}
                     disabled={activeTab != "drafts"}
                   />
 
-                  {/* Right Side */}
-
+                  {/* Right side controls - responsively shown/hidden */}
                   <div
                     className={
                       currentlyEditedTweet === index
-                        ? "flex justify-evenly items-center gap-3"
+                        ? "flex justify-end items-center gap-1 sm:gap-3"
                         : "hidden"
                     }
                   >
@@ -1509,68 +1517,72 @@ export default function PlayGround({
         ))}
       </div>
 
-      <div className="flex justify-between mt-6">
+      {/* Bottom controls - Responsive version */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-3 sm:gap-0">
         <button
           onClick={() => setShowPreview(true)}
-          className="flex items-center gap-2 px-4 py-2 text-blue-400 hover:bg-gray-800 rounded-full"
+          className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-blue-400 
+    hover:bg-gray-800 rounded-full text-sm sm:text-base w-full sm:w-auto"
         >
-          <Eye size={18} />
-          Preview
+          <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />
+          <span>Preview</span>
         </button>
+
         {activeTab === "drafts" ? (
           <button
             onClick={handleSaveAsDraft}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 rounded-full hover:bg-blue-600 text-white"
+            className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 
+      bg-blue-500 rounded-full hover:bg-blue-600 text-white text-sm sm:text-base w-full sm:w-auto"
           >
-            <Save size={18} />
-            Save {pageContent.isThread ? "Thread" : "Tweet"} as draft
+            <Save size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <span>
+              Save {pageContent.isThread ? "Thread" : "Tweet"} as draft
+            </span>
           </button>
         ) : activeTab === "scheduled" ? (
           activeTab === "scheduled" && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  // Convert to draft
-                  const updatedTweets = pageContent.tweets.map((tweet) => ({
-                    ...tweet,
-                    status: "draft" as const,
-                    scheduledFor: undefined,
-                  }));
+            <button
+              onClick={() => {
+                // Convert to draft
+                const updatedTweets = pageContent.tweets.map((tweet) => ({
+                  ...tweet,
+                  status: "draft" as const,
+                  scheduledFor: undefined,
+                }));
 
-                  if (pageContent.isThread && pageContent.threadId) {
-                    const thread: Thread = {
-                      id: pageContent.threadId,
-                      tweetIds: updatedTweets.map((t) => t.id),
-                      createdAt: new Date(),
-                      status: "draft",
-                    };
-                    tweetStorage.saveThread(thread, updatedTweets, true);
-                  } else {
-                    tweetStorage.saveTweet(updatedTweets[0], true);
-                  }
+                if (pageContent.isThread && pageContent.threadId) {
+                  const thread: Thread = {
+                    id: pageContent.threadId,
+                    tweetIds: updatedTweets.map((t) => t.id),
+                    createdAt: new Date(),
+                    status: "draft",
+                  };
+                  tweetStorage.saveThread(thread, updatedTweets, true);
+                } else {
+                  tweetStorage.saveTweet(updatedTweets[0], true);
+                }
 
-                  hideEditor();
-                  setActiveTab("drafts");
-                  refreshSidebar();
-                }}
-                className="px-4 py-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center gap-2"
-              >
-                <PenSquare size={18} />
-                Switch to Draft
-              </button>
-            </div>
+                hideEditor();
+                setActiveTab("drafts");
+                refreshSidebar();
+              }}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 
+        bg-blue-500 rounded-full hover:bg-blue-600 text-white text-sm sm:text-base w-full sm:w-auto"
+            >
+              <PenSquare size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span>Switch to Draft</span>
+            </button>
           )
         ) : (
           activeTab === "published" && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleRepurpose}
-                className="px-4 py-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center gap-2"
-              >
-                <PenSquare size={18} />
-                Repurpose {pageContent.isThread ? "Thread" : "Tweet"}
-              </button>
-            </div>
+            <button
+              onClick={handleRepurpose}
+              className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 
+        bg-blue-500 rounded-full hover:bg-blue-600 text-white text-sm sm:text-base w-full sm:w-auto"
+            >
+              <PenSquare size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span>Repurpose {pageContent.isThread ? "Thread" : "Tweet"}</span>
+            </button>
           )
         )}
       </div>

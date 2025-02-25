@@ -1,4 +1,4 @@
-import { Tweet } from "@/types/tweet";
+import { ThreadData, Tweet } from "@/types/tweet";
 import { tweetStorage } from "./localStorage";
 
 export async function syncAllDraftsFromServer() {
@@ -21,8 +21,7 @@ export async function syncAllDraftsFromServer() {
 
     // Process threads
     if (data.threads && Array.isArray(data.threads)) {
-      data.threads.forEach((threadData) => {
-        console.log(" checking thread data", threadData);
+      data.threads.forEach((threadData: ThreadData) => {
         tweetStorage.saveThread(threadData.thread, threadData.tweets, false);
       });
     }

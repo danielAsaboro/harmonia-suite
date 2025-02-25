@@ -1,4 +1,5 @@
-// src/components/editor/media/MediaPreview.tsx
+// // src/components/editor/media/MediaPreview.tsx
+
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
@@ -26,7 +27,6 @@ export default function MediaPreview({
       const urls = await Promise.all(
         mediaIds.map((mediaId) => getMediaUrl(mediaId))
       );
-      // console.log("   inspecting the urls", urls);
       setMediaUrls(urls);
     };
 
@@ -115,9 +115,9 @@ export default function MediaPreview({
                   <Image
                     src={url}
                     alt={`Media ${index + 1}`}
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 640px) 96px, 96px"
+                    className="object-cover"
                   />
                 ) : (
                   <video
@@ -129,9 +129,13 @@ export default function MediaPreview({
               </div>
               {isDraft && (
                 <button
-                  onClick={() => onRemove(index)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(index);
+                  }}
                   className="absolute -top-2 -right-2 bg-gray-900 rounded-full p-1 
-                           hover:bg-gray-800 text-red-400"
+                           hover:bg-gray-800 text-red-400 z-10"
+                  aria-label="Remove media"
                 >
                   ✕
                 </button>
@@ -176,7 +180,8 @@ export default function MediaPreview({
                   {currentFullscreenIndex + 1} / {mediaUrls.length}
                 </span>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setFullscreenMedia(null);
                     setCurrentFullscreenIndex(-1);
                   }}
@@ -191,16 +196,24 @@ export default function MediaPreview({
               {mediaUrls.length > 1 && (
                 <>
                   <button
-                    onClick={() => handleNavigation("left")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNavigation("left");
+                    }}
                     className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray-900/50 hover:bg-gray-900 
-                           rounded-full p-3 text-white transition-colors"
+                           rounded-full p-2 sm:p-3 text-white transition-colors z-10"
+                    aria-label="Previous image"
                   >
                     ←
                   </button>
                   <button
-                    onClick={() => handleNavigation("right")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNavigation("right");
+                    }}
                     className="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-900/50 hover:bg-gray-900 
-                           rounded-full p-3 text-white transition-colors"
+                           rounded-full p-2 sm:p-3 text-white transition-colors z-10"
+                    aria-label="Next image"
                   >
                     →
                   </button>

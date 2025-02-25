@@ -39,6 +39,11 @@ export interface UnifiedTweetComposerProps {
   draftId: string | null;
   draftType: "tweet" | "thread" | null;
 }
+
+export interface ThreadData {
+  thread: Thread;
+  tweets: Tweet[];
+}
 // Types for media storage
 export interface StoredMedia {
   id: string;

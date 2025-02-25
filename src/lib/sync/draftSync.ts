@@ -1,6 +1,6 @@
 // // src/lib/sync/draftSync.ts
 
-import { Tweet, Thread, ThreadWithTweets } from "@/types/tweet";
+import { Tweet, ThreadWithTweets } from "@/types/tweet";
 import { tweetStorage } from "@/utils/localStorage";
 
 interface PendingSync {
@@ -13,8 +13,7 @@ class DraftSyncService {
   private static instance: DraftSyncService;
   private pendingSyncs: Map<string, PendingSync> = new Map();
   private syncInterval: NodeJS.Timeout | null = null;
-  // private SYNC_INTERVAL = 15 * 1000; // 15 seconds for testing
-  private SYNC_INTERVAL = 30 * 1000; // 30 secs in milliseconds
+  private SYNC_INTERVAL = 15 * 1000; // 30 secs in milliseconds
   private isSyncing = false;
 
   private constructor() {
@@ -133,69 +132,73 @@ class DraftSyncService {
     }
   }
 
+  // Add this new method to your DraftSyncService class
+  async fetchLatestDraft(
+    id: string,
+    type: "tweet" | "thread"
+  ): Promise<boolean> {
+    try {
+      // Fetch the latest version from the backend
+      const response = await fetch(`/api/drafts?type=${type}&id=${id}`);
 
-// Add this new method to your DraftSyncService class
-async fetchLatestDraft(id: string, type: "tweet" | "thread"): Promise<boolean> {
-  try {
-    // Fetch the latest version from the backend
-    const response = await fetch(`/api/drafts?type=${type}&id=${id}`);
-    
-    if (!response.ok) {
-      console.error(`Failed to fetch latest ${type}: ${response.statusText}`);
+      if (!response.ok) {
+        console.error(`Failed to fetch latest ${type}: ${response.statusText}`);
+        return false;
+      }
+
+      const serverData = await response.json();
+
+      // For tweets, compare timestamps directly
+      if (type === "tweet") {
+        const localTweet = tweetStorage.getTweets().find((t) => t.id === id);
+
+        if (!localTweet) {
+          // If not in local storage, save the server version
+          tweetStorage.saveTweet(serverData, false);
+          return true;
+        }
+
+        // Compare timestamps - server data has updatedAt, local has lastModified
+        const serverTime = new Date(serverData.updatedAt).getTime();
+        const localTime = localTweet.lastSaved
+          ? new Date(localTweet.lastSaved).getTime()
+          : new Date(localTweet.createdAt).getTime();
+
+        // If server is newer, update local
+        if (serverTime > localTime) {
+          tweetStorage.saveTweet(serverData, false);
+          return true;
+        }
+      }
+      // For threads, handle the thread and its tweets
+      else if (type === "thread") {
+        const localThread = tweetStorage.getThreadWithTweets(id);
+
+        if (!localThread) {
+          // If not in local storage, save the server version
+          tweetStorage.saveThread(serverData.thread, serverData.tweets, false);
+          return true;
+        }
+
+        // Compare timestamps
+        const serverTime = new Date(serverData.thread.updatedAt).getTime();
+        const localTime = new Date(
+          localThread.lastModified || localThread.createdAt
+        ).getTime();
+
+        // If server is newer, update local
+        if (serverTime > localTime) {
+          tweetStorage.saveThread(serverData.thread, serverData.tweets, false);
+          return true;
+        }
+      }
+
+      return false; // No updates needed
+    } catch (error) {
+      console.error(`Error fetching latest ${type}:`, error);
       return false;
     }
-    
-    const serverData = await response.json();
-    
-    // For tweets, compare timestamps directly
-    if (type === "tweet") {
-      const localTweet = tweetStorage.getTweets().find(t => t.id === id);
-      
-      if (!localTweet) {
-        // If not in local storage, save the server version
-        tweetStorage.saveTweet(serverData, false);
-        return true;
-      }
-      
-      // Compare timestamps - server data has updatedAt, local has lastModified
-      const serverTime = new Date(serverData.updatedAt).getTime();
-      const localTime = localTweet.lastSaved ? 
-        new Date(localTweet.lastSaved).getTime() : 
-        new Date(localTweet.createdAt).getTime();
-      
-      // If server is newer, update local
-      if (serverTime > localTime) {
-        tweetStorage.saveTweet(serverData, false);
-        return true;
-      }
-    } 
-    // For threads, handle the thread and its tweets
-    else if (type === "thread") {
-      const localThread = tweetStorage.getThreadWithTweets(id);
-      
-      if (!localThread) {
-        // If not in local storage, save the server version
-        tweetStorage.saveThread(serverData.thread, serverData.tweets, false);
-        return true;
-      }
-      
-      // Compare timestamps
-      const serverTime = new Date(serverData.thread.updatedAt).getTime();
-      const localTime = new Date(localThread.lastModified || localThread.createdAt).getTime();
-      
-      // If server is newer, update local
-      if (serverTime > localTime) {
-        tweetStorage.saveThread(serverData.thread, serverData.tweets, false);
-        return true;
-      }
-    }
-    
-    return false; // No updates needed
-  } catch (error) {
-    console.error(`Error fetching latest ${type}:`, error);
-    return false;
   }
-}
 
   queueForSync(id: string, type: "tweet" | "thread") {
     this.pendingSyncs.set(id, {

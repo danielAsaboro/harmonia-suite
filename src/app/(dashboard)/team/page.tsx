@@ -47,7 +47,7 @@ interface PendingInvite {
 interface TeamMember {
   id: string;
   handle: string;
-  publicKey: string;
+  publicKey?: string;
   role: "admin" | "creator";
   addedAt: Date;
   lastActive: Date;
@@ -541,7 +541,9 @@ export default function TeamManagementPage() {
                         {member.handle}
                       </div>
                       <div className="font-mono text-sm">
-                        {`${member.publicKey.slice(0, 6)}` + '...' + `${member.publicKey.slice(-4)}`}
+                        {member.publicKey
+                          ? `${member.publicKey.slice(0, 6)}...${member.publicKey.slice(-4)}`
+                          : "Not added yet"}
                       </div>
                       <div>
                         <Badge
@@ -566,7 +568,7 @@ export default function TeamManagementPage() {
                             setDeleteModal({
                               isOpen: true,
                               memberId: member.id,
-                              memberKey: member.publicKey,
+                              memberKey: member.publicKey!,
                             })
                           }
                           className="text-red-400 hover:text-red-500"
