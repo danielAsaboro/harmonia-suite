@@ -18,6 +18,8 @@ export function useTwitterAccount(twitterId: string | undefined) {
       if (!instructions || !publicKey) throw new Error("Not connected");
 
       try {
+        console.log(" twitterid ", twitterId);
+        console.log(" twitter handle ", twitterHandle);
         const tx = instructions.registerTwitterAccount(
           twitterId,
           twitterHandle,
@@ -121,7 +123,8 @@ export function useTwitterAccount(twitterId: string | undefined) {
       return isRegistered;
     } catch (err) {
       console.error("Error checking registration:", err);
-      throw err;
+      // throw err;
+      return false;
     }
   }, [twitterId, fetchAccount]);
 
