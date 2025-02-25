@@ -387,9 +387,12 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
             shouldUpdate = true;
 
             // Collect all media IDs from all tweets in the thread
-            const allMediaIds = serverData.tweets.reduce((ids, tweet) => {
-              return ids.concat(tweet.mediaIds || []);
-            }, []);
+            const allMediaIds = serverData.tweets.reduce(
+              (ids: string[], tweet: Tweet) => {
+                return ids.concat(tweet.mediaIds || []);
+              },
+              []
+            );
 
             // Sync all media files before saving the thread
             await syncMediaFiles(allMediaIds);

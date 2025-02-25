@@ -1,4 +1,6 @@
 // /app/api/team/invite/verify/route.ts
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { verifyInviteToken } from "@/utils/jwt";
 import { prismaDb } from "@/lib/db/prisma_service";

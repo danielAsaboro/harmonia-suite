@@ -1,4 +1,5 @@
 // In /app/api/media/get/route.ts
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { fileStorage } from "@/lib/storage";

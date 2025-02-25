@@ -1,4 +1,6 @@
 // /app/api/email/preview/route.ts
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { TeamInviteEmail } from "@/lib/email/templates/teamInvite";
 import { render } from "@react-email/render";
