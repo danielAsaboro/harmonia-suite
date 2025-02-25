@@ -92,12 +92,17 @@ export default function ThreadPreview({
                 <div className="flex-shrink-0">{getAvatar()}</div>
 
                 <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-bold text-white">{userName}</span>
-                    <VerificationBadge variant={verifiedType as BadgeVariant} />
-                    <span className="text-gray-500">{userHandle}</span>
-                    <span className="text-gray-500">·</span>
-                    <span className="text-gray-500">{tweet.status}</span>
+                  <div className="flex justify-between space-x-2">
+                    <div className="flex flex-col">
+                      <div className="flex">
+                        <span className="font-bold text-white">{userName}</span>
+                        <VerificationBadge
+                          variant={verifiedType as BadgeVariant}
+                        />
+                      </div>
+                      <span className="text-gray-500">{userHandle}</span>
+                    </div>
+                      <span className="text-gray-500">{tweet.status}</span>
                   </div>
 
                   <div className="mt-2 whitespace-pre-wrap text-white">

@@ -1383,18 +1383,23 @@ export default function PlayGround({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-gray-400">
-                    <span
-                      className={cn(
-                        "font-bold",
-                        isUserAccountDetailsLoading
-                          ? "text-gray-600 animate-pulse"
-                          : "text-white"
-                      )}
-                    >
-                      {userName}
-                    </span>
-                    <VerificationBadge variant={verifiedType as BadgeVariant} />
+                  <div className="flex flex-col gap-1 text-gray-400 items-start">
+                    <div className="flex">
+                      <span
+                        className={cn(
+                          "font-bold",
+                          isUserAccountDetailsLoading
+                            ? "text-gray-600 animate-pulse"
+                            : "text-white"
+                        )}
+                      >
+                        {userName}
+                      </span>
+                      <VerificationBadge
+                        variant={verifiedType as BadgeVariant}
+                      />
+                    </div>
+
                     <span
                       className={cn(
                         isUserAccountDetailsLoading
