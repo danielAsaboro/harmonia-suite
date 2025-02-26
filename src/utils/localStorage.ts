@@ -2,7 +2,6 @@
 
 import { draftSync } from "@/lib/sync/draftSync";
 import { Tweet, Thread, ThreadWithTweets } from "@/types/tweet";
-import { debounce } from "lodash";
 
 interface TwitterUserDetails {
   id: string;
@@ -23,7 +22,7 @@ interface TwitterUserDetails {
 export class TweetStorageService {
   private static instance: TweetStorageService;
   private readonly BASE_KEY = "helm_app";
-  private readonly USER_KEY = "current_user_id";
+  private readonly USER_KEY = `${this.BASE_KEY}_current_user_id`;
   private lastSave: number = Date.now();
 
   private constructor() {}

@@ -19,7 +19,7 @@ import {
   User,
 } from "lucide-react";
 import Image from "next/image";
-// import LogoutModal from "@/components/auth/LogoutModal";
+import LogoutModal from "@/components/auth/LogoutModal";
 
 const navigationItems = [
   {
@@ -128,8 +128,7 @@ const Sidebar = ({ className }: SidebarProps) => {
           "mt-6 flex items-center gap-2 rounded-lg px-3 py-2 outline-0",
           "border-2 border-green-400 bg-transparent text-green-400 hover:bg-green-400 hover:text-white",
           "transition-colors duration-200",
-          pathname === "/team" &&
-            "bg-green-400 text-white hover:bg-green-500"
+          pathname === "/team" && "bg-green-400 text-white hover:bg-green-500"
         )}
       >
         <User className="h-5 w-5" />
@@ -155,10 +154,10 @@ const Sidebar = ({ className }: SidebarProps) => {
         </button>
       </div>
 
-      {/* <LogoutModal
+      <LogoutModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
-      /> */}
+      />
     </div>
   );
 };

@@ -170,6 +170,54 @@ export function UserAccountProvider({
     }
   }, []);
 
+  const forceReloadUserData = useCallback(async () => {
+    try {
+      setUserAccount((prev) => ({ ...prev, isLoading: true }));
+
+      // Skip cache check and fetch directly from API
+      const response = await fetch("/api/users/profile");
+
+      if (!response.ok) {
+        throw new Error("Failed to get user profile data");
+      }
+
+      const profileData = await response.json();
+
+      const userDetails = {
+        id: profileData.userId,
+        name: profileData.name,
+        handle: profileData.username,
+        profileImageUrl: profileData.profileImageUrl,
+        verified: profileData.verified || false,
+        verifiedType: profileData.verifiedType || null,
+        email: profileData.email,
+        emailVerified: profileData.emailVerified,
+        walletAddress: profileData.walletAddress,
+        timezone: profileData.timezone || "UTC",
+        contentPreferences: profileData.contentPreferences,
+        teamMemberships: profileData.teamMemberships,
+      };
+
+      // Update localStorage with fresh data
+      tweetStorage.saveUserDetails(userDetails);
+
+      setUserAccount({
+        ...userDetails,
+        handle: `@${userDetails.handle}`,
+        isLoading: false,
+      });
+    } catch (error) {
+      setUserAccount((prevState) => ({
+        ...prevState,
+        isLoading: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load user profile data",
+      }));
+    }
+  }, []);
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
@@ -223,7 +271,7 @@ export function UserAccountProvider({
 
   const contextValue: UserAccountType = {
     ...userAccount,
-    reloadUserData: fetchUserData,
+    reloadUserData: forceReloadUserData,
     getAvatar,
   };
 
