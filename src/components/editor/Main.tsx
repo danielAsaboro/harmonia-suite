@@ -1,6 +1,6 @@
 // components/editor/Main.tsx
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Tweet,
   Thread,
@@ -1175,6 +1175,158 @@ export default function PlayGround({
     window.addEventListener("keydown", handleDraftSwitch);
     return () => window.removeEventListener("keydown", handleDraftSwitch);
   }, [currentlyEditedTweet, pageContent.tweets.length]);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // Check if any of our textareas is currently focused
+      const activeElement = document.activeElement;
+      const textareaIndex = textareaRefs.current.findIndex(
+        (ref) => ref === activeElement
+      );
+
+      // Skip if no textarea is focused or if not in drafts mode
+      if (textareaIndex === -1 || activeTab !== "drafts") {
+        return;
+      }
+
+      // Skip if the tweet is submitted
+      if (pageContent.tweets[textareaIndex].isSubmitted) {
+        return;
+      }
+
+      // Check for images in clipboard
+      if (e.clipboardData && e.clipboardData.items) {
+        const items = e.clipboardData.items;
+        const imageFiles: File[] = [];
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf("image") !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+              imageFiles.push(file);
+            }
+          }
+        }
+
+        // If we found images, handle them
+        if (imageFiles.length > 0) {
+          // Prevent default to avoid pasting the image as text/html content
+          e.preventDefault();
+
+          // Check media limit
+          const currentMedia = pageContent.tweets[textareaIndex].mediaIds || [];
+          const totalFiles = currentMedia.length + imageFiles.length;
+
+          if (totalFiles > 4) {
+            alert("Maximum 4 media files per tweet");
+            return;
+          }
+
+          // Upload the images
+          handleMediaUploadCallback(textareaIndex, imageFiles);
+          // handleMediaUpload(textareaIndex, imageFiles);
+        }
+      }
+    };
+
+    // Add the global paste event listener
+    document.addEventListener("paste", handlePaste);
+
+    // Clean up
+    return () => {
+      document.removeEventListener("paste", handlePaste);
+    };
+  }, [activeTab, pageContent.tweets, handleMediaUpload]);
+
+  // Add this near the top of your component, with other hooks and state definitions
+  const handleMediaUploadCallback = useCallback(
+    (tweetIndex: number, files: File[]) => {
+      // Don't allow editing submitted content
+      if (pageContent.tweets[tweetIndex].isSubmitted) {
+        alert(
+          "This content has been submitted for approval and cannot be edited."
+        );
+        return;
+      }
+
+      const newTweets = [...pageContent.tweets];
+      const currentMedia = newTweets[tweetIndex].mediaIds || [];
+      const totalFiles = currentMedia.length + files.length;
+
+      if (totalFiles > 4) {
+        alert("Maximum 4 media files per tweet");
+        return;
+      }
+
+      // Your existing upload logic
+      (async () => {
+        try {
+          // Upload files to the backend and get their IDs
+          const mediaIds = await Promise.all(
+            files.map(async (file) => {
+              // Create form data for the file
+              const formData = new FormData();
+              formData.append("file", file);
+
+              // Upload to backend
+              const response = await fetch("/api/media/upload", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to upload media");
+              }
+
+              const data = await response.json();
+
+              // Store in IndexedDB for local caching
+              await storeMediaFile(data.id, file);
+
+              return data.id;
+            })
+          );
+
+          // Update the tweet's media array
+          newTweets[tweetIndex] = {
+            ...newTweets[tweetIndex],
+            mediaIds: [...currentMedia, ...mediaIds],
+          };
+
+          // Save the updated tweets
+          setPageContent((prev) => ({
+            isThread: prev.isThread,
+            threadId: prev.threadId,
+            tweets: newTweets,
+          }));
+          setContentChanged(true);
+
+          // If it's a thread, save with thread context
+          if (pageContent.isThread && pageContent.threadId) {
+            const thread: Thread = {
+              id: pageContent.threadId,
+              tweetIds: newTweets.map((t) => t.id),
+              createdAt: new Date(),
+              status: "draft",
+            };
+            tweetStorage.saveThread(thread, newTweets, true);
+          } else {
+            // For single tweet
+            tweetStorage.saveTweet(newTweets[0], true);
+          }
+        } catch (error) {
+          console.error("Error uploading media:", error);
+          alert("Failed to upload media");
+        }
+      })();
+    },
+    [
+      pageContent.tweets,
+      pageContent.isThread,
+      pageContent.threadId,
+      setContentChanged,
+    ]
+  );
 
   if (isLoading) {
     return (
