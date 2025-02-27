@@ -10,6 +10,11 @@ interface MentionInputProps {
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   maxLength?: number;
+  // New props for navigation and content splitting
+  onSplitContent?: (beforeCursor: string, afterCursor: string) => void;
+  onNavigateUp?: () => void;
+  onNavigateDown?: () => void;
+  onMergeWithPrevious?: () => void;
 }
 
 const DEFAULT_TEXTAREA_HEIGHT = "60px";
@@ -27,6 +32,10 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
       onFocus,
       onKeyDown,
       maxLength = MAX_TWEET_LENGTH,
+      onSplitContent,
+      onNavigateUp,
+      onNavigateDown,
+      onMergeWithPrevious,
     },
     ref
   ) => {
@@ -136,6 +145,65 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
         : `${e.target.scrollHeight}px`;
     };
 
+    // New handler for keyboard navigation and content splitting
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Call the original onKeyDown if provided
+      if (onKeyDown) {
+        onKeyDown(e);
+      }
+
+      // Get textarea and selection info
+      const textarea = e.currentTarget;
+      const { selectionStart, selectionEnd, value: text } = textarea;
+
+      // Handle Shift+Enter for content splitting
+      if (e.key === "Enter" && e.shiftKey && onSplitContent && !readOnly) {
+        e.preventDefault();
+
+        // Split content at cursor position
+        const beforeCursor = text.substring(0, selectionStart);
+        const afterCursor = text.substring(selectionStart);
+
+        // Call handler with both parts
+        onSplitContent(beforeCursor, afterCursor);
+        return;
+      }
+
+      // Handle arrow key navigation between inputs
+      // Up arrow at beginning moves to previous input
+      if (e.key === "ArrowUp" && selectionStart === 0 && onNavigateUp) {
+        e.preventDefault();
+        onNavigateUp();
+        return;
+      }
+
+      // Down arrow at end moves to next input
+      if (
+        e.key === "ArrowDown" &&
+        selectionStart === text.length &&
+        onNavigateDown
+      ) {
+        e.preventDefault();
+        onNavigateDown();
+        return;
+      }
+
+      // Add new handler for backspace at beginning to merge with previous tweet
+      if (
+        e.key === "Backspace" &&
+        selectionStart === 0 &&
+        selectionEnd === 0 &&
+        onNavigateUp
+      ) {
+        // We need a new prop for this functionality
+        if (typeof onMergeWithPrevious === "function") {
+          e.preventDefault();
+          onMergeWithPrevious();
+          return;
+        }
+      }
+    };
+
     useEffect(() => {
       formatContent(value);
     }, [value]);
@@ -147,7 +215,7 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
           value={value}
           onChange={handleChange}
           onFocus={onFocus}
-          onKeyDown={onKeyDown}
+          onKeyDown={handleKeyDown} // Use our enhanced handler
           placeholder={placeholder}
           className={`w-full bg-transparent border-none resize-none focus:ring-0 focus:outline-none text-transparent caret-white ${className}`}
           readOnly={readOnly}

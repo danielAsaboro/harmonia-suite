@@ -1327,6 +1327,227 @@ export default function PlayGround({
     ]
   );
 
+  // Handle splitting content on Shift+Enter
+  const handleSplitContent = (
+    index: number,
+    beforeCursor: string,
+    afterCursor: string
+  ) => {
+    // Don't allow splitting if content is submitted
+    if (pageContent.tweets[index].isSubmitted) {
+      return;
+    }
+
+    const newTweets = [...pageContent.tweets];
+
+    // Update the current tweet with content before cursor
+    newTweets[index] = {
+      ...newTweets[index],
+      content: beforeCursor,
+      teamId: selectedTeamId || newTweets[index].teamId,
+    };
+
+    // Create a new tweet with content after cursor
+    const newTweetId = `tweet-${uuidv4()}`;
+    const newTweet: Tweet = {
+      id: newTweetId,
+      content: afterCursor,
+      mediaIds: [],
+      createdAt: new Date(),
+      status: "draft" as TweetStatus,
+      threadId: pageContent.threadId,
+      position: index + 1,
+      teamId: selectedTeamId || undefined,
+    };
+
+    // Insert new tweet after the current one
+    newTweets.splice(index + 1, 0, newTweet);
+
+    // Update positions for all tweets after this one
+    for (let i = index + 1; i < newTweets.length; i++) {
+      newTweets[i] = {
+        ...newTweets[i],
+        position: i,
+      };
+    }
+
+    // Handle thread state updates
+    if (pageContent.isThread && pageContent.threadId) {
+      // Update existing thread
+      const thread: Thread = {
+        id: pageContent.threadId,
+        tweetIds: newTweets.map((t) => t.id),
+        createdAt: new Date(),
+        status: "draft",
+        teamId: selectedTeamId || undefined,
+      };
+
+      setPageContent({
+        isThread: true,
+        threadId: pageContent.threadId,
+        tweets: newTweets,
+      });
+
+      tweetStorage.saveThread(thread, newTweets, true);
+    } else {
+      // Convert single tweet to thread
+      const newThreadId = `thread-${uuidv4()}`;
+
+      // Update all tweets to have the new threadId
+      for (let i = 0; i < newTweets.length; i++) {
+        newTweets[i] = {
+          ...newTweets[i],
+          threadId: newThreadId,
+          position: i,
+        };
+      }
+
+      const thread: Thread = {
+        id: newThreadId,
+        tweetIds: newTweets.map((t) => t.id),
+        createdAt: new Date(),
+        status: "draft",
+        teamId: selectedTeamId || undefined,
+      };
+
+      setPageContent({
+        isThread: true,
+        threadId: newThreadId,
+        tweets: newTweets,
+      });
+
+      tweetStorage.saveThread(thread, newTweets, true);
+    }
+
+    // Focus the new input field and place cursor at beginning
+    setTimeout(() => {
+      const nextTextarea = textareaRefs.current[index + 1];
+      if (nextTextarea) {
+        nextTextarea.focus();
+        nextTextarea.setSelectionRange(0, 0);
+      }
+    }, 0);
+
+    refreshSidebar();
+  };
+
+  // Handle navigating up with arrow keys
+  const handleNavigateUp = (index: number) => {
+    if (index > 0) {
+      const prevTextarea = textareaRefs.current[index - 1];
+      if (prevTextarea) {
+        prevTextarea.focus();
+        // Place cursor at the end of previous content
+        const contentLength = pageContent.tweets[index - 1].content.length;
+        prevTextarea.setSelectionRange(contentLength, contentLength);
+        setCurrentlyEditedTweet(index - 1);
+      }
+    }
+  };
+
+  // Handle navigating down with arrow keys
+  const handleNavigateDown = (index: number) => {
+    if (index < pageContent.tweets.length - 1) {
+      const nextTextarea = textareaRefs.current[index + 1];
+      if (nextTextarea) {
+        nextTextarea.focus();
+        // Place cursor at beginning of next content
+        nextTextarea.setSelectionRange(0, 0);
+        setCurrentlyEditedTweet(index + 1);
+      }
+    }
+  };
+
+  const handleMergeWithPrevious = (index: number) => {
+    // Can't merge the first tweet or submitted tweets
+    if (
+      index === 0 ||
+      pageContent.tweets[index].isSubmitted ||
+      pageContent.tweets[index - 1].isSubmitted
+    ) {
+      return;
+    }
+
+    const newTweets = [...pageContent.tweets];
+
+    // Get content from both tweets
+    const previousContent = newTweets[index - 1].content;
+    const currentContent = newTweets[index].content;
+
+    // Merge content into the previous tweet
+    newTweets[index - 1] = {
+      ...newTweets[index - 1],
+      content: previousContent + currentContent,
+    };
+
+    // Remove the current tweet
+    newTweets.splice(index, 1);
+
+    // Update positions for all tweets after this one
+    for (let i = index - 1; i < newTweets.length; i++) {
+      newTweets[i] = {
+        ...newTweets[i],
+        position: i,
+      };
+    }
+
+    // Handle special case where merging would leave only one tweet
+    if (newTweets.length === 1 && pageContent.isThread) {
+      // Convert thread to single tweet
+      const singleTweet: Tweet = {
+        ...newTweets[0],
+        threadId: undefined,
+        position: undefined,
+      };
+
+      setPageContent({
+        isThread: false,
+        threadId: undefined,
+        tweets: [singleTweet],
+      });
+
+      // Remove the thread and save as single tweet
+      if (pageContent.threadId) {
+        cleanupMediaAndDeleteThread(pageContent.threadId).then(() => {
+          tweetStorage.saveTweet(singleTweet, true);
+        });
+      }
+    } else if (pageContent.isThread && pageContent.threadId) {
+      // Update thread with new arrangement
+      const thread: Thread = {
+        id: pageContent.threadId,
+        tweetIds: newTweets.map((t) => t.id),
+        createdAt: new Date(),
+        status: "draft",
+        teamId: selectedTeamId || undefined,
+      };
+
+      setPageContent({
+        isThread: true,
+        threadId: pageContent.threadId,
+        tweets: newTweets,
+      });
+
+      tweetStorage.saveThread(thread, newTweets, true);
+    }
+
+    // Focus the previous input and set cursor at the join point
+    setTimeout(() => {
+      const prevTextarea = textareaRefs.current[index - 1];
+      if (prevTextarea) {
+        prevTextarea.focus();
+        // Set cursor at the point where the texts were merged
+        prevTextarea.setSelectionRange(
+          previousContent.length,
+          previousContent.length
+        );
+        setCurrentlyEditedTweet(index - 1);
+      }
+    }, 0);
+
+    refreshSidebar();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1516,17 +1737,20 @@ export default function PlayGround({
                   className={`text-white text-sm sm:text-base min-h-[60px] mt-2 w-full ${
                     tweet.isSubmitted ? "cursor-not-allowed" : ""
                   }`}
-                  onKeyDown={(e) => {
-                    if (
-                      activeTab === "drafts" &&
-                      e.key === "Enter" &&
-                      e.shiftKey &&
-                      !tweet.isSubmitted
-                    ) {
-                      e.preventDefault();
-                      addTweetToThread(index);
-                    }
-                  }}
+                  // Add new handlers
+                  onSplitContent={(beforeCursor, afterCursor) =>
+                    activeTab === "drafts" &&
+                    !tweet.isSubmitted &&
+                    handleSplitContent(index, beforeCursor, afterCursor)
+                  }
+                  onNavigateUp={() => handleNavigateUp(index)}
+                  onNavigateDown={() => handleNavigateDown(index)}
+                  onMergeWithPrevious={() =>
+                    activeTab === "drafts" &&
+                    !tweet.isSubmitted &&
+                    handleMergeWithPrevious(index)
+                  }
+                  // Keep original handlers
                   readOnly={activeTab !== "drafts" || tweet.isSubmitted}
                   ref={(el) => {
                     setTextAreaRef(el, index);
