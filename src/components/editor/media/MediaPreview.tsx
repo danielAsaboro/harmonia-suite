@@ -106,9 +106,10 @@ export default function MediaPreview({
           if (!url) return null;
 
           return (
-            <div key={mediaIds[index]} className="relative">
+            <div key={`index_${mediaIds[index]}`} className="relative">
               <div
                 className="w-24 h-24 relative rounded-lg overflow-hidden cursor-pointer"
+                key={`${index}`}
                 onClick={() => handleMediaClick(url, index)}
               >
                 {isImageUrl(url) ? (

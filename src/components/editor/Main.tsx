@@ -1238,7 +1238,6 @@ export default function PlayGround({
     };
   }, [activeTab, pageContent.tweets, handleMediaUpload]);
 
-  // Add this near the top of your component, with other hooks and state definitions
   const handleMediaUploadCallback = useCallback(
     (tweetIndex: number, files: File[]) => {
       // Don't allow editing submitted content
