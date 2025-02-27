@@ -19,6 +19,7 @@ export class PrismaDraftThreadsService {
       status: thread.status,
       tags: thread.tags ? JSON.parse(thread.tags) : [],
       userId: thread.userId,
+      teamId: thread.teamId,
     };
   }
 
@@ -35,6 +36,7 @@ export class PrismaDraftThreadsService {
       position: tweet.position || undefined,
       tags: tweet.tags ? JSON.parse(tweet.tags) : [],
       userId: tweet.userId,
+      teamId: tweet.teamId,
     };
   }
 
@@ -136,6 +138,8 @@ export class PrismaDraftThreadsService {
       },
     });
 
+    console.log(" details from the thread in drafts ::", thread);
+
     if (!thread) return null;
 
     // Then, find associated tweets
@@ -148,6 +152,9 @@ export class PrismaDraftThreadsService {
         position: "asc",
       },
     });
+
+    // console.log(" details from the each tweet in drafts ::");
+    // console.dir(tweets, { option: null });
 
     return {
       thread: this.adaptDraftThread(thread),
@@ -269,6 +276,43 @@ export class PrismaDraftThreadsService {
     return threadsWithTweets;
   }
 
+  async getAllUserSubmittedThreads(
+    userId: string
+  ): Promise<{ thread: DraftThread; tweets: DraftTweet[] }[]> {
+    // Find all threads for the user that have been submitted
+    const threads = await this.prisma.draft_threads.findMany({
+      where: {
+        userId: userId,
+        isSubmitted: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    // For each thread, find its tweets
+    const threadsWithTweets = await Promise.all(
+      threads.map(async (thread) => {
+        const tweets = await this.prisma.draft_tweets.findMany({
+          where: {
+            threadId: thread.id,
+            userId: userId,
+          },
+          orderBy: {
+            position: "asc",
+          },
+        });
+
+        return {
+          thread: this.adaptDraftThread(thread),
+          tweets: tweets.map((tweet) => this.adaptDraftTweet(tweet)),
+        };
+      })
+    );
+
+    return threadsWithTweets;
+  }
+
   // Delete a draft thread and its associated tweets
   async deleteDraftThread(id: string, userId: string): Promise<void> {
     // Use a transaction to ensure atomic deletion
@@ -303,6 +347,7 @@ export class PrismaDraftThreadsService {
       data: {
         status: "pending_approval",
         approvalId,
+        isSubmitted: true,
         updatedAt: new Date().toISOString(),
       },
     });

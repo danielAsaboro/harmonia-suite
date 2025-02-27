@@ -1,6 +1,12 @@
-import { Tweet, Thread } from "../types/tweet";
+import { Tweet, Thread, TweetStatus } from "../types/tweet";
 
 const MAX_TWEET_LENGTH = 280;
+
+export type Tab = "drafts" | "scheduled" | "published";
+
+export function mapTabToTweetStatus(tab: Tab): TweetStatus {
+  return tab === "drafts" ? "draft" : (tab as TweetStatus);
+}
 
 export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);

@@ -206,7 +206,7 @@ export class TweetStorageService {
             status: tweet.status,
             teamId: thread.teamId,
           },
-          false // Don't force immediate sync for individual tweets
+          immediate
         );
       });
 

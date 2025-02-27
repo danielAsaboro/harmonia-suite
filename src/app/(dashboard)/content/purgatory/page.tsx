@@ -1,4 +1,4 @@
-// /app/purgatory/approvals/page.tsx
+// /app/purgatory/page.tsx
 
 import PendingApprovalsView from "@/components/purgatory/pending-approvals-view";
 

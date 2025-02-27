@@ -9,7 +9,7 @@ import {
   Search,
   ChevronLeft,
   Calendar,
-  ChevronRight,
+  ChevronRight
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useUserAccount } from "./context/account";

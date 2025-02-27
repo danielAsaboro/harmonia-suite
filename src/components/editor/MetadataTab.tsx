@@ -232,122 +232,166 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
       </div> */}
       {/* Submit Button Section - Only show for team content (not personal) */}
       {selectedTeamId && selectedTeamId !== userId && (
-        <div className="relative w-full h-40">
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="p-4">
-              <button
-                onClick={() => setSubmitModalOpen(true)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center gap-2"
-                disabled={editorState.selectedItemStatus === "pending_approval"}
-              >
-                <FileCheck size={18} />
-                {editorState.selectedItemStatus === "pending_approval"
-                  ? "Pending Approval"
-                  : "Submit for review"}
-              </button>
+        <div className="relative w-full p-4 border-b border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-3">
+            Content Review
+          </h3>
+          {editorState.selectedItemStatus === "pending_approval" ? (
+            <div className="p-3 bg-yellow-900/30 rounded-md">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                <span className="text-yellow-400 text-sm font-medium">
+                  Pending Review
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                This content has been submitted for review and is awaiting
+                approval.
+              </p>
             </div>
-          </div>
+          ) : editorState.selectedItemStatus === "approved" ? (
+            <div className="p-3 bg-green-900/30 rounded-md">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                <span className="text-green-400 text-sm font-medium">
+                  Approved
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                This content has been approved for publishing.
+              </p>
+            </div>
+          ) : editorState.selectedItemStatus === "rejected" ? (
+            <div className="p-3 bg-red-900/30 rounded-md">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+                <span className="text-red-400 text-sm font-medium">
+                  Rejected
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                This content was rejected. Please revise and resubmit.
+              </p>
+            </div>
+          ) : (
+            <button
+              onClick={() => setSubmitModalOpen(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center gap-2 w-full"
+            >
+              <FileCheck size={18} />
+              Submit for review
+            </button>
+          )}
         </div>
       )}
 
       {/* Approval Actions - Only shown for team admins on pending content */}
-      {isTeamAdmin(selectedTeamId!) && editorState.selectedItemStatus === "pending_approval" && (
-        <div className="p-4 border-t border-gray-800">
-          <h3 className="text-sm font-medium text-gray-400 mb-3">
-            Admin Actions
-          </h3>
-          <div className="flex gap-3">
-            <button
-              className="px-3 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 flex-1"
-              onClick={async () => {
-                try {
-                  const contentId = editorState.selectedDraftId;
-                  const contentType = editorState.selectedDraftType;
+      {isTeamAdmin(selectedTeamId!) &&
+        editorState.selectedItemStatus === "pending_approval" && (
+          <div className="p-4 border-t border-gray-800">
+            <h3 className="text-sm font-medium text-gray-400 mb-3">
+              Admin Actions
+            </h3>
+            <div className="flex gap-3">
+              <button
+                className="px-3 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 flex-1"
+                onClick={async () => {
+                  try {
+                    const contentId = editorState.selectedDraftId;
+                    const contentType = editorState.selectedDraftType;
 
-                  if (!contentId || !contentType || !selectedTeamId) return;
+                    if (!contentId || !contentType || !selectedTeamId) return;
 
-                  const response = await fetch("/api/team/content", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      action: "approve",
-                      contentId,
-                      contentType,
-                      teamId: selectedTeamId,
-                    }),
-                  });
+                    const response = await fetch("/api/team/content/approval", {
+                      method: "PATCH",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        action: "approve",
+                        contentId,
+                        contentType,
+                        teamId: selectedTeamId,
+                      }),
+                    });
 
-                  if (!response.ok) {
-                    throw new Error("Failed to approve content");
+                    if (!response.ok) {
+                      throw new Error("Failed to approve content");
+                    }
+
+                    // Success - close editor and refresh sidebar
+                    alert("Content approved successfully");
+                    hideEditor();
+                    refreshSidebar();
+                  } catch (error) {
+                    console.error("Error approving content:", error);
+                    alert(
+                      "Failed to approve content: " +
+                        (error instanceof Error
+                          ? error.message
+                          : "Unknown error")
+                    );
                   }
+                }}
+              >
+                Approve
+              </button>
+              <button
+                className="px-3 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 flex-1"
+                onClick={async () => {
+                  try {
+                    const reason = prompt(
+                      "Please provide a reason for rejection:"
+                    );
+                    if (reason === null) return; // User cancelled
+                    if (reason.trim() === "") {
+                      alert("A rejection reason is required");
+                      return;
+                    }
 
-                  // Success - close editor and refresh sidebar
-                  alert("Content approved successfully");
-                  hideEditor();
-                  refreshSidebar();
-                } catch (error) {
-                  console.error("Error approving content:", error);
-                  alert(
-                    "Failed to approve content: " +
-                      (error instanceof Error ? error.message : "Unknown error")
-                  );
-                }
-              }}
-            >
-              Approve
-            </button>
-            <button
-              className="px-3 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 flex-1"
-              onClick={async () => {
-                try {
-                  const reason = prompt(
-                    "Please provide a reason for rejection:"
-                  );
-                  if (reason === null) return; // User cancelled
+                    const contentId = editorState.selectedDraftId;
+                    const contentType = editorState.selectedDraftType;
 
-                  const contentId = editorState.selectedDraftId;
-                  const contentType = editorState.selectedDraftType;
+                    if (!contentId || !contentType || !selectedTeamId) return;
 
-                  if (!contentId || !contentType || !selectedTeamId) return;
+                    const response = await fetch("/api/team/content/approval", {
+                      method: "PATCH",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        action: "reject",
+                        contentId,
+                        contentType,
+                        teamId: selectedTeamId,
+                        rejectionReason: reason,
+                      }),
+                    });
 
-                  const response = await fetch("/api/team/content", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      action: "reject",
-                      contentId,
-                      contentType,
-                      teamId: selectedTeamId,
-                      rejectionReason: reason,
-                    }),
-                  });
+                    if (!response.ok) {
+                      throw new Error("Failed to reject content");
+                    }
 
-                  if (!response.ok) {
-                    throw new Error("Failed to reject content");
+                    // Success - close editor and refresh sidebar
+                    alert("Content rejected successfully");
+                    hideEditor();
+                    refreshSidebar();
+                  } catch (error) {
+                    console.error("Error rejecting content:", error);
+                    alert(
+                      "Failed to reject content: " +
+                        (error instanceof Error
+                          ? error.message
+                          : "Unknown error")
+                    );
                   }
-
-                  // Success - close editor and refresh sidebar
-                  alert("Content rejected successfully");
-                  hideEditor();
-                  refreshSidebar();
-                } catch (error) {
-                  console.error("Error rejecting content:", error);
-                  alert(
-                    "Failed to reject content: " +
-                      (error instanceof Error ? error.message : "Unknown error")
-                  );
-                }
-              }}
-            >
-              Reject
-            </button>
+                }}
+              >
+                Reject
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };

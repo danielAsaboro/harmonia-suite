@@ -37,7 +37,6 @@ import { cn } from "@/utils/ts-merge";
 import PublishingModal from "./PublishingModal";
 import MentionInput from "./MentionInput";
 import SubmissionModal from "@/app/content/compose/twitter/SubmissionModal";
-import { hashThread, hashTweet } from "./utils";
 import VerificationBadge, { BadgeVariant } from "./VerificationBadge";
 import { useTeam } from "./context/TeamContext";
 
@@ -184,11 +183,6 @@ export default function PlayGround({
   });
   const { selectedTeamId, isTeamAdmin } = useTeam();
 
-  // Add a function to check if content is editable
-  const isContentEditable = (item: Tweet | Thread): boolean => {
-    return !item.isSubmitted && item.status !== "pending_approval";
-  };
-
   const [pageContent, setPageContent] = useState<PageContent>({
     isThread: false,
     tweets: [],
@@ -262,7 +256,7 @@ export default function PlayGround({
     newTweets[index] = {
       ...newTweets[index],
       content: newContent,
-      teamId: selectedTeamId || undefined,
+      teamId: selectedTeamId || newTweets[index].teamId,
     };
 
     // Adjust height of changed textarea
@@ -277,6 +271,7 @@ export default function PlayGround({
         tweetIds: newTweets.map((t) => t.id),
         createdAt: new Date(),
         status: "draft",
+        teamId: selectedTeamId || undefined,
       };
       tweetStorage.saveThread(thread, newTweets, false);
     } else {
@@ -484,34 +479,6 @@ export default function PlayGround({
     }
   };
 
-  // function to handle media preview from both backend and IndexedDB
-  // const getMediaPreviewUrl = async (mediaId: string): Promise<string> => {
-  //   try {
-  //     // First try to get from IndexedDB
-  //     const cachedMedia = await getMediaFile(mediaId);
-  //     if (cachedMedia) {
-  //       return cachedMedia;
-  //     }
-
-  //     // If not in IndexedDB, fetch from backend
-  //     const response = await fetch(`/api/media/upload?id=${mediaId}`);
-  //     if (!response.ok) {
-  //       throw new Error("Failed to fetch media");
-  //     }
-
-  //     const blob = await response.blob();
-  //     const url = URL.createObjectURL(blob);
-
-  //     // Cache in IndexedDB for future use
-  //     await storeMediaFile(mediaId, new File([blob], mediaId));
-
-  //     return url;
-  //   } catch (error) {
-  //     console.error("Error getting media preview:", error);
-  //     return "";
-  //   }
-  // };
-
   const handleRemoveMedia = async (tweetIndex: number, mediaIndex: number) => {
     if (pageContent.tweets[tweetIndex].isSubmitted) {
       alert(
@@ -595,7 +562,7 @@ export default function PlayGround({
           ...pageContent.tweets[0],
           threadId: newThreadId,
           position: 0,
-          teamId: selectedTeamId || undefined,
+          teamId: selectedTeamId || pageContent.tweets[0].teamId,
         };
 
         // Create new tweet
@@ -603,6 +570,7 @@ export default function PlayGround({
           id: `tweet-${uuidv4()}`,
           content: "",
           mediaIds: [],
+          tags: [],
           createdAt: new Date(),
           status: "draft" as const,
           threadId: newThreadId,
@@ -648,6 +616,7 @@ export default function PlayGround({
         const reindexedTweets = newTweets.map((tweet, idx) => ({
           ...tweet,
           position: idx,
+          teamId: tweet.teamId || selectedTeamId || undefined,
         }));
 
         // Update state with reindexed tweets
@@ -663,6 +632,7 @@ export default function PlayGround({
           tweetIds: reindexedTweets.map((t) => t.id),
           createdAt: new Date(),
           status: "draft",
+          teamId: selectedTeamId || undefined,
         };
         tweetStorage.saveThread(thread, reindexedTweets, true);
       }
@@ -1007,8 +977,10 @@ export default function PlayGround({
             id: `tweet-${uuidv4()}`,
             content: "",
             mediaIds: [],
+            tags: [],
             createdAt: new Date(),
             status: "draft",
+            teamId: selectedTeamId || undefined,
           };
           setPageContent({
             isThread: false,
@@ -1036,129 +1008,6 @@ export default function PlayGround({
     editorState.selectedItemStatus,
     refreshSidebar,
   ]);
-
-  const handleSubmitForReview = async (): Promise<void> => {
-    try {
-      // Only allow submission if content is associated with a team
-      if (!selectedTeamId || selectedTeamId === userId) {
-        alert("Please select a team to submit this content for approval.");
-        return;
-      }
-
-      // Validate tweets first
-      if (!validateTweets()) return;
-
-      // Generate hash based on content type
-      let contentHash: string | null;
-      const contentType = pageContent.isThread ? "thread" : "tweet";
-      const contentId = pageContent.isThread
-        ? pageContent.threadId
-        : pageContent.tweets[0].id;
-
-      if (pageContent.isThread && pageContent.threadId) {
-        // For thread: hash all tweets in order
-        contentHash = hashThread(pageContent.tweets);
-        console.log("Thread hash:", contentHash);
-      } else {
-        // For single tweet: hash just that tweet
-        contentHash = hashTweet(pageContent.tweets[0]);
-        console.log("Tweet hash:", contentHash);
-      }
-
-      // Here we would interact with the blockchain
-      // For now, we'll simulate this interaction
-      // In a real implementation, this would call your Solana program
-
-      // Submit to your backend API
-      const response = await fetch("/api/approval", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: contentType,
-          id: contentId,
-          contentHash,
-          teamId: selectedTeamId,
-          // Include any blockchain-specific data like publicKey if needed
-          // publicKey: wallet.publicKey.toString(),
-          // Add transaction signature if you have one
-          // transactionSignature: txSignature
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to submit for approval");
-      }
-
-      const result = await response.json();
-
-      // Update local state to reflect "pending_approval" status
-      if (pageContent.isThread && pageContent.threadId) {
-        const thread: Thread = {
-          id: pageContent.threadId,
-          tweetIds: pageContent.tweets.map((t) => t.id),
-          createdAt: new Date(),
-          status: "pending_approval",
-          teamId: selectedTeamId,
-          isSubmitted: true, // Mark as submitted
-        };
-
-        // Update all tweets in the thread
-        const updatedTweets = pageContent.tweets.map((tweet) => ({
-          ...tweet,
-          status: "pending_approval" as TweetStatus,
-          teamId: selectedTeamId,
-          isSubmitted: true, // Mark as submitted
-        }));
-
-        tweetStorage.saveThread(thread, updatedTweets, true);
-      } else {
-        // Update single tweet
-        tweetStorage.saveTweet(
-          {
-            ...pageContent.tweets[0],
-            status: "pending_approval" as TweetStatus,
-            teamId: selectedTeamId,
-            isSubmitted: true, // Mark as submitted
-          },
-          true
-        );
-      }
-
-      // Close the modal and editor
-      setSubmitModalOpen(false);
-      hideEditor();
-      refreshSidebar();
-
-      // Show success message
-    } catch (error) {
-      console.error("Error submitting for review:", error);
-      alert(
-        "Failed to submit for review: " +
-          (error instanceof Error ? error.message : "Unknown error")
-      );
-    }
-  };
-
-  // // Add effect to manage threadId
-  // useEffect(() => {
-  //   // If it's a thread draft, use its existing threadId
-  //   if (draftType === "thread" && draftId) {
-  //     const thread = tweetStorage.getThreads().find((t) => t.id === draftId);
-  //     setThreadId(thread?.id || `thread-${uuidv4()}`);
-  //     setPageContent((prev)=>{
-  //       return {
-  //         isThread: prev.threadId
-  //       }
-  //     })
-  //   }
-  //   // For new tweets or single tweets, set threadId to null
-  //   else {
-  //     setThreadId(null);
-  //   }
-  // }, [draftId, draftType]);
 
   useEffect(() => {
     if (!isLoading && pageContent.tweets.length > 0 && contentChanged) {
@@ -1714,7 +1563,14 @@ export default function PlayGround({
       <SubmissionModal
         isOpen={isSubmitModalOpen}
         onClose={() => setSubmitModalOpen(false)}
-        onProceed={handleSubmitForReview}
+        onProceed={() => {
+          // Close the modal
+          setSubmitModalOpen(false);
+          // Hide the editor
+          hideEditor();
+          // Refresh the sidebar to show updated content
+          refreshSidebar();
+        }}
       />
     </div>
   );

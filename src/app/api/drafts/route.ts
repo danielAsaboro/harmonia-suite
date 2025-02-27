@@ -29,16 +29,16 @@ export async function POST(req: NextRequest) {
     });
 
     const body = await req.json();
-    const { type, data, teamId } = body; // Extract teamId from request
+    const { type, data } = body;
     const now = new Date().toISOString();
 
-    console.dir(
-      {
-        type,
-        data,
-      },
-      { depth: null }
-    );
+    // console.dir(
+    //   {
+    //     type,
+    //     data,
+    //   },
+    //   { depth: null }
+    // );
 
     if (type === "tweet") {
       const tweet = {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
-        teamId: teamId || null, // Include teamId
+        teamId: data.teamId || null, // Include teamId
         isSubmitted: data.isSubmitted || false, // Include submission status
       };
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
-        teamId: teamId || null, // Include teamId
+        teamId: data.tweets[0].teamId || null, // Include teamId
         isSubmitted: data.isSubmitted || false, // Include submission status
       };
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         createdAt: tweet.createdAt || now,
         updatedAt: now,
         position: tweet.position + 1,
-        teamId: teamId || null, // Include teamId
+        teamId: data.teamId || null, // Include teamId
         isSubmitted: data.isSubmitted || false, // Include submission status
       }));
 

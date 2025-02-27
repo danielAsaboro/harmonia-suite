@@ -48,24 +48,44 @@ class DraftSyncService {
       for (const sync of syncsArray) {
         if (sync.type === "tweet") {
           const tweet = tweetStorage.getTweets().find((t) => t.id === sync.id);
-          if (tweet && !tweet.threadId) {
-            // Only sync standalone tweets
+          // Skip syncing if the tweet is submitted or pending approval
+          if (
+            tweet &&
+            !tweet.threadId &&
+            tweet.status !== "pending_approval" &&
+            !tweet.isSubmitted
+          ) {
+            // Only sync standalone tweets that aren't submitted or pending approval
             await this.syncTweetToBackend(tweet);
           } else if (tweet && tweet.threadId) {
             // If it has a threadId, we should sync the entire thread instead
             const thread = tweetStorage.getThreadWithTweets(tweet.threadId);
 
-            if (thread) {
+            if (
+              thread &&
+              thread.status !== "pending_approval" &&
+              !thread.isSubmitted
+            ) {
+              // Only sync if the thread isn't submitted or pending approval
               await this.syncThreadToBackend(thread);
               console.log("finished syncing thread to backend 1");
             }
           }
         } else {
-          const tweet = tweetStorage.getTweets().find((t) => t.id === sync.id);
-          if (tweet) {
-            const thread = tweetStorage.getThreadWithTweets(tweet.threadId!);
-            if (thread) {
-              await this.syncThreadToBackend(thread);
+          const thread = tweetStorage
+            .getThreads()
+            .find((t) => t.id === sync.id);
+          // Skip syncing if the thread is submitted or pending approval
+          if (
+            thread &&
+            thread.status !== "pending_approval" &&
+            !thread.isSubmitted
+          ) {
+            const threadWithTweets = tweetStorage.getThreadWithTweets(
+              thread.id
+            );
+            if (threadWithTweets) {
+              await this.syncThreadToBackend(threadWithTweets);
               console.log("finished syncing thread to backend 2");
             }
           }
@@ -200,7 +220,33 @@ class DraftSyncService {
     }
   }
 
+  // queueForSync(id: string, type: "tweet" | "thread") {
+  //   this.pendingSyncs.set(id, {
+  //     id,
+  //     type,
+  //     lastModified: new Date(),
+  //   });
+  // }
+
   queueForSync(id: string, type: "tweet" | "thread") {
+    // Don't queue for sync if it's pending approval or submitted
+    if (type === "tweet") {
+      const tweet = tweetStorage.getTweets().find((t) => t.id === id);
+      if (tweet && (tweet.status === "pending_approval" || tweet.isSubmitted)) {
+        console.log("Skipping sync for submitted/pending tweet:", id);
+        return;
+      }
+    } else if (type === "thread") {
+      const thread = tweetStorage.getThreads().find((t) => t.id === id);
+      if (
+        thread &&
+        (thread.status === "pending_approval" || thread.isSubmitted)
+      ) {
+        console.log("Skipping sync for submitted/pending thread:", id);
+        return;
+      }
+    }
+
     this.pendingSyncs.set(id, {
       id,
       type,

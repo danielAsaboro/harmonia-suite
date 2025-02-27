@@ -10,6 +10,8 @@ export class PrismaDraftTweetsService {
 
   // Adapter method to convert Prisma result to DraftTweet
   private adaptDraftTweet(tweet: any): DraftTweet {
+    // console.log(" printing adapt tweet");
+    // console.dir(tweet, { depth: null });
     return {
       id: tweet.id,
       content: tweet.content,
@@ -21,6 +23,7 @@ export class PrismaDraftTweetsService {
       position: tweet.position || undefined,
       tags: tweet.tags ? JSON.parse(tweet.tags) : [],
       userId: tweet.userId,
+      teamId: tweet.teamId,
     };
   }
 
@@ -131,6 +134,20 @@ export class PrismaDraftTweetsService {
     return tweets.map((tweet) => this.adaptDraftTweet(tweet));
   }
 
+  async getAllUserSubmittedTweets(userId: string): Promise<DraftTweet[]> {
+    const tweets = await this.prisma.draft_tweets.findMany({
+      where: {
+        userId: userId,
+        isSubmitted: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return tweets.map((tweet) => this.adaptDraftTweet(tweet));
+  }
+
   // Delete a draft tweet
   async deleteDraftTweet(id: string, userId: string): Promise<void> {
     await this.prisma.draft_tweets.delete({
@@ -155,6 +172,7 @@ export class PrismaDraftTweetsService {
       data: {
         status: "pending_approval",
         approvalId,
+        isSubmitted: true,
         updatedAt: new Date().toISOString(),
       },
     });

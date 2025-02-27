@@ -189,7 +189,7 @@ export default function WelcomeScreen() {
   const getWelcomeDescription = () => {
     if (isTeamContext) {
       if (totalDrafts === 0 && totalScheduled === 0 && totalPendingApproval === 0) {
-        return `Start composing content for the ${teamName} team. Your drafts will be saved automatically.`;
+        return `Start composing content for ${teamName}. Your drafts will be saved automatically.`;
       }
 
       if (totalPendingApproval > 0) {

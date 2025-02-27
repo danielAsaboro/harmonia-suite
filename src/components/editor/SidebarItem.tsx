@@ -4,6 +4,7 @@ import { Tweet, Thread } from "@/types/tweet";
 import ConfirmDialog from "./ConfirmDialog";
 import { tweetStorage } from "@/utils/localStorage";
 import SharedDraftModal from "./SharedDraftModal";
+import { useEditor } from "./context/Editor";
 
 interface SidebarItemProps {
   item: Tweet | Thread;
@@ -19,6 +20,7 @@ export function SidebarItem({
   onDelete,
 }: SidebarItemProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const { hideEditor } = useEditor();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isThread = "tweetIds" in item;
@@ -50,6 +52,9 @@ export function SidebarItem({
       tweetStorage.deleteThread(item.id);
     } else {
       tweetStorage.deleteTweet(item.id);
+    }
+    if (isThread) {
+      hideEditor();
     }
     setShowMenu(false);
     onDelete(item.id);

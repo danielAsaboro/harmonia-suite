@@ -25,9 +25,8 @@ export function tweetToScheduledItem(
       id: tweet.userId,
       name: authorData?.name || "Unknown",
       handle: authorData?.username || "unknown",
-      profileUrl: authorData?.profile_image_url,
+      profileUrl: authorData?.profileImageUrl,
     },
-    // For pending approvals, we'll use submittedAt from approval or current date
     scheduledFor: new Date(tweet.updatedAt),
     tags: tweet.tags || [],
     content: tweet.content,
@@ -36,22 +35,22 @@ export function tweetToScheduledItem(
     createdAt: new Date(tweet.createdAt),
     lastModified: new Date(tweet.updatedAt),
     mediaIds: tweet.mediaIds || [],
-    // These will be set separately after fetching the shared draft info
-    shareLink: undefined,
-    sharedDraftToken: undefined,
+    // Include share link information directly
+    shareLink: tweet.shareLink,
+    sharedDraftToken: tweet.sharedDraftToken,
   };
 }
 
 // Transform a draft thread to a scheduled item
 export function threadToScheduledItem(
-  threadData: { thread: any; tweets: any[] },
+  threadData: any,
   authorData: any
 ): ScheduledThread {
   const thread = threadData.thread;
   const tweets = threadData.tweets;
 
   // Combine all tweet content for the preview
-  const combinedContent = tweets.map((t) => t.content).join(" ");
+  const combinedContent = tweets.map((t: any) => t.content).join(" ");
   const firstTweetContent = tweets[0]?.content || "";
 
   return {
@@ -61,7 +60,7 @@ export function threadToScheduledItem(
       id: thread.userId,
       name: authorData?.name || "Unknown",
       handle: authorData?.username || "unknown",
-      profileUrl: authorData?.profile_image_url,
+      profileUrl: authorData?.profileImageUrl,
     },
     scheduledFor: new Date(thread.updatedAt),
     tags: thread.tags || [],
@@ -72,9 +71,9 @@ export function threadToScheduledItem(
     lastModified: new Date(thread.updatedAt),
     threadTweets: tweets,
     totalTweets: tweets.length,
-    // These will be set separately after fetching the shared draft info
-    shareLink: undefined,
-    sharedDraftToken: undefined,
+    // Include share link information directly
+    shareLink: threadData.shareLink,
+    sharedDraftToken: threadData.sharedDraftToken,
   };
 }
 

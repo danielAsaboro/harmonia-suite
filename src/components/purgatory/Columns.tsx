@@ -154,6 +154,68 @@ export const columns: ColumnDef<ScheduledItem>[] = [
     size: 180,
   },
   {
+    accessorKey: "teamName",
+    header: ({ column }) => {
+      return (
+        <div
+          className="flex items-center cursor-pointer text-left"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Team
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </div>
+      );
+    },
+    cell: ({ row }) => {
+      const teamName = row.getValue("teamName") as string;
+      return (
+        <span className="text-sm font-medium">{teamName || "Personal"}</span>
+      );
+    },
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => {
+      return (
+        <div
+          className="flex items-center cursor-pointer text-left"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </div>
+      );
+    },
+    cell: ({ row }) => {
+      const status = row.getValue("status") as TweetStatus;
+
+      // Define status badge styling
+      let badgeVariant: "default" | "secondary" | "destructive" | "outline" =
+        "default";
+      let statusText = "Unknown";
+
+      switch (status) {
+        case "pending_approval":
+          badgeVariant = "secondary";
+          statusText = "Pending";
+          break;
+        case "approved":
+          badgeVariant = "default";
+          statusText = "Approved";
+          break;
+        case "rejected":
+          badgeVariant = "destructive";
+          statusText = "Rejected";
+          break;
+        default:
+          badgeVariant = "outline";
+          statusText = status.charAt(0).toUpperCase() + status.slice(1);
+      }
+
+      return <Badge variant={badgeVariant}>{statusText}</Badge>;
+    },
+  },
+  {
     accessorKey: "scheduledFor",
     header: ({ column }) => {
       return (
