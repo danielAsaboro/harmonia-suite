@@ -1,4 +1,6 @@
 // /app/api/team/content/approval/status/route.ts
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { getUserData } from "@/lib/session";
 import {

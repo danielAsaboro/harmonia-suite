@@ -15,7 +15,7 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
-    console.log(" extracted token ", token)
+    console.log(" extracted token ", token);
     // First, get the shared draft info using the access token
     const sharedDraft = await sharedDraftsService.getSharedDraftByToken(token);
 
