@@ -8,37 +8,37 @@ generator client {
 }
 
 model user_tokens {
-  userId            String                 @id
-  accessToken       String
-  refreshToken      String
-  expiresAt         String
-  username          String
-  name              String
-  profileImageUrl   String?
-  verified          Boolean   @default(false)  // Adding verified field
-  verifiedType      String?   // Adding verified_type field as optional
-  draftThreads      draft_threads[]
-  draftTweets       draft_tweets[]
-  scheduledThreads  scheduled_threads[]
-  scheduledTweets   scheduled_tweets[]
+  userId              String                  @id
+  accessToken         String
+  refreshToken        String
+  expiresAt           String
+  username            String
+  name                String
+  profileImageUrl     String?
+  verified            Boolean                 @default(false) // Adding verified field
+  verifiedType        String? // Adding verified_type field as optional
+  draftThreads        draft_threads[]
+  draftTweets         draft_tweets[]
+  scheduledThreads    scheduled_threads[]
+  scheduledTweets     scheduled_tweets[]
   sharedDraftComments shared_draft_comments[]
-  sharedDrafts      shared_drafts[]
+  sharedDrafts        shared_drafts[]
   teamMemberships     team_members[]
-  createdInvites      team_invites[] @relation("inviteCreator")
-  acceptedInvites     team_invites[] @relation("inviteAcceptor")
+  createdInvites      team_invites[]          @relation("inviteCreator")
+  acceptedInvites     team_invites[]          @relation("inviteAcceptor")
 
-  email             String?  @unique
-  emailVerified     Boolean  @default(false)
-  walletAddress     String?  @unique
-  timezone          String?  @default("UTC")
-  contentPreferences Json?   // For storing content type preferences
+  email               String? @unique
+  emailVerified       Boolean @default(false)
+  walletAddress       String? @unique
+  timezone            String? @default("UTC")
+  contentPreferences  Json? // For storing content type preferences
   onboardingCompleted Boolean @default(false)
 
   @@unique([accessToken])
 }
 
 model scheduled_tweets {
-  id           String     @id
+  id           String             @id
   content      String
   mediaIds     String?
   scheduledFor String
@@ -48,7 +48,7 @@ model scheduled_tweets {
   createdAt    String
   error        String?
   userId       String
-  user         user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user         user_tokens        @relation(fields: [userId], references: [userId], onDelete: Cascade)
   thread       scheduled_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
 
   @@index([userId])
@@ -56,14 +56,14 @@ model scheduled_tweets {
 }
 
 model scheduled_threads {
-  id           String     @id
+  id           String             @id
   tweetIds     String
   scheduledFor String
   status       String
   createdAt    String
   error        String?
   userId       String
-  user         user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user         user_tokens        @relation(fields: [userId], references: [userId], onDelete: Cascade)
   tweets       scheduled_tweets[]
 
   @@index([userId])
@@ -71,60 +71,68 @@ model scheduled_threads {
 }
 
 model draft_tweets {
-  id          String     @id
-  content     String
-  mediaIds    String?
-  createdAt   String
-  updatedAt   String
-  status      String
-  threadId    String?
-  position    Int?
-  tags        String?
-  userId      String
-  user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  thread      draft_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
-  approvalId  String?
-  approvedAt  String?
-  rejectedAt  String?
+  id              String         @id
+  content         String
+  mediaIds        String?
+  createdAt       String
+  updatedAt       String
+  status          String
+  threadId        String?
+  position        Int?
+  tags            String?
+  userId          String
+  user            user_tokens    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  thread          draft_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  approvalId      String?
+  approvedAt      String?
+  rejectedAt      String?
   rejectionReason String?
+  teamId          String? // Make nullable so existing records remain valid
+  team            teams?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  isSubmitted     Boolean        @default(false) // New field to track submission status
 
+  @@index([teamId])
   @@index([threadId])
   @@index([userId])
 }
 
 model draft_threads {
-  id          String     @id
-  tweetIds    String
-  createdAt   String
-  updatedAt   String
-  status      String
-  tags        String?
-  userId      String
-  user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  tweets      draft_tweets[]
-  approvalId  String?
-  approvedAt  String?
-  rejectedAt  String?
+  id              String         @id
+  tweetIds        String
+  createdAt       String
+  updatedAt       String
+  status          String
+  tags            String?
+  userId          String
+  user            user_tokens    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  tweets          draft_tweets[]
+  approvalId      String?
+  approvedAt      String?
+  rejectedAt      String?
   rejectionReason String?
+  teamId          String?
+  team            teams?         @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  isSubmitted     Boolean        @default(false)
 
+  @@index([teamId])
   @@index([userId])
 }
 
 model shared_drafts {
-  id                String                 @id
-  draftId           String
-  draftType         String
-  createdAt         String
-  expiresAt         String
-  canComment        Boolean                @default(false)
-  creatorId         String
-  accessToken       String                 @unique
-  authorName        String
-  authorHandle      String
-  authorProfileUrl  String?
-  shareState        String                 @default("active")
-  comments          shared_draft_comments[]
-  creator           user_tokens             @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
+  id               String                  @id
+  draftId          String
+  draftType        String
+  createdAt        String
+  expiresAt        String
+  canComment       Boolean                 @default(false)
+  creatorId        String
+  accessToken      String                  @unique
+  authorName       String
+  authorHandle     String
+  authorProfileUrl String?
+  shareState       String                  @default("active")
+  comments         shared_draft_comments[]
+  creator          user_tokens             @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
 
   @@index([draftId])
   @@index([accessToken])
@@ -132,18 +140,18 @@ model shared_drafts {
 }
 
 model shared_draft_comments {
-  id            String       @id
+  id            String        @id
   sharedDraftId String
   content       String
   authorId      String?
   authorName    String
   createdAt     String
   position      Int?
-  metadata      String       @default("{}")
-  resolved      Boolean      @default(false)
+  metadata      String        @default("{}")
+  resolved      Boolean       @default(false)
   resolvedAt    String?
   resolvedBy    String?
-  author        user_tokens? @relation(fields: [authorId], references: [userId], onDelete: SetNull)
+  author        user_tokens?  @relation(fields: [authorId], references: [userId], onDelete: SetNull)
   sharedDraft   shared_drafts @relation(fields: [sharedDraftId], references: [id], onDelete: Cascade)
 
   @@index([resolved])
@@ -152,40 +160,41 @@ model shared_draft_comments {
 }
 
 model content_approvals {
-  id            String   @id
-  contentType   String   // "tweet" or "thread"
-  contentId     String   // draft_tweet or draft_thread id
-  blockchainId  String   // On-chain content identifier (hash)
-  submittedAt   String
-  status        String   // "pending", "approved", "rejected"
-  requiredApprovals Int
-  currentApprovals Int
-  approvers     String?  // JSON array of approver publicKeys
-  rejectionReason String?
+  id                   String  @id
+  contentType          String // "tweet" or "thread"
+  contentId            String // draft_tweet or draft_thread id
+  blockchainId         String // On-chain content identifier (hash)
+  submittedAt          String
+  status               String // "pending", "approved", "rejected"
+  requiredApprovals    Int
+  currentApprovals     Int
+  approvers            String? // JSON array of approver publicKeys
+  rejectionReason      String?
   transactionSignature String?
 
   @@index([contentId])
   @@index([blockchainId])
 }
 
-
 model teams {
-  id          String       @id
-  name        String
-  createdAt   String
-  updatedAt   String
-  members     team_members[]
-  invites     team_invites[]
+  id            String          @id
+  name          String
+  createdAt     String
+  updatedAt     String
+  members       team_members[]
+  invites       team_invites[]
+  draft_tweets  draft_tweets[]
+  draft_threads draft_threads[]
 }
 
 model team_members {
-  id          String       @id
-  teamId      String
-  userId      String
-  role        String      // "admin" or "creator"
-  joinedAt    String
-  team        teams       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user        user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  id       String      @id
+  teamId   String
+  userId   String
+  role     String // "admin" or "creator"
+  joinedAt String
+  team     teams       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     user_tokens @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@index([teamId])
@@ -193,20 +202,20 @@ model team_members {
 }
 
 model team_invites {
-  id          String       @id
-  teamId      String
-  email       String
-  role        String      // "admin" or "creator"
-  token       String      @unique
-  status      String      // "pending", "accepted", "expired", "revoked"
-  createdAt   String
-  expiresAt   String
-  createdBy   String
-  acceptedAt  String?
-  acceptedBy  String?     // userId of person who accepted the invite
-  team        teams       @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  creator     user_tokens @relation(name: "inviteCreator", fields: [createdBy], references: [userId], onDelete: Cascade)
-  acceptor    user_tokens? @relation(name: "inviteAcceptor", fields: [acceptedBy], references: [userId], onDelete: SetNull)
+  id         String       @id
+  teamId     String
+  email      String
+  role       String // "admin" or "creator"
+  token      String       @unique
+  status     String // "pending", "accepted", "expired", "revoked"
+  createdAt  String
+  expiresAt  String
+  createdBy  String
+  acceptedAt String?
+  acceptedBy String? // userId of person who accepted the invite
+  team       teams        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator    user_tokens  @relation(name: "inviteCreator", fields: [createdBy], references: [userId], onDelete: Cascade)
+  acceptor   user_tokens? @relation(name: "inviteAcceptor", fields: [acceptedBy], references: [userId], onDelete: SetNull)
 
   @@index([teamId])
   @@index([email])

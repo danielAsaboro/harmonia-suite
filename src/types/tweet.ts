@@ -20,6 +20,8 @@ export interface Tweet {
   lastSaved?: string;
   tags?: string[];
   lastModified?: string;
+  teamId?: string;
+  isSubmitted?: boolean;
 }
 
 export interface Thread {
@@ -30,6 +32,8 @@ export interface Thread {
   scheduledFor?: Date;
   tags?: string[];
   lastModified?: string;
+  teamId?: string;
+  isSubmitted?: boolean;
 }
 
 export interface ThreadWithTweets extends Thread {

@@ -15,6 +15,7 @@ import {
   removeMediaFile,
   storeMediaFile,
 } from "@/lib/storage/indexedDB";
+import { useTeam } from "./TeamContext";
 
 type Tab = "drafts" | "scheduled" | "published";
 
@@ -22,7 +23,7 @@ type EditorState = {
   isVisible: boolean;
   selectedDraftId: string | null;
   selectedDraftType: "tweet" | "thread" | null;
-  selectedItemStatus?: Tab;
+  selectedItemStatus?: Tab | "pending_approval";
 };
 
 type EditorContextType = {
@@ -32,7 +33,6 @@ type EditorContextType = {
   showEditor: (draftId?: string, type?: "tweet" | "thread") => void;
   hideEditor: () => void;
   loadDraft: () => Tweet | ThreadWithTweets | null | undefined;
-  // loadDraft: () => Promise<Tweet | ThreadWithTweets | null>;
   loadScheduledItem: () => Tweet | ThreadWithTweets | null;
   refreshSidebar: () => void;
   refreshCounter: number;
@@ -45,6 +45,9 @@ type EditorContextType = {
   handlePublishDraft: () => void;
   isSubmitModalOpen: boolean;
   setSubmitModalOpen: (open: boolean) => void;
+  selectedTeamId: string | null;
+  setSelectedTeamId: (teamId: string | null) => void;
+  isTeamAdmin: boolean;
 };
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -60,6 +63,11 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   });
   const [isMetadataTabVisible, setIsMetadataTabVisible] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const {
+    selectedTeamId,
+    setSelectedTeamId,
+    isTeamAdmin: checkIsTeamAdmin,
+  } = useTeam();
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarVisible((prev) => !prev);
@@ -182,131 +190,6 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 
     return null;
   }, [editorState.selectedDraftId, editorState.selectedDraftType]);
-
-  // // syncing but without media
-
-  // const loadDraft = useCallback(async () => {
-  //   if (!editorState.selectedDraftId || !editorState.selectedDraftType) {
-  //     return null;
-  //   }
-
-  //   const draftId = editorState.selectedDraftId;
-  //   const draftType = editorState.selectedDraftType;
-
-  //   try {
-  //     // First, check if there's a newer version on the server
-  //     const response = await fetch(
-  //       `/api/drafts?type=${draftType}&id=${draftId}`
-  //     );
-
-  //     if (response.ok) {
-  //       const serverData = await response.json();
-
-  //       // Compare timestamps to see if server version is newer
-  //       if (draftType === "tweet") {
-  //         const localTweet = tweetStorage
-  //           .getTweets()
-  //           .find((t) => t.id === draftId);
-
-  //         if (localTweet && serverData) {
-  //           const serverTime = new Date(serverData.updatedAt).getTime();
-  //           const localTime = new Date(
-  //             localTweet.lastModified || localTweet.createdAt
-  //           ).getTime();
-
-  //           // If server version is newer, update local storage
-  //           if (serverTime > localTime) {
-  //             tweetStorage.saveTweet(serverData, false);
-  //           }
-  //         }
-  //       } else if (draftType === "thread") {
-  //         const localThread = tweetStorage.getThreadWithTweets(draftId);
-
-  //         if (localThread && serverData?.thread) {
-  //           const serverTime = new Date(serverData.thread.updatedAt).getTime();
-  //           const localTime = new Date(
-  //             localThread.lastModified || localThread.createdAt
-  //           ).getTime();
-
-  //           // If server version is newer, update local storage
-  //           if (serverTime > localTime) {
-  //             tweetStorage.saveThread(
-  //               serverData.thread,
-  //               serverData.tweets,
-  //               false
-  //             );
-  //           }
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error checking for newer draft version:", error);
-  //     // If we can't reach the server, we'll fall back to the local version
-  //   }
-
-  //   // Now load the potentially updated local version
-  //   if (draftType === "tweet") {
-  //     const tweets = tweetStorage.getTweets();
-  //     return (
-  //       tweets.find((t) => t.id === draftId && t.status === "draft") || null
-  //     );
-  //   } else {
-  //     const threads = tweetStorage.getThreads();
-  //     const thread = threads.find((t) => t.id === draftId);
-
-  //     if (thread && thread.status === "draft") {
-  //       const tweets = tweetStorage
-  //         .getTweets()
-  //         .filter((t) => t.threadId === thread.id)
-  //         .sort((a, b) => (a.position || 0) - (b.position || 0));
-
-  //       return {
-  //         ...thread,
-  //         tweets: tweets.map((t) => ({
-  //           ...t,
-  //           status: thread.status,
-  //         })),
-  //       } as ThreadWithTweets;
-  //     }
-  //     return null;
-  //   }
-  // }, [editorState.selectedDraftId, editorState.selectedDraftType]);
-
-  // // initial version
-  // const loadDraft = useCallback(() => {
-  //   if (!editorState.selectedDraftId || !editorState.selectedDraftType) {
-  //     return null;
-  //   }
-
-  //   if (editorState.selectedDraftType === "tweet") {
-  //     const tweets = tweetStorage.getTweets();
-  //     return (
-  //       tweets.find(
-  //         (t) => t.id === editorState.selectedDraftId && t.status === "draft"
-  //       ) || null
-  //     );
-  //   } else {
-  //     const threads = tweetStorage.getThreads();
-  //     const thread = threads.find((t) => t.id === editorState.selectedDraftId);
-
-  //     if (thread && thread.status === "draft") {
-  //       const tweets = tweetStorage
-  //         .getTweets()
-  //         .filter((t) => t.threadId === thread.id)
-  //         .sort((a, b) => (a.position || 0) - (b.position || 0));
-
-  //       // Important: Preserve the thread's status when loading
-  //       return {
-  //         ...thread,
-  //         tweets: tweets.map((t) => ({
-  //           ...t,
-  //           status: thread.status,
-  //         })),
-  //       } as ThreadWithTweets;
-  //     }
-  //     return null;
-  //   }
-  // }, [editorState.selectedDraftId, editorState.selectedDraftType]);
 
   const refreshSidebar = useCallback(() => {
     setRefreshCounter((prev) => prev + 1);
@@ -555,6 +438,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
           window.dispatchEvent(new CustomEvent("publishDraft")),
         isSubmitModalOpen,
         setSubmitModalOpen: (open: boolean) => setIsSubmitModalOpen(open),
+        selectedTeamId,
+        setSelectedTeamId,
+        isTeamAdmin: selectedTeamId ? checkIsTeamAdmin(selectedTeamId) : false,
       }}
     >
       {children}

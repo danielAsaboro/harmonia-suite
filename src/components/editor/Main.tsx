@@ -39,6 +39,7 @@ import MentionInput from "./MentionInput";
 import SubmissionModal from "@/app/content/compose/twitter/SubmissionModal";
 import { hashThread, hashTweet } from "./utils";
 import VerificationBadge, { BadgeVariant } from "./VerificationBadge";
+import { useTeam } from "./context/TeamContext";
 
 const DEFAULT_TEXTAREA_HEIGHT = "60px";
 
@@ -153,6 +154,7 @@ export default function PlayGround({
 }: UnifiedTweetComposerProps) {
   const {
     name: userName,
+    id: userId,
     handle: userTwitterHandle,
     isLoading: isUserAccountDetailsLoading,
     getAvatar,
@@ -180,6 +182,12 @@ export default function PlayGround({
     errorCount: 0,
     isProcessing: false,
   });
+  const { selectedTeamId, isTeamAdmin } = useTeam();
+
+  // Add a function to check if content is editable
+  const isContentEditable = (item: Tweet | Thread): boolean => {
+    return !item.isSubmitted && item.status !== "pending_approval";
+  };
 
   const [pageContent, setPageContent] = useState<PageContent>({
     isThread: false,
@@ -242,10 +250,19 @@ export default function PlayGround({
   const handleTweetChange = (index: number, newContent: string) => {
     if (activeTab != "drafts") return;
 
+    // Don't allow editing submitted content
+    if (pageContent.tweets[index].isSubmitted) {
+      alert(
+        "This content has been submitted for approval and cannot be edited."
+      );
+      return;
+    }
+
     const newTweets = [...pageContent.tweets];
     newTweets[index] = {
       ...newTweets[index],
       content: newContent,
+      teamId: selectedTeamId || undefined,
     };
 
     // Adjust height of changed textarea
@@ -390,6 +407,13 @@ export default function PlayGround({
   };
 
   const handleMediaUpload = async (tweetIndex: number, files: File[]) => {
+    if (pageContent.tweets[tweetIndex].isSubmitted) {
+      alert(
+        "This content has been submitted for approval and cannot be edited."
+      );
+      return;
+    }
+
     const newTweets = [...pageContent.tweets];
     const currentMedia = newTweets[tweetIndex].mediaIds || [];
     const totalFiles = currentMedia.length + files.length;
@@ -489,6 +513,13 @@ export default function PlayGround({
   // };
 
   const handleRemoveMedia = async (tweetIndex: number, mediaIndex: number) => {
+    if (pageContent.tweets[tweetIndex].isSubmitted) {
+      alert(
+        "This content has been submitted for approval and cannot be edited."
+      );
+      return;
+    }
+
     const newTweets = [...pageContent.tweets];
     const currentMedia = newTweets[tweetIndex].mediaIds || [];
     const mediaId = currentMedia[mediaIndex];
@@ -541,6 +572,19 @@ export default function PlayGround({
   const addTweetToThread = (index: number) => {
     if (activeTab !== "drafts") return;
 
+    // Check if thread is submitted
+    if (pageContent.isThread && pageContent.threadId) {
+      const thread = tweetStorage
+        .getThreads()
+        .find((t) => t.id === pageContent.threadId);
+      if (thread?.isSubmitted) {
+        alert(
+          "This thread has been submitted for approval and cannot be modified."
+        );
+        return;
+      }
+    }
+
     try {
       if (!pageContent.isThread) {
         // Generate a new threadId when converting to a thread
@@ -551,6 +595,7 @@ export default function PlayGround({
           ...pageContent.tweets[0],
           threadId: newThreadId,
           position: 0,
+          teamId: selectedTeamId || undefined,
         };
 
         // Create new tweet
@@ -562,6 +607,7 @@ export default function PlayGround({
           status: "draft" as const,
           threadId: newThreadId,
           position: 1,
+          teamId: selectedTeamId || undefined,
         };
 
         // Update state with both tweets
@@ -577,6 +623,7 @@ export default function PlayGround({
           tweetIds: [updatedFirstTweet.id, newTweet.id],
           createdAt: new Date(),
           status: "draft",
+          teamId: selectedTeamId || undefined,
         };
         tweetStorage.saveThread(thread, [updatedFirstTweet, newTweet], true);
       } else {
@@ -589,6 +636,7 @@ export default function PlayGround({
           status: "draft" as const,
           threadId: pageContent.threadId,
           position: index + 1,
+          teamId: selectedTeamId || undefined,
         };
 
         const newTweets = [...pageContent.tweets];
@@ -991,6 +1039,12 @@ export default function PlayGround({
 
   const handleSubmitForReview = async (): Promise<void> => {
     try {
+      // Only allow submission if content is associated with a team
+      if (!selectedTeamId || selectedTeamId === userId) {
+        alert("Please select a team to submit this content for approval.");
+        return;
+      }
+
       // Validate tweets first
       if (!validateTweets()) return;
 
@@ -1025,6 +1079,7 @@ export default function PlayGround({
           type: contentType,
           id: contentId,
           contentHash,
+          teamId: selectedTeamId,
           // Include any blockchain-specific data like publicKey if needed
           // publicKey: wallet.publicKey.toString(),
           // Add transaction signature if you have one
@@ -1046,12 +1101,16 @@ export default function PlayGround({
           tweetIds: pageContent.tweets.map((t) => t.id),
           createdAt: new Date(),
           status: "pending_approval",
+          teamId: selectedTeamId,
+          isSubmitted: true, // Mark as submitted
         };
 
         // Update all tweets in the thread
         const updatedTweets = pageContent.tweets.map((tweet) => ({
           ...tweet,
           status: "pending_approval" as TweetStatus,
+          teamId: selectedTeamId,
+          isSubmitted: true, // Mark as submitted
         }));
 
         tweetStorage.saveThread(thread, updatedTweets, true);
@@ -1061,6 +1120,8 @@ export default function PlayGround({
           {
             ...pageContent.tweets[0],
             status: "pending_approval" as TweetStatus,
+            teamId: selectedTeamId,
+            isSubmitted: true, // Mark as submitted
           },
           true
         );
@@ -1367,7 +1428,12 @@ export default function PlayGround({
       {/* content */}
       <div className="bg-gray-900 rounded-lg">
         {tweetsWithUniqueIds.map((tweet, index) => (
-          <div key={tweet.id} className="relative p-2 sm:p-4">
+          <div
+            key={tweet.id}
+            className={`relative p-2 sm:p-4 ${
+              tweet.isSubmitted ? "opacity-80" : ""
+            }`}
+          >
             {/* Thread line - made responsive with proper spacing */}
             {index < pageContent.tweets.length - 1 && (
               <div
@@ -1428,6 +1494,13 @@ export default function PlayGround({
                     )}
                 </div>
 
+                {/* Add submission status indicator if submitted */}
+                {tweet.isSubmitted && (
+                  <div className="mt-1 px-2 py-0.5 bg-yellow-900/30 text-yellow-500 text-xs rounded-full inline-block">
+                    Pending Approval
+                  </div>
+                )}
+
                 {/* Mention input with responsive text size */}
                 <MentionInput
                   value={tweet.content}
@@ -1440,18 +1513,21 @@ export default function PlayGround({
                   placeholder={
                     index === 0 ? "What's happening?" : "Add to thread..."
                   }
-                  className="text-white text-sm sm:text-base min-h-[60px] mt-2 w-full"
+                  className={`text-white text-sm sm:text-base min-h-[60px] mt-2 w-full ${
+                    tweet.isSubmitted ? "cursor-not-allowed" : ""
+                  }`}
                   onKeyDown={(e) => {
                     if (
                       activeTab === "drafts" &&
                       e.key === "Enter" &&
-                      e.shiftKey
+                      e.shiftKey &&
+                      !tweet.isSubmitted
                     ) {
                       e.preventDefault();
                       addTweetToThread(index);
                     }
                   }}
-                  readOnly={activeTab !== "drafts"}
+                  readOnly={activeTab !== "drafts" || tweet.isSubmitted}
                   ref={(el) => {
                     setTextAreaRef(el, index);
                     if (el) {
@@ -1482,7 +1558,7 @@ export default function PlayGround({
                   <MediaUpload
                     onUpload={(files) => handleMediaUpload(index, files)}
                     maxFiles={4 - (tweet.mediaIds?.length || 0)}
-                    disabled={activeTab != "drafts"}
+                    disabled={activeTab != "drafts" || tweet.isSubmitted}
                   />
 
                   {/* Right side controls - responsively shown/hidden */}

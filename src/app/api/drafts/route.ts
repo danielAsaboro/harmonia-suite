@@ -6,6 +6,7 @@ import {
   draftTweetsService,
   draftThreadsService,
   userTokensService,
+  teamInvitesService,
 } from "@/lib/services";
 import { fileStorage } from "@/lib/storage";
 
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     });
 
     const body = await req.json();
-    const { type, data } = body;
+    const { type, data, teamId } = body; // Extract teamId from request
     const now = new Date().toISOString();
 
     console.dir(
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
+        teamId: teamId || null, // Include teamId
+        isSubmitted: data.isSubmitted || false, // Include submission status
       };
 
       await draftTweetsService.saveDraftTweet(tweet);
@@ -57,6 +60,8 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
+        teamId: teamId || null, // Include teamId
+        isSubmitted: data.isSubmitted || false, // Include submission status
       };
 
       const tweets = data.tweets.map((tweet: any) => ({
@@ -65,6 +70,8 @@ export async function POST(req: NextRequest) {
         createdAt: tweet.createdAt || now,
         updatedAt: now,
         position: tweet.position + 1,
+        teamId: teamId || null, // Include teamId
+        isSubmitted: data.isSubmitted || false, // Include submission status
       }));
 
       await draftThreadsService.saveDraftThread(thread, tweets);
@@ -81,6 +88,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Update the GET handler to filter by team
 export async function GET(req: NextRequest) {
   try {
     const userData = await getUserData(req);
@@ -91,6 +99,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
     const id = searchParams.get("id");
+    const teamId = searchParams.get("teamId"); // Get teamId from query params
 
     if (type === "tweet" && id) {
       const tweet = await draftTweetsService.getDraftTweet(id, userData.userId);
@@ -105,7 +114,44 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(thread);
     }
 
-    // If no specific id, return all drafts
+    // If teamId is provided, filter by team
+    if (teamId) {
+      // Check if user is team admin for visibility of pending approvals
+      const isAdmin = await teamInvitesService.isTeamAdmin(
+        teamId,
+        userData.userId
+      );
+
+      // Get user's drafts for the team
+      const tweets = await draftTweetsService.getUserDraftTweetsByTeam(
+        userData.userId,
+        teamId
+      );
+
+      const threads = await draftThreadsService.getUserDraftThreadsByTeam(
+        userData.userId,
+        teamId
+      );
+
+      // If user is admin, also get pending approval items for this team
+      if (isAdmin) {
+        const pendingTweets =
+          await draftTweetsService.getTeamPendingApprovalTweets(teamId);
+
+        const pendingThreads =
+          await draftThreadsService.getTeamPendingApprovalThreads(teamId);
+
+        // Combine user's drafts with pending approvals
+        return NextResponse.json({
+          tweets: [...tweets, ...pendingTweets],
+          threads: [...threads, ...pendingThreads],
+        });
+      }
+
+      return NextResponse.json({ tweets, threads });
+    }
+
+    // If no specific filters, return all user's drafts across teams
     const tweets = await draftTweetsService.getUserDraftTweets(userData.userId);
     const threads = await draftThreadsService.getUserDraftThreads(
       userData.userId

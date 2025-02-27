@@ -41,6 +41,8 @@ export interface DraftTweet extends Omit<Tweet, "createdAt"> {
   createdAt: string;
   userId: string;
   updatedAt: string;
+  teamId?: string; // Add teamId
+  isSubmitted?: boolean; // Add submission status
   approvalId?: string;
   approvedAt?: string;
   rejectedAt?: string;
@@ -51,6 +53,8 @@ export interface DraftThread extends Omit<Thread, "createdAt"> {
   createdAt: string;
   userId: string;
   updatedAt: string;
+  teamId?: string; // Add teamId
+  isSubmitted?: boolean; // Add submission status
   approvalId?: string;
   approvedAt?: string;
   rejectedAt?: string;

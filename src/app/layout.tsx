@@ -5,6 +5,7 @@ import { UiLayout } from "@/components/ui/ui-layout";
 import { ReactQueryProvider } from "./react-query-provider";
 import { HelmProvider } from "@/contexts/helm/HelmContext";
 import { UserAccountProvider } from "@/components/editor/context/account";
+import { TeamProvider } from "@/components/editor/context/TeamContext";
 
 export const metadata = {
   title: "Harmoniasuite",
@@ -29,7 +30,9 @@ export default function RootLayout({
             <SolanaProvider>
               <HelmProvider>
                 <UserAccountProvider>
-                  <UiLayout links={links}>{children}</UiLayout>
+                  <TeamProvider>
+                    <UiLayout links={links}>{children}</UiLayout>
+                  </TeamProvider>
                 </UserAccountProvider>
               </HelmProvider>
             </SolanaProvider>

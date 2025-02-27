@@ -9,6 +9,8 @@ import { DraftMetadata, Tag } from "@/types/tweet";
 import { UnifiedChecklist } from "./UnifiedChecklist";
 import { cn } from "@/utils/ts-merge";
 import TagsSection from "./TagsSection";
+import { useTeam } from "./context/TeamContext";
+import { useUserAccount } from "./context/account";
 
 const formatTimeAgo = (date: Date): string => {
   const minutes = Math.floor((new Date().getTime() - date.getTime()) / 60000);
@@ -48,7 +50,11 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
     activeTab,
     setSubmitModalOpen,
     refreshCounter,
+    hideEditor,
+    refreshSidebar,
   } = useEditor();
+  const { selectedTeamId, isTeamAdmin, teams } = useTeam();
+  const { id: userId } = useUserAccount();
 
   const [draftData, setDraftData] = useState<DraftMetadata>({
     title: "Draft title...",
@@ -184,13 +190,34 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
       {/* Tags Section */}
       <TagsSection />
 
+      {/* Team Information Section */}
+      <div className="p-4 border-b border-gray-800">
+        <h3 className="text-sm font-medium text-gray-400 mb-2">Team</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">Selected Team</span>
+            <span className="font-medium text-gray-300">
+              {teams.find((t) => t.id === selectedTeamId)?.name || "Personal"}
+            </span>
+          </div>
+          {selectedTeamId && selectedTeamId !== userId && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Role</span>
+              <span className="font-medium text-gray-300">
+                {teams.find((t) => t.id === selectedTeamId)?.role || "Member"}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Checklist Section */}
       <div className="p-4 border-b border-gray-800">
         <UnifiedChecklist />
       </div>
 
       {/* Submit Button Section */}
-      <div className="relative w-full h-40">
+      {/* <div className="relative w-full h-40">
         <div className="w-full h-full flex items-center justify-center">
           <div className="p-4">
             <button
@@ -202,7 +229,125 @@ const MetadataTab: React.FC<MetadataTabProps> = ({ className }) => {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
+      {/* Submit Button Section - Only show for team content (not personal) */}
+      {selectedTeamId && selectedTeamId !== userId && (
+        <div className="relative w-full h-40">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="p-4">
+              <button
+                onClick={() => setSubmitModalOpen(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 flex items-center justify-center gap-2"
+                disabled={editorState.selectedItemStatus === "pending_approval"}
+              >
+                <FileCheck size={18} />
+                {editorState.selectedItemStatus === "pending_approval"
+                  ? "Pending Approval"
+                  : "Submit for review"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Actions - Only shown for team admins on pending content */}
+      {isTeamAdmin(selectedTeamId!) && editorState.selectedItemStatus === "pending_approval" && (
+        <div className="p-4 border-t border-gray-800">
+          <h3 className="text-sm font-medium text-gray-400 mb-3">
+            Admin Actions
+          </h3>
+          <div className="flex gap-3">
+            <button
+              className="px-3 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 flex-1"
+              onClick={async () => {
+                try {
+                  const contentId = editorState.selectedDraftId;
+                  const contentType = editorState.selectedDraftType;
+
+                  if (!contentId || !contentType || !selectedTeamId) return;
+
+                  const response = await fetch("/api/team/content", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      action: "approve",
+                      contentId,
+                      contentType,
+                      teamId: selectedTeamId,
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error("Failed to approve content");
+                  }
+
+                  // Success - close editor and refresh sidebar
+                  alert("Content approved successfully");
+                  hideEditor();
+                  refreshSidebar();
+                } catch (error) {
+                  console.error("Error approving content:", error);
+                  alert(
+                    "Failed to approve content: " +
+                      (error instanceof Error ? error.message : "Unknown error")
+                  );
+                }
+              }}
+            >
+              Approve
+            </button>
+            <button
+              className="px-3 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 flex-1"
+              onClick={async () => {
+                try {
+                  const reason = prompt(
+                    "Please provide a reason for rejection:"
+                  );
+                  if (reason === null) return; // User cancelled
+
+                  const contentId = editorState.selectedDraftId;
+                  const contentType = editorState.selectedDraftType;
+
+                  if (!contentId || !contentType || !selectedTeamId) return;
+
+                  const response = await fetch("/api/team/content", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      action: "reject",
+                      contentId,
+                      contentType,
+                      teamId: selectedTeamId,
+                      rejectionReason: reason,
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error("Failed to reject content");
+                  }
+
+                  // Success - close editor and refresh sidebar
+                  alert("Content rejected successfully");
+                  hideEditor();
+                  refreshSidebar();
+                } catch (error) {
+                  console.error("Error rejecting content:", error);
+                  alert(
+                    "Failed to reject content: " +
+                      (error instanceof Error ? error.message : "Unknown error")
+                  );
+                }
+              }}
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

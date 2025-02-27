@@ -38,6 +38,8 @@ export class PrismaDraftTweetsService {
         position: tweet.position || null,
         tags: JSON.stringify(tweet.tags || []),
         userId: tweet.userId,
+        teamId: tweet.teamId || null,
+        isSubmitted: tweet.isSubmitted || false,
         approvalId: tweet.approvalId || null,
         approvedAt: tweet.approvedAt || null,
         rejectedAt: tweet.rejectedAt || null,
@@ -54,6 +56,8 @@ export class PrismaDraftTweetsService {
         position: tweet.position || null,
         tags: JSON.stringify(tweet.tags || []),
         userId: tweet.userId,
+        teamId: tweet.teamId || null,
+        isSubmitted: tweet.isSubmitted || false,
         approvalId: tweet.approvalId || null,
         approvedAt: tweet.approvedAt || null,
         rejectedAt: tweet.rejectedAt || null,
@@ -80,6 +84,44 @@ export class PrismaDraftTweetsService {
       where: {
         userId: userId,
         threadId: null,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return tweets.map((tweet) => this.adaptDraftTweet(tweet));
+  }
+
+  async getUserDraftTweetsByTeam(
+    userId: string,
+    teamId: string
+  ): Promise<DraftTweet[]> {
+    const tweets = await this.prisma.draft_tweets.findMany({
+      where: {
+        userId: userId,
+        teamId: teamId,
+        // For regular users, only show their own unsubmitted drafts
+        OR: [
+          { isSubmitted: false },
+          { status: { not: "pending_approval" } }, // Show approved/rejected but not pending
+        ],
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return tweets.map((tweet) => this.adaptDraftTweet(tweet));
+  }
+
+  async getTeamPendingApprovalTweets(teamId: string): Promise<DraftTweet[]> {
+    const tweets = await this.prisma.draft_tweets.findMany({
+      where: {
+        teamId: teamId,
+        status: "pending_approval",
+        isSubmitted: true,
+        threadId: null, // Only standalone tweets
       },
       orderBy: {
         updatedAt: "desc",

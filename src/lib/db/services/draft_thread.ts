@@ -63,6 +63,12 @@ export class PrismaDraftThreadsService {
           status: thread.status,
           tags: JSON.stringify(thread.tags || []),
           userId: thread.userId,
+          teamId: thread.teamId || null,
+          isSubmitted: thread.isSubmitted || false,
+          approvalId: thread.approvalId || null,
+          approvedAt: thread.approvedAt || null,
+          rejectedAt: thread.rejectedAt || null,
+          rejectionReason: thread.rejectionReason || null,
         },
         create: {
           id: thread.id,
@@ -72,6 +78,12 @@ export class PrismaDraftThreadsService {
           status: thread.status,
           tags: JSON.stringify(thread.tags || []),
           userId: thread.userId,
+          teamId: thread.teamId || null,
+          isSubmitted: thread.isSubmitted || false,
+          approvalId: thread.approvalId || null,
+          approvedAt: thread.approvedAt || null,
+          rejectedAt: thread.rejectedAt || null,
+          rejectionReason: thread.rejectionReason || null,
         },
       });
 
@@ -89,6 +101,8 @@ export class PrismaDraftThreadsService {
             position: tweet.position || null,
             tags: JSON.stringify(tweet.tags || []),
             userId: tweet.userId,
+            teamId: thread.teamId || null, // Use thread's teamId
+            isSubmitted: thread.isSubmitted || false, // Use thread's submission status
           },
           create: {
             id: tweet.id,
@@ -101,6 +115,8 @@ export class PrismaDraftThreadsService {
             position: tweet.position || null,
             tags: JSON.stringify(tweet.tags || []),
             userId: tweet.userId,
+            teamId: thread.teamId || null, // Use thread's teamId
+            isSubmitted: thread.isSubmitted || false, // Use thread's submission status
           },
         });
       }
@@ -160,6 +176,83 @@ export class PrismaDraftThreadsService {
           where: {
             threadId: thread.id,
             userId: userId,
+          },
+          orderBy: {
+            position: "asc",
+          },
+        });
+
+        return {
+          thread: this.adaptDraftThread(thread),
+          tweets: tweets.map((tweet) => this.adaptDraftTweet(tweet)),
+        };
+      })
+    );
+
+    return threadsWithTweets;
+  }
+
+  async getUserDraftThreadsByTeam(
+    userId: string,
+    teamId: string
+  ): Promise<{ thread: DraftThread; tweets: DraftTweet[] }[]> {
+    // Find all threads for the user and specific team
+    const threads = await this.prisma.draft_threads.findMany({
+      where: {
+        userId: userId,
+        teamId: teamId,
+        // For regular users, only show their own unsubmitted drafts or non-pending ones
+        OR: [{ isSubmitted: false }, { status: { not: "pending_approval" } }],
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    // For each thread, find its tweets
+    const threadsWithTweets = await Promise.all(
+      threads.map(async (thread) => {
+        const tweets = await this.prisma.draft_tweets.findMany({
+          where: {
+            threadId: thread.id,
+            userId: userId,
+          },
+          orderBy: {
+            position: "asc",
+          },
+        });
+
+        return {
+          thread: this.adaptDraftThread(thread),
+          tweets: tweets.map((tweet) => this.adaptDraftTweet(tweet)),
+        };
+      })
+    );
+
+    return threadsWithTweets;
+  }
+
+  async getTeamPendingApprovalThreads(
+    teamId: string
+  ): Promise<{ thread: DraftThread; tweets: DraftTweet[] }[]> {
+    // Find all pending approval threads for the team
+    const threads = await this.prisma.draft_threads.findMany({
+      where: {
+        teamId: teamId,
+        status: "pending_approval",
+        isSubmitted: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    // For each thread, find its tweets
+    const threadsWithTweets = await Promise.all(
+      threads.map(async (thread) => {
+        const tweets = await this.prisma.draft_tweets.findMany({
+          where: {
+            threadId: thread.id,
           },
           orderBy: {
             position: "asc",

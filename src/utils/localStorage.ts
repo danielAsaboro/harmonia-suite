@@ -145,7 +145,11 @@ export class TweetStorageService {
       const index = tweets.findIndex((t) => t.id === tweet.id);
 
       if (index >= 0) {
-        tweets[index] = tweet;
+        tweets[index] = {
+          ...tweets[index],
+          ...tweet,
+          teamId: tweet.teamId || tweets[index].teamId,
+        };
       } else {
         tweets.push(tweet);
       }
@@ -177,7 +181,11 @@ export class TweetStorageService {
       const threadIndex = threads.findIndex((t) => t.id === thread.id);
 
       if (threadIndex >= 0) {
-        threads[threadIndex] = thread;
+        threads[threadIndex] = {
+          ...threads[threadIndex],
+          ...thread,
+          teamId: thread.teamId || threads[threadIndex].teamId,
+        };
       } else {
         threads.push(thread);
       }
@@ -192,7 +200,12 @@ export class TweetStorageService {
       // Save associated tweets to localStorage
       tweets.forEach((tweet) => {
         this.saveTweet(
-          { ...tweet, threadId: thread.id, status: tweet.status },
+          {
+            ...tweet,
+            threadId: thread.id,
+            status: tweet.status,
+            teamId: thread.teamId,
+          },
           false // Don't force immediate sync for individual tweets
         );
       });
@@ -208,6 +221,38 @@ export class TweetStorageService {
       }
     } catch (error) {
       console.error("Error saving thread:", error);
+    }
+  }
+
+  // Add methods to filter by team
+  getTweetsByTeam(teamId: string | null): Tweet[] {
+    try {
+      const tweets = this.getTweets();
+
+      if (!teamId) return tweets; // Return all if no teamId specified
+
+      return tweets.filter(
+        (tweet) => teamId === "all" || tweet.teamId === teamId || !tweet.teamId
+      );
+    } catch (error) {
+      console.error("Error getting tweets by team:", error);
+      return [];
+    }
+  }
+
+  getThreadsByTeam(teamId: string | null): Thread[] {
+    try {
+      const threads = this.getThreads();
+
+      if (!teamId) return threads; // Return all if no teamId specified
+
+      return threads.filter(
+        (thread) =>
+          teamId === "all" || thread.teamId === teamId || !thread.teamId
+      );
+    } catch (error) {
+      console.error("Error getting threads by team:", error);
+      return [];
     }
   }
 

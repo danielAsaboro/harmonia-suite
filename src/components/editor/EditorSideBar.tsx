@@ -18,6 +18,7 @@ import { SidebarItem } from "./SidebarItem";
 import Image from "next/image";
 import EditorSideBarBottomOverlay from "./EditorSideBarBottomOverlay";
 import Link from "next/link";
+import { useTeam } from "./context/TeamContext";
 
 export default function EditorSidebar() {
   const {
@@ -46,7 +47,7 @@ export default function EditorSidebar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const { teams, selectedTeamId, setSelectedTeamId, isTeamAdmin } = useTeam();
 
   // Filter items based on search query
   const filteredItems = items.filter((item) => {
@@ -79,28 +80,62 @@ export default function EditorSidebar() {
   useEffect(() => {
     const loadItems = () => {
       let filtered: (Tweet | Thread)[] = [];
-      const tweets = tweetStorage.getTweets();
-      const threads = tweetStorage.getThreads();
 
+      // Get tweets and threads filtered by team
+      const tweets = selectedTeamId
+        ? tweetStorage.getTweetsByTeam(selectedTeamId)
+        : tweetStorage.getTweets();
+
+      const threads = selectedTeamId
+        ? tweetStorage.getThreadsByTeam(selectedTeamId)
+        : tweetStorage.getThreads();
+
+      // Also filter by status
       switch (activeTab) {
         case "drafts":
+          // For drafts, only show user's own unsubmitted content
           filtered = [
-            ...tweets.filter((t) => t.status === "draft" && !t.threadId),
-            ...threads.filter((t) => t.status === "draft"),
+            ...tweets.filter(
+              (t) => t.status === "draft" && !t.threadId && !t.isSubmitted
+            ),
+            ...threads.filter((t) => t.status === "draft" && !t.isSubmitted),
           ];
           break;
         case "scheduled":
+          // For scheduled content, show all scheduled content for the team
           filtered = [
             ...tweets.filter((t) => t.status === "scheduled" && !t.threadId),
             ...threads.filter((t) => t.status === "scheduled"),
           ];
           break;
         case "published":
+          // For published content, show all published content for the team
           filtered = [
             ...tweets.filter((t) => t.status === "published" && !t.threadId),
             ...threads.filter((t) => t.status === "published"),
           ];
           break;
+      }
+
+      // If user is admin of selected team, also show pending approval content
+      if (isTeamAdmin(selectedTeamId!) && selectedTeamId) {
+        const pendingApproval = [
+          ...tweets.filter(
+            (t) =>
+              t.status === "pending_approval" &&
+              !t.threadId &&
+              t.teamId === selectedTeamId &&
+              t.isSubmitted
+          ),
+          ...threads.filter(
+            (t) =>
+              t.status === "pending_approval" &&
+              t.teamId === selectedTeamId &&
+              t.isSubmitted
+          ),
+        ];
+
+        filtered = [...filtered, ...pendingApproval];
       }
 
       setItems(
@@ -112,7 +147,44 @@ export default function EditorSidebar() {
     };
 
     loadItems();
-  }, [activeTab, refreshCounter]);
+  }, [activeTab, refreshCounter, selectedTeamId, isTeamAdmin]);
+  // useEffect(() => {
+  //   const loadItems = () => {
+  //     let filtered: (Tweet | Thread)[] = [];
+  //     const tweets = tweetStorage.getTweets();
+  //     const threads = tweetStorage.getThreads();
+
+  //     switch (activeTab) {
+  //       case "drafts":
+  //         filtered = [
+  //           ...tweets.filter((t) => t.status === "draft" && !t.threadId),
+  //           ...threads.filter((t) => t.status === "draft"),
+  //         ];
+  //         break;
+  //       case "scheduled":
+  //         filtered = [
+  //           ...tweets.filter((t) => t.status === "scheduled" && !t.threadId),
+  //           ...threads.filter((t) => t.status === "scheduled"),
+  //         ];
+  //         break;
+  //       case "published":
+  //         filtered = [
+  //           ...tweets.filter((t) => t.status === "published" && !t.threadId),
+  //           ...threads.filter((t) => t.status === "published"),
+  //         ];
+  //         break;
+  //     }
+
+  //     setItems(
+  //       filtered.sort(
+  //         (a, b) =>
+  //           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  //       )
+  //     );
+  //   };
+
+  //   loadItems();
+  // }, [activeTab, refreshCounter]);
 
   const createNewDraft = () => {
     const emptyDraft = items.find(
@@ -228,33 +300,20 @@ export default function EditorSidebar() {
                   <span
                     className="text-sm font-medium truncate max-w-28"
                     title={
-                      selectedTeamId === userId
-                        ? name
-                        : teamMemberships.find(
-                            (t) => t.team.id === selectedTeamId
-                          )?.team.name || name
+                      teams.find((t) => t.id === selectedTeamId)?.name ||
+                      "Your Account"
                     }
                   >
                     {selectedTeamId !== userId && (
                       <span className="text-blue-400 text-xs mr-1">•</span>
                     )}
-                    {(selectedTeamId === userId
-                      ? name
-                      : teamMemberships.find(
-                          (t) => t.team.id === selectedTeamId
-                        )?.team.name || name
+                    {(
+                      teams.find((t) => t.id === selectedTeamId)?.name ||
+                      "Your Account"
                     ).length > 10
-                      ? `${(selectedTeamId === userId
-                          ? name
-                          : teamMemberships.find(
-                              (t) => t.team.id === selectedTeamId
-                            )?.team.name || name
-                        ).substring(0, 10)}...`
-                      : selectedTeamId === userId
-                        ? name
-                        : teamMemberships.find(
-                            (t) => t.team.id === selectedTeamId
-                          )?.team.name || name}
+                      ? `${(teams.find((t) => t.id === selectedTeamId)?.name || "Your Account").substring(0, 10)}...`
+                      : teams.find((t) => t.id === selectedTeamId)?.name ||
+                        "Your Account"}
                   </span>
                   <ChevronDown
                     className={`w-4 h-4 transition-transform duration-200 ${
@@ -270,11 +329,10 @@ export default function EditorSidebar() {
                     aria-orientation="vertical"
                   >
                     <div className="py-1">
-                      {teamMemberships.length > 0 ? (
-                        teamMemberships.map((eachTeam) => {
+                      {teams.length > 0 ? (
+                        teams.map((team) => {
                           // Determine if this team is selected
-                          const isSelected =
-                            selectedTeamId === eachTeam.team.id;
+                          const isSelected = selectedTeamId === team.id;
                           return (
                             <div
                               className={`px-4 py-2 text-sm ${
@@ -284,26 +342,26 @@ export default function EditorSidebar() {
                               } flex items-center gap-2 cursor-pointer`}
                               role="menuitem"
                               tabIndex={0}
-                              key={eachTeam.team.id}
+                              key={team.id}
                               onClick={() => {
-                                setSelectedTeamId(eachTeam.team.id);
+                                setSelectedTeamId(team.id);
+                                hideEditor();
                                 setIsDropdownOpen(false);
                               }}
-                              title={
-                                eachTeam.team.id === userId
-                                  ? name
-                                  : eachTeam.team.name
-                              }
+                              title={team.name}
                             >
                               {isSelected && (
                                 <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                               )}
-                              {eachTeam.team.id !== userId && !isSelected && (
+                              {team.id !== userId && !isSelected && (
                                 <span className="w-2 h-2 border border-gray-500 rounded-full opacity-50"></span>
                               )}
-                              {eachTeam.team.id === userId
-                                ? name
-                                : eachTeam.team.name}
+                              {team.name}
+                              {team.role === "admin" && (
+                                <span className="ml-auto text-xs text-gray-500">
+                                  Admin
+                                </span>
+                              )}
                             </div>
                           );
                         })
@@ -312,7 +370,7 @@ export default function EditorSidebar() {
                           className="px-4 py-2 text-sm text-gray-400 cursor-default"
                           role="menuitem"
                         >
-                          Teams you are in will also appear here
+                          No teams available
                         </div>
                       )}
                     </div>
