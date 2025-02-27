@@ -46,6 +46,7 @@ export default function EditorSidebar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   // Filter items based on search query
   const filteredItems = items.filter((item) => {
@@ -55,6 +56,14 @@ export default function EditorSidebar() {
         : tweetStorage.getThreadPreview(item.id)?.content.toLowerCase() || "";
     return content.includes(searchQuery.toLowerCase());
   });
+
+  useEffect(() => {
+    // Initialize the selected team
+    // to the user's account by default
+    if (!selectedTeamId) {
+      setSelectedTeamId(userId);
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (editorState.selectedDraftId) {
@@ -216,8 +225,36 @@ export default function EditorSidebar() {
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="true"
                 >
-                  <span className="text-sm font-medium truncate max-w-28">
-                    {name}
+                  <span
+                    className="text-sm font-medium truncate max-w-28"
+                    title={
+                      selectedTeamId === userId
+                        ? name
+                        : teamMemberships.find(
+                            (t) => t.team.id === selectedTeamId
+                          )?.team.name || name
+                    }
+                  >
+                    {selectedTeamId !== userId && (
+                      <span className="text-blue-400 text-xs mr-1">•</span>
+                    )}
+                    {(selectedTeamId === userId
+                      ? name
+                      : teamMemberships.find(
+                          (t) => t.team.id === selectedTeamId
+                        )?.team.name || name
+                    ).length > 10
+                      ? `${(selectedTeamId === userId
+                          ? name
+                          : teamMemberships.find(
+                              (t) => t.team.id === selectedTeamId
+                            )?.team.name || name
+                        ).substring(0, 10)}...`
+                      : selectedTeamId === userId
+                        ? name
+                        : teamMemberships.find(
+                            (t) => t.team.id === selectedTeamId
+                          )?.team.name || name}
                   </span>
                   <ChevronDown
                     className={`w-4 h-4 transition-transform duration-200 ${
@@ -233,27 +270,40 @@ export default function EditorSidebar() {
                     aria-orientation="vertical"
                   >
                     <div className="py-1">
-                      {/* Current account - highlighted */}
-                      <div
-                        className="px-4 py-2 text-sm text-blue-400 flex items-center gap-2 bg-gray-800"
-                        role="menuitem"
-                      >
-                        <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                        {name} {}
-                      </div>
-
-                      {/* Other accounts would be mapped here */}
                       {teamMemberships.length > 0 ? (
                         teamMemberships.map((eachTeam) => {
-                          if (eachTeam.team.id == userId) return;
+                          // Determine if this team is selected
+                          const isSelected =
+                            selectedTeamId === eachTeam.team.id;
                           return (
                             <div
-                              className="px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 cursor-pointer"
+                              className={`px-4 py-2 text-sm ${
+                                isSelected
+                                  ? "text-blue-400 bg-gray-800"
+                                  : "text-gray-300 hover:bg-gray-800"
+                              } flex items-center gap-2 cursor-pointer`}
                               role="menuitem"
                               tabIndex={0}
                               key={eachTeam.team.id}
+                              onClick={() => {
+                                setSelectedTeamId(eachTeam.team.id);
+                                setIsDropdownOpen(false);
+                              }}
+                              title={
+                                eachTeam.team.id === userId
+                                  ? name
+                                  : eachTeam.team.name
+                              }
                             >
-                              {eachTeam.team.name}
+                              {isSelected && (
+                                <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                              )}
+                              {eachTeam.team.id !== userId && !isSelected && (
+                                <span className="w-2 h-2 border border-gray-500 rounded-full opacity-50"></span>
+                              )}
+                              {eachTeam.team.id === userId
+                                ? name
+                                : eachTeam.team.name}
                             </div>
                           );
                         })
