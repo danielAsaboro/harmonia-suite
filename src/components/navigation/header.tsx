@@ -1,5 +1,6 @@
+// /components/navigation/header.tsx
 import { cn } from "@/utils/ts-merge";
-import { Bell } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
@@ -8,27 +9,45 @@ interface HeaderProps {
   userName: string;
   profile_image_url: string;
   className?: string;
+  onMenuClick?: () => void;
 }
 
-const Header = ({ userName, profile_image_url, className }: HeaderProps) => {
+const Header = ({ 
+  userName, 
+  profile_image_url, 
+  className,
+  onMenuClick 
+}: HeaderProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <header
       className={cn(
-        "flex h-16 items-center justify-between border-b border-slate-700 bg-slate-800 px-6",
+        "flex h-16 items-center justify-between border-b border-slate-700 bg-slate-800 px-4 md:px-6",
         className
       )}
     >
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-white">
+        {/* Mobile menu toggle button */}
+        <button 
+          onClick={onMenuClick}
+          className="lg:hidden rounded-full p-2 text-slate-200 hover:bg-slate-700"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        
+        <h1 className="text-lg md:text-xl font-semibold text-white truncate">
           Welcome, {userName}
         </h1>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button className="rounded-full p-2 text-slate-200 hover:bg-slate-700">
+      <div className="flex items-center gap-3 md:gap-4">
+        <button 
+          className="rounded-full p-2 text-slate-200 hover:bg-slate-700"
+          aria-label="Notifications"
+        >
           <Bell className="h-5 w-5" />
         </button>
 

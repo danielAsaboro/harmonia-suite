@@ -10,13 +10,11 @@ import {
   BookOpen,
   Trophy,
   Target,
-  Wallet,
-  Plus,
+  User,
   Settings,
   HelpCircle,
   LogOut,
-  BanknoteIcon,
-  User,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import LogoutModal from "@/components/auth/LogoutModal";
@@ -64,9 +62,10 @@ const bottomNavigationItems = [
 
 interface SidebarProps {
   className?: string;
+  onClose?: () => void;
 }
 
-const Sidebar = ({ className }: SidebarProps) => {
+const Sidebar = ({ className, onClose }: SidebarProps) => {
   const pathname = usePathname();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -88,6 +87,12 @@ const Sidebar = ({ className }: SidebarProps) => {
           "flex items-center gap-3 rounded-lg px-3 py-2 text-slate-200 transition-colors",
           isActive ? "bg-green-400 text-white" : "hover:bg-slate-700"
         )}
+        onClick={() => {
+          // Close sidebar on mobile when an item is clicked
+          if (onClose && window.innerWidth < 1024) {
+            onClose();
+          }
+        }}
       >
         <Icon className="h-5 w-5" />
         <span>{title}</span>
@@ -99,7 +104,7 @@ const Sidebar = ({ className }: SidebarProps) => {
     <div
       className={cn("flex h-full w-64 flex-col bg-slate-800 p-4", className)}
     >
-      <div className="mb-8">
+      <div className="mb-8 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/icons/app-icon.svg"
@@ -109,6 +114,17 @@ const Sidebar = ({ className }: SidebarProps) => {
             height={8}
           />
         </Link>
+
+        {/* Close button for mobile */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden rounded-full p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
+            aria-label="Close sidebar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       <nav className="space-y-2">
@@ -130,6 +146,12 @@ const Sidebar = ({ className }: SidebarProps) => {
           "transition-colors duration-200",
           pathname === "/team" && "bg-green-400 text-white hover:bg-green-500"
         )}
+        onClick={() => {
+          // Close sidebar on mobile when team link is clicked
+          if (onClose && window.innerWidth < 1024) {
+            onClose();
+          }
+        }}
       >
         <User className="h-5 w-5" />
         <span>Manage Team</span>
