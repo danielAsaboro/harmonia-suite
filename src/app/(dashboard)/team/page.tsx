@@ -1,4 +1,4 @@
-// /app/team/page.tsx
+// // /app/team/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -32,6 +32,7 @@ import {
   Eye,
   Copy,
   Check,
+  Menu,
 } from "lucide-react";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 import { TeamRole } from "@/types/team";
@@ -45,8 +46,8 @@ interface PendingInvite {
   sentAt: Date;
   expiresAt: Date;
   status: "pending" | "expired";
-  inviteLink?: string; // Added invite link property
-  token?: string; // Token to construct link
+  inviteLink?: string;
+  token?: string;
 }
 
 interface TeamMember {
@@ -105,23 +106,29 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
       open={isOpen}
       onOpenChange={(open) => !isLoading && !open && onClose()}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-w-[95vw] mx-auto">
         <DialogHeader>
           <DialogTitle>Confirm Removal</DialogTitle>
           <DialogDescription>
             Are you sure you want to remove the team member with public key{" "}
-            <span className="font-mono">{memberKey}</span>? This action cannot
-            be undone.
+            <span className="font-mono break-words">{memberKey}</span>? This
+            action cannot be undone.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex space-x-2 justify-end">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+        <DialogFooter className="flex space-x-2 justify-end sm:justify-end flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             variant="destructive"
             onClick={onConfirm}
             disabled={isLoading}
+            className="w-full sm:w-auto"
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Remove Member
@@ -160,7 +167,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
       open={isOpen}
       onOpenChange={(open) => !isLoading && !open && onClose()}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-w-[95vw] mx-auto">
         <DialogHeader>
           <DialogTitle>Add New Team Member</DialogTitle>
           <DialogDescription>
@@ -190,11 +197,20 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({
             </SelectContent>
           </Select>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+        <DialogFooter className="flex sm:justify-end flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Add Member
           </Button>
@@ -215,6 +231,7 @@ export default function TeamManagementPage() {
   const [isDeletingMember, setIsDeletingMember] = useState(false);
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -306,9 +323,10 @@ export default function TeamManagementPage() {
   }, []);
 
   const filteredMembers = teamMembers.filter((member) => {
-    const matchesSearch = member.handle
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      member.handle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (member.publicKey?.toLowerCase().includes(searchQuery.toLowerCase()) ??
+        false);
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -432,10 +450,13 @@ export default function TeamManagementPage() {
   const [showEmailPreview, setShowEmailPreview] = useState(false);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Team Management</h1>
-        <div className="flex gap-2">
+    <div className="p-3 md:p-6 space-y-6">
+      {/* Header with responsive design */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">Team Management</h1>
+
+        {/* Desktop buttons */}
+        <div className="hidden sm:flex gap-2">
           <Button
             onClick={() => setShowAddMember(true)}
             className="flex items-center gap-2"
@@ -460,6 +481,57 @@ export default function TeamManagementPage() {
             Preview Email
           </Button>
         </div>
+
+        {/* Mobile menu button */}
+        <div className="sm:hidden flex w-full justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="flex items-center gap-2"
+          >
+            <Menu className="w-4 h-4" />
+            Menu
+          </Button>
+        </div>
+
+        {/* Mobile menu */}
+        {showMobileMenu && (
+          <div className="sm:hidden w-full flex flex-col gap-2">
+            <Button
+              onClick={() => {
+                setShowAddMember(true);
+                setShowMobileMenu(false);
+              }}
+              className="flex items-center gap-2 w-full justify-start"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add Member
+            </Button>
+            <Button
+              onClick={() => {
+                setShowInviteMember(true);
+                setShowMobileMenu(false);
+              }}
+              className="flex items-center gap-2 w-full justify-start"
+              variant="outline"
+            >
+              <Mail className="w-4 h-4" />
+              Invite Member
+            </Button>
+            <Button
+              onClick={() => {
+                setShowEmailPreview(true);
+                setShowMobileMenu(false);
+              }}
+              variant="ghost"
+              className="flex items-center gap-2 w-full justify-start"
+            >
+              <Eye className="w-4 h-4" />
+              Preview Email
+            </Button>
+          </div>
+        )}
       </div>
 
       <EmailPreview
@@ -467,40 +539,99 @@ export default function TeamManagementPage() {
         onClose={() => setShowEmailPreview(false)}
       />
 
-      {/* Pending Invites Section - Updated with Invite Link column */}
+      {/* Pending Invites Section - Responsive layout */}
       {pendingInvites.length > 0 && (
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold mb-4">Pending Invites</h2>
-            <div className="rounded-lg border border-border">
-              <div className="grid grid-cols-5 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
-                <div>Email</div>
-                <div>Role</div>
-                <div>Sent</div>
-                <div>Expires</div>
-                <div>Invite Link</div> {/* New column for invite link */}
+
+            {/* Desktop view */}
+            <div className="hidden md:block overflow-x-auto">
+              <div className="rounded-lg border border-border min-w-full">
+                <div className="grid grid-cols-5 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
+                  <div>Email</div>
+                  <div>Role</div>
+                  <div>Sent</div>
+                  <div>Expires</div>
+                  <div>Invite Link</div>
+                </div>
+                <div className="divide-y divide-border">
+                  {pendingInvites.map((invite) => (
+                    <div
+                      key={invite.id}
+                      className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-gray-50/5"
+                    >
+                      <div className="truncate">{invite.email}</div>
+                      <div>
+                        <Badge
+                          variant={
+                            invite.role === "admin" ? "default" : "secondary"
+                          }
+                        >
+                          {invite.role}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {invite.sentAt.toLocaleDateString()}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {invite.expiresAt.toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center">
+                        <div className="relative flex-1 truncate text-xs font-mono bg-muted p-2 rounded mr-2">
+                          {invite.inviteLink}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            invite.inviteLink &&
+                            copyInviteLink(invite.inviteLink, invite.id)
+                          }
+                          className="flex-shrink-0"
+                        >
+                          {copiedLinkId === invite.id ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="divide-y divide-border">
-                {pendingInvites.map((invite) => (
-                  <div
-                    key={invite.id}
-                    className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-gray-50/5"
-                  >
-                    <div>{invite.email}</div>
-                    <div>
-                      <Badge
-                        variant={
-                          invite.role === "admin" ? "default" : "secondary"
-                        }
-                      >
-                        {invite.role}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {invite.sentAt.toLocaleDateString()}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {invite.expiresAt.toLocaleDateString()}
+            </div>
+
+            {/* Mobile view - Card style */}
+            <div className="md:hidden space-y-4">
+              {pendingInvites.map((invite) => (
+                <div
+                  key={invite.id}
+                  className="border border-border rounded-lg p-4 space-y-3"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="font-medium">{invite.email}</div>
+                    <Badge
+                      variant={
+                        invite.role === "admin" ? "default" : "secondary"
+                      }
+                    >
+                      {invite.role}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 text-sm">
+                    <div className="text-muted-foreground">Sent:</div>
+                    <div>{invite.sentAt.toLocaleDateString()}</div>
+
+                    <div className="text-muted-foreground">Expires:</div>
+                    <div>{invite.expiresAt.toLocaleDateString()}</div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-muted-foreground text-sm">
+                      Invite Link:
                     </div>
                     <div className="flex items-center">
                       <div className="relative flex-1 truncate text-xs font-mono bg-muted p-2 rounded mr-2">
@@ -523,8 +654,8 @@ export default function TeamManagementPage() {
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -533,17 +664,17 @@ export default function TeamManagementPage() {
       {/* Existing team members card */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="relative w-96">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div className="relative w-full md:w-96">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
               <Input
-                placeholder="Search by public key..."
+                placeholder="Search by handle or key..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full md:w-auto">
               <Filter className="h-4 w-4 text-gray-500" />
               <Select
                 value={roleFilter}
@@ -551,7 +682,7 @@ export default function TeamManagementPage() {
                   setRoleFilter(value)
                 }
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -563,82 +694,159 @@ export default function TeamManagementPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-border">
-            <div className="grid grid-cols-6 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
-              <div>Twitter Handle</div>
-              <div>Public Key</div>
-              <div>Role</div>
-              <div>Added</div>
-              <div>Last Active</div>
-              <div>Actions</div>
-            </div>
+          {/* Desktop view for team members */}
+          <div className="hidden md:block overflow-x-auto">
+            <div className="rounded-lg border border-border min-w-full">
+              <div className="grid grid-cols-6 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
+                <div>Twitter Handle</div>
+                <div>Public Key</div>
+                <div>Role</div>
+                <div>Added</div>
+                <div>Last Active</div>
+                <div>Actions</div>
+              </div>
 
-            <div className="divide-y divide-border">
-              {isLoading ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                  Loading team members...
-                </div>
-              ) : (
-                <>
-                  {filteredMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50/5"
-                    >
-                      <div className="text-sm text-gray-500">
-                        {member.handle}
+              <div className="divide-y divide-border">
+                {isLoading ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                    Loading team members...
+                  </div>
+                ) : (
+                  <>
+                    {filteredMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        className="grid grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50/5"
+                      >
+                        <div className="text-sm text-gray-500">
+                          {member.handle}
+                        </div>
+                        <div className="font-mono text-sm truncate">
+                          {member.publicKey
+                            ? `${member.publicKey.slice(0, 6)}...${member.publicKey.slice(-4)}`
+                            : "Not added yet"}
+                        </div>
+                        <div>
+                          <Badge
+                            variant={
+                              member.role === "admin" ? "default" : "secondary"
+                            }
+                          >
+                            {member.role}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {member.addedAt.toLocaleDateString()}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {member.lastActive.toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setDeleteModal({
+                                isOpen: true,
+                                memberId: member.id,
+                                memberKey: member.publicKey!,
+                              })
+                            }
+                            className="text-red-400 hover:text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="font-mono text-sm">
-                        {member.publicKey
-                          ? `${member.publicKey.slice(0, 6)}...${member.publicKey.slice(-4)}`
-                          : "Not added yet"}
+                    ))}
+
+                    {filteredMembers.length === 0 && !isLoading && (
+                      <div className="p-8 text-center text-gray-500">
+                        No team members found matching your filters
                       </div>
-                      <div>
-                        <Badge
-                          variant={
-                            member.role === "admin" ? "default" : "secondary"
-                          }
-                        >
-                          {member.role}
-                        </Badge>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile view for team members - Card style */}
+          <div className="md:hidden">
+            {isLoading ? (
+              <div className="p-8 text-center text-gray-500">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                Loading team members...
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="border border-border rounded-lg p-4 space-y-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">{member.handle}</div>
+                      <Badge
+                        variant={
+                          member.role === "admin" ? "default" : "secondary"
+                        }
+                      >
+                        {member.role}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">
+                        Public Key:
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {member.addedAt.toLocaleDateString()}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {member.lastActive.toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setDeleteModal({
-                              isOpen: true,
-                              memberId: member.id,
-                              memberKey: member.publicKey!,
-                            })
-                          }
-                          className="text-red-400 hover:text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                      <div className="font-mono text-sm bg-muted p-2 rounded truncate">
+                        {member.publicKey || "Not added yet"}
                       </div>
                     </div>
-                  ))}
 
-                  {filteredMembers.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">
-                      No team members found matching your filters
+                    <div className="grid grid-cols-2 text-sm">
+                      <div className="text-muted-foreground">Added:</div>
+                      <div>{member.addedAt.toLocaleDateString()}</div>
+
+                      <div className="text-muted-foreground">Last Active:</div>
+                      <div>{member.lastActive.toLocaleDateString()}</div>
                     </div>
-                  )}
-                </>
-              )}
-            </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setDeleteModal({
+                            isOpen: true,
+                            memberId: member.id,
+                            memberKey: member.publicKey!,
+                          })
+                        }
+                        className="text-red-400 hover:text-red-500"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredMembers.length === 0 && !isLoading && (
+                  <div className="p-8 text-center text-gray-500 border border-dashed border-border rounded-lg">
+                    No team members found matching your filters
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -650,7 +858,7 @@ export default function TeamManagementPage() {
         onInvite={handleInviteMember}
         isLoading={isInviting}
       />
-{/* lol */}
+
       <AddMemberModal
         isOpen={showAddMember}
         onClose={() => setShowAddMember(false)}
@@ -667,6 +875,15 @@ export default function TeamManagementPage() {
         memberKey={deleteModal.memberKey}
         isLoading={isDeletingMember}
       />
+      {/* <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() =>
+          setDeleteModal({ isOpen: false, memberId: "", memberKey: "" })
+        }
+        onConfirm={() => handleRemoveMember(deleteModal.memberId)}
+        memberKey={deleteModal.memberKey}
+        isLoading={isDeletingMember}
+      /> */}
     </div>
   );
 }
