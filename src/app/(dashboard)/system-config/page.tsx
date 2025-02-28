@@ -23,7 +23,9 @@ import {
   AlertCircle,
   Download,
   Upload,
+  Menu,
 } from "lucide-react";
+
 // System Status Types
 export type SystemStatus = {
   llmStatus: "operational" | "degraded" | "down";
@@ -86,6 +88,7 @@ export interface ConfigSectionProps {
   icon: React.ReactNode;
   children: React.ReactNode;
 }
+
 // Reusable Status Card Component
 const StatusCard: React.FC<StatusCardProps> = ({
   title,
@@ -116,7 +119,7 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
   icon,
   children,
 }) => (
-  <Card variant="elevated">
+  <Card variant="elevated" className="h-full">
     <CardHeader>
       <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-zinc-50">
         {icon}
@@ -159,6 +162,9 @@ export default function DashboardPage() {
     },
   });
 
+  // Mobile menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
   // Event Handlers
   const handleConfigUpdate = (
     section: keyof SystemConfig,
@@ -180,38 +186,63 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-8">
+    <div className="w-full mx-auto p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8">
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-50">
             System Configuration
           </h1>
-          <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-zinc-500 dark:text-zinc-400">
             Manage your system settings and configurations
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Backup
+
+        {/* Mobile menu button */}
+        <div className="sm:hidden w-full flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <Menu className="w-4 h-4" />
+            <span className="ml-2">Actions</span>
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Restore
+        </div>
+
+        {/* Action buttons */}
+        <div
+          className={`flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto ${mobileMenuOpen ? "block" : "hidden sm:flex"}`}
+        >
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 justify-center"
+            size="sm"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Backup</span>
           </Button>
           <Button
-            className="flex items-center gap-2"
+            variant="outline"
+            className="flex items-center gap-2 justify-center"
+            size="sm"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">Restore</span>
+          </Button>
+          <Button
+            className="flex items-center gap-2 justify-center"
             onClick={handleSaveChanges}
+            size="sm"
           >
             <Save className="w-4 h-4" />
-            Save Changes
+            <span className="hidden sm:inline">Save Changes</span>
           </Button>
         </div>
       </div>
 
       {/* System Status Overview */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <StatusCard
           title="LLM Status"
           value={systemStatus.llmStatus}
@@ -229,7 +260,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Configuration Sections */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {/* LLM Configuration */}
         <ConfigSection
           title="LLM Configuration"
@@ -355,14 +386,14 @@ export default function DashboardPage() {
           title="Privacy Controls"
           icon={<Shield className="w-5 h-5" />}
         >
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 Data Retention Period (days)
               </label>
               <Input
                 type="number"
-                className="w-24"
+                className="w-full sm:w-24"
                 value={config.privacy.dataRetentionDays}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleConfigUpdate(
@@ -374,7 +405,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 Enable Usage Analytics
               </label>
@@ -386,7 +417,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 Store User Data Locally Only
               </label>
