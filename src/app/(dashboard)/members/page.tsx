@@ -138,12 +138,12 @@ const MemberFinder = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto bg-gray-900 rounded-2xl p-8 space-y-8">
-      <header className="space-y-3">
-        <h1 className="text-white text-3xl font-bold">
+    <div className="w-full max-w-6xl mx-auto bg-gray-900 rounded-2xl p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6 lg:space-y-8">
+      <header className="space-y-2 md:space-y-3">
+        <h1 className="text-white text-2xl md:text-3xl font-bold">
           Superteam Member Finder
         </h1>
-        <p className="text-gray-400 text-lg max-w-3xl">
+        <p className="text-gray-400 text-base md:text-lg max-w-3xl">
           Find the perfect Superteam member to match your community needs. Just
           describe your requirements, and I'll suggest the most relevant
           member(s) or let you know if no match exists.{" "}
@@ -152,28 +152,30 @@ const MemberFinder = () => {
 
       <hr className="border-gray-700" />
 
-      <form onSubmit={handleSearch} className="flex gap-3">
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
           <Input
             value={query}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setQuery(e.target.value)
+            }
             placeholder="Describe your project needs..."
-            className="pl-12 bg-gray-800 border-gray-700 text-white h-14 text-lg"
+            className="pl-12 bg-gray-800 border-gray-700 text-white h-12 md:h-14 text-base md:text-lg w-full"
           />
         </div>
         <Button
           type="submit"
-          className="h-14 px-8 bg-white text-gray-900 hover:bg-gray-100 text-lg"
+          className="h-12 md:h-14 px-6 md:px-8 bg-white text-gray-900 hover:bg-gray-100 text-base md:text-lg sm:whitespace-nowrap"
         >
           <Send className="w-5 h-5 mr-2" />
           Find Matches
         </Button>
       </form>
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-gray-300 text-xl font-semibold">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <h2 className="text-gray-300 text-lg md:text-xl font-semibold">
             Suggested Matches
           </h2>
           <span className="text-gray-400">
@@ -181,33 +183,33 @@ const MemberFinder = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {suggestions.map((member) => (
             <Card
               key={member.id}
               className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-all"
             >
-              <CardContent className="p-6 space-y-6">
+              <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
                 <div className="flex justify-between items-start">
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     <div className="space-y-1">
-                      <h3 className="text-white text-xl font-semibold">
+                      <h3 className="text-white text-lg md:text-xl font-semibold">
                         {member.name}
                       </h3>
-                      <p className="text-gray-400">
+                      <p className="text-gray-400 text-sm">
                         {member.location} • {member.timezone}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Badge
                         variant="secondary"
-                        className="bg-green-900 text-green-300 px-3 py-1"
+                        className="bg-green-900 text-green-300 px-2 md:px-3 py-1 text-xs md:text-sm"
                       >
                         {member.matchPercentage}% Match
                       </Badge>
                       <Badge
                         variant="secondary"
-                        className="bg-blue-900 text-blue-300 px-3 py-1"
+                        className="bg-blue-900 text-blue-300 px-2 md:px-3 py-1 text-xs md:text-sm"
                       >
                         {member.availability}
                       </Badge>
@@ -217,18 +219,18 @@ const MemberFinder = () => {
                     <img
                       src={member.profileImage}
                       alt={member.name}
-                      className="w-16 h-16 rounded-full"
+                      className="w-12 h-12 md:w-16 md:h-16 rounded-full"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
-                      <span className="text-2xl text-white">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xl md:text-2xl text-white">
                         {member.name[0]}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <p className="text-gray-300 text-sm line-clamp-2">
+                <p className="text-gray-300 text-xs md:text-sm line-clamp-2">
                   {member.bio}
                 </p>
 
@@ -237,28 +239,30 @@ const MemberFinder = () => {
                     <Badge
                       key={skill}
                       variant="outline"
-                      className="bg-gray-700 text-gray-300 border-gray-600"
+                      className="bg-gray-700 text-gray-300 border-gray-600 text-xs"
                     >
                       {skill}
                     </Badge>
                   ))}
                 </div>
 
-                <div className="space-y-3">
-                  <h4 className="text-gray-300 font-semibold">
+                <div className="space-y-2">
+                  <h4 className="text-gray-300 text-sm font-semibold">
                     Why this match?
                   </h4>
-                  <p className="text-gray-400 text-sm">{member.matchReason}</p>
+                  <p className="text-gray-400 text-xs md:text-sm">
+                    {member.matchReason}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <div className="flex gap-2">
                     <Link
                       href={`mailto:${member.email}`}
-                      className="flex items-center gap-2 text-gray-400 hover:text-white text-sm"
+                      className="flex items-center gap-2 text-gray-400 hover:text-white text-xs md:text-sm truncate max-w-full"
                     >
-                      <Mail className="w-4 h-4" />
-                      {member.email}
+                      <Mail className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{member.email}</span>
                     </Link>
                   </div>
                   <div className="flex gap-4">
@@ -268,7 +272,7 @@ const MemberFinder = () => {
                       rel="noopener noreferrer"
                       className="text-gray-400 hover:text-white"
                     >
-                      <Twitter className="w-5 h-5" />
+                      <Twitter className="w-4 h-4 md:w-5 md:h-5" />
                     </Link>
                     <Link
                       href={`https://github.com/${member.github}`}
@@ -276,7 +280,7 @@ const MemberFinder = () => {
                       rel="noopener noreferrer"
                       className="text-gray-400 hover:text-white"
                     >
-                      <Github className="w-5 h-5" />
+                      <Github className="w-4 h-4 md:w-5 md:h-5" />
                     </Link>
                     <Link
                       href={`https://linkedin.com/in/${member.linkedin}`}
@@ -284,7 +288,7 @@ const MemberFinder = () => {
                       rel="noopener noreferrer"
                       className="text-gray-400 hover:text-white"
                     >
-                      <Linkedin className="w-5 h-5" />
+                      <Linkedin className="w-4 h-4 md:w-5 md:h-5" />
                     </Link>
                   </div>
                 </div>
@@ -295,9 +299,9 @@ const MemberFinder = () => {
                   rel="noopener noreferrer"
                   className="block"
                 >
-                  <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white gap-2">
+                  <Button className="w-full bg-gray-700 hover:bg-gray-600 text-white gap-2 text-sm">
                     View Full Profile
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
                   </Button>
                 </Link>
               </CardContent>
