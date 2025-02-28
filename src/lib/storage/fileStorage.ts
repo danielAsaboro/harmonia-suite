@@ -171,5 +171,5 @@ export const fileStorage = new FileStorage({
     "video/mp4",
     "video/quicktime",
   ],
-  maxFileSize: 5 * 1024 * 1024, // 15MB
+  maxFileSize: 5 * 1024 * 1024, // 5MB
 });

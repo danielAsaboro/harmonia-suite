@@ -18,6 +18,7 @@ export class PrismaScheduledThreadsService {
       createdAt: thread.createdAt,
       error: thread.error || undefined,
       userId: thread.userId,
+      teamId: thread.teamId || undefined,
       userTokens: thread.user
         ? {
             accessToken: thread.user.accessToken,
@@ -40,6 +41,7 @@ export class PrismaScheduledThreadsService {
         createdAt: thread.createdAt,
         error: thread.error || null,
         userId: thread.userId,
+        teamId: thread.teamId || null,
       },
       create: {
         id: thread.id,
@@ -49,6 +51,7 @@ export class PrismaScheduledThreadsService {
         createdAt: thread.createdAt,
         error: thread.error || null,
         userId: thread.userId,
+        teamId: thread.teamId || null,
       },
     });
   }

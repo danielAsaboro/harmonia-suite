@@ -6,6 +6,7 @@ import { ReactQueryProvider } from "./react-query-provider";
 import { HelmProvider } from "@/contexts/helm/HelmContext";
 import { UserAccountProvider } from "@/components/editor/context/account";
 import { TeamProvider } from "@/components/editor/context/TeamContext";
+import { initializeAppWideServices } from "@/lib/init";
 
 export const metadata = {
   title: "Harmoniasuite",
@@ -16,6 +17,9 @@ const links: { label: string; path: string }[] = [
   { label: "Account", path: "/account" },
   { label: "Clusters", path: "/clusters" },
 ];
+
+// // the Scheduler
+// initializeAppWideServices();
 
 export default function RootLayout({
   children,

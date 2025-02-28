@@ -94,6 +94,7 @@ export interface ScheduledTweet {
   createdAt: string;
   error?: string;
   userId: string;
+  teamId?: string;
   userTokens?: TokenData; // Added for joined data from database
 }
 
@@ -105,6 +106,7 @@ export interface ScheduledThread {
   createdAt: string;
   error?: string;
   userId: string;
+  teamId?: string;
   userTokens?: TokenData; // Added for joined data from database
 }
 

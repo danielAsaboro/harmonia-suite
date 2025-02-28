@@ -139,7 +139,7 @@ export class TweetStorageService {
     return tweets[0] || null;
   }
 
-  public saveTweet(tweet: Tweet, immediate: boolean = false) {
+  public async saveTweet(tweet: Tweet, immediate: boolean = false) {
     try {
       const tweets = this.getTweets();
       const index = tweets.findIndex((t) => t.id === tweet.id);
@@ -176,7 +176,7 @@ export class TweetStorageService {
     }
   }
 
-  public saveThread(
+  public async saveThread(
     thread: Thread,
     tweets: Tweet[],
     immediate: boolean = false
@@ -214,7 +214,6 @@ export class TweetStorageService {
             threadId: thread.id,
             status: tweet.status,
             teamId: thread.teamId,
-            // Preserve media metadata
             media: tweet.media || existingTweet?.media,
           },
           immediate
@@ -227,7 +226,8 @@ export class TweetStorageService {
 
         // Only force immediate sync if explicitly requested
         if (immediate) {
-          draftSync.forceSyncNow();
+          console.log(" forcing sync right now");
+          await draftSync.forceSyncNow();
         }
       }
     } catch (error) {

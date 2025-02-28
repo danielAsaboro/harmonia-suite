@@ -1,0 +1,33 @@
+[2025-02-28T17:33:16.420Z] Tweet scheduler started
+[2025-02-28T17:34:00.590Z] Starting scheduled publication check
+[2025-02-28T17:34:01.661Z] Successfully published tweet tweet-8a0715e7-619f-4c1f-b27d-0fe0bac6e9fa
+[2025-02-28T17:35:00.924Z] Starting scheduled publication check
+[2025-02-28T17:35:00.941Z] ERROR - Failed to publish thread thread-76d9110d-20f9-40da-a7e0-a37de0f52c2a: (0 , _lib_storage_indexedDB__WEBPACK_IMPORTED_MODULE_1__.getMediaFile) is not a function
+[2025-02-28T17:36:00.995Z] Starting scheduled publication check
+[2025-02-28T17:37:13.402Z] Tweet scheduler started
+[2025-02-28T17:37:13.409Z] Tweet scheduler started
+[2025-02-28T17:37:13.417Z] Tweet scheduler started
+[2025-02-28T17:37:13.420Z] Tweet scheduler started
+[2025-02-28T17:37:13.425Z] Tweet scheduler started
+[2025-02-28T17:37:13.426Z] Tweet scheduler started
+[2025-02-28T17:37:15.288Z] Tweet scheduler started
+[2025-02-28T17:53:28.296Z] Tweet scheduler started
+[2025-02-28T17:54:00.646Z] Starting scheduled publication check
+[2025-02-28T17:54:01.666Z] ERROR - Failed to publish thread thread-76d9110d-20f9-40da-a7e0-a37de0f52c2a: Request failed with code 400
+[2025-02-28T17:55:00.137Z] Starting scheduled publication check
+[2025-02-28T17:56:00.192Z] Starting scheduled publication check
+[2025-02-28T17:57:00.440Z] Starting scheduled publication check
+[2025-02-28T17:58:00.847Z] Starting scheduled publication check
+[2025-02-28T17:59:00.956Z] Starting scheduled publication check
+[2025-02-28T18:00:00.560Z] Starting scheduled publication check
+[2025-02-28T18:01:00.647Z] Starting scheduled publication check
+[2025-02-28T18:02:00.752Z] Starting scheduled publication check
+[2025-02-28T18:03:00.835Z] Starting scheduled publication check
+[2025-02-28T18:04:00.932Z] Starting scheduled publication check
+[2025-02-28T18:05:00.068Z] Starting scheduled publication check
+[2025-02-28T18:06:00.256Z] Starting scheduled publication check
+[2025-02-28T18:07:00.327Z] Starting scheduled publication check
+[2025-02-28T18:08:00.392Z] Starting scheduled publication check
+[2025-02-28T18:09:00.452Z] Starting scheduled publication check
+[2025-02-28T18:10:00.742Z] Starting scheduled publication check
+[2025-02-28T18:11:00.836Z] Starting scheduled publication check

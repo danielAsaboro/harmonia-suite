@@ -711,9 +711,7 @@ export default function PlayGround({
         const tweetsData = pageContent.tweets.map((tweet) => ({
           id: tweet.id,
           content: tweet.content,
-          media: {
-            mediaIds: [...(tweet.media?.mediaIds || [])],
-          },
+          media: tweet.media,
           scheduledFor: scheduledDate.toISOString(),
           threadId: pageContent.threadId,
           position: tweet.position,
@@ -721,21 +719,6 @@ export default function PlayGround({
           createdAt: new Date().toISOString(),
           userId,
         }));
-
-        // Save to SQLite via API
-        const scheduleResponse = await fetch("/api/scheduler/schedule", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "thread",
-            thread: threadData,
-            tweets: tweetsData,
-          }),
-        });
-
-        if (!scheduleResponse.ok) {
-          throw new Error("Failed to schedule thread");
-        }
 
         // Save to localStorage for UI
         const thread: Thread = {
@@ -746,7 +729,7 @@ export default function PlayGround({
           scheduledFor: scheduledDate,
         };
 
-        tweetStorage.saveThread(
+        await tweetStorage.saveThread(
           thread,
           pageContent.tweets.map((t) => ({
             ...t,
@@ -755,12 +738,36 @@ export default function PlayGround({
           })),
           true
         );
+
+        const scheduleResponse = await fetch("/api/scheduler/schedule", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "thread",
+            teamId: selectedTeamId,
+            thread: threadData,
+            tweets: tweetsData,
+          }),
+        });
+
+        if (!scheduleResponse.ok) {
+          tweetStorage.saveThread(
+            thread,
+            pageContent.tweets.map((t) => ({
+              ...t,
+              status: "draft" as const,
+              scheduledFor: undefined,
+            })),
+            true
+          );
+          throw new Error("Failed to schedule thread");
+        }
       } else {
         // Prepare single tweet data for SQLite
         const tweetData = {
           id: pageContent.tweets[0].id,
           content: pageContent.tweets[0].content,
-          mediaIds: pageContent.tweets[0].media?.mediaIds || [],
+          media: pageContent.tweets[0].media,
           scheduledFor: scheduledDate.toISOString(),
           status: "scheduled" as const,
           createdAt: new Date().toISOString(),
@@ -774,22 +781,23 @@ export default function PlayGround({
           body: JSON.stringify({
             type: "tweet",
             tweet: tweetData,
+            teamId: selectedTeamId,
           }),
         });
 
         if (!scheduleResponse.ok) {
+          // Save to localStorage for UI
+          await tweetStorage.saveTweet(
+            {
+              ...pageContent.tweets[0],
+              status: "draft" as const,
+              scheduledFor: undefined,
+            },
+            true
+          );
+
           throw new Error("Failed to schedule tweet");
         }
-
-        // Save to localStorage for UI
-        tweetStorage.saveTweet(
-          {
-            ...pageContent.tweets[0],
-            status: "scheduled",
-            scheduledFor: scheduledDate,
-          },
-          true
-        );
       }
 
       // Close the scheduler and editor

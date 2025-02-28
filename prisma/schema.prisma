@@ -48,11 +48,14 @@ model scheduled_tweets {
   createdAt     String
   error         String?
   userId        String
+  teamId        String?
   user          user_tokens        @relation(fields: [userId], references: [userId], onDelete: Cascade)
   thread        scheduled_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  team          teams?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([scheduledFor])
+  @@index([teamId])
 }
 
 model scheduled_threads {
@@ -63,11 +66,14 @@ model scheduled_threads {
   createdAt    String
   error        String?
   userId       String
+  teamId       String?
   user         user_tokens        @relation(fields: [userId], references: [userId], onDelete: Cascade)
   tweets       scheduled_tweets[]
+  team         teams?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([scheduledFor])
+  @@index([teamId])
 }
 
 model draft_tweets {
@@ -177,14 +183,16 @@ model content_approvals {
 }
 
 model teams {
-  id            String          @id
-  name          String
-  createdAt     String
-  updatedAt     String
-  members       team_members[]
-  invites       team_invites[]
-  draft_tweets  draft_tweets[]
-  draft_threads draft_threads[]
+  id                String              @id
+  name              String
+  createdAt         String
+  updatedAt         String
+  members           team_members[]
+  invites           team_invites[]
+  draft_tweets      draft_tweets[]
+  draft_threads     draft_threads[]
+  scheduled_tweets  scheduled_tweets[]
+  scheduled_threads scheduled_threads[]
 }
 
 model team_members {

@@ -13,20 +13,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OnboardingState, OnboardingStep, steps } from "@/types/onboarding";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useWallet } from "@solana/wallet-adapter-react";
+// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// import { useWallet } from "@solana/wallet-adapter-react";
 import { ArrowRight } from "lucide-react";
-import { useTransactionToast } from "@/components/ui/ui-layout";
-import { useTwitterAccount } from "@/hooks/helm";
+// import { useTransactionToast } from "@/components/ui/ui-layout";
+// import { useTwitterAccount } from "@/hooks/helm";
 import toast from "react-hot-toast";
 import EmailVerification from "./EmailVerification";
 import PreferencesStep from "./PreferencesStep";
 
+// Helper function to create the user's team
+const createTeam = async (userInfo: TwitterUserData) => {
+  try {
+    // Call the team members API to automatically set up the team
+    const response = await fetch("/api/team/members", {
+      method: "GET", // GET request initializes the team with the current user as admin
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create team");
+    }
+
+    console.log("Team created successfully");
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating team:", error);
+    // Don't throw error here - we want onboarding to complete even if team creation fails
+    // The user can set up their team later
+    toast.error("Team setup failed, but you can create it later in settings");
+  }
+};
+
 const OnboardingFlow = ({ user }: { user: TwitterUserData }) => {
   const router = useRouter();
-  const { connected, publicKey } = useWallet();
-  const transactionToast = useTransactionToast();
-  const { registerAccount } = useTwitterAccount(user.id);
+  // const { connected, publicKey } = useWallet();
+  // const transactionToast = useTransactionToast();
+  // const { registerAccount } = useTwitterAccount(user.id);
 
   // Initialize state with default values
   const [state, setState] = useState<OnboardingState>({
@@ -134,14 +159,17 @@ const OnboardingFlow = ({ user }: { user: TwitterUserData }) => {
     if (stepIndex === steps.length - 1) {
       try {
         // Register account on the blockchain
-        const signature = await registerAccount(user.id, user.username);
-        transactionToast(signature);
+        // const signature = await registerAccount(user.id, user.username);
+        // transactionToast(signature);
+
+        // Create team automatically
+        await createTeam(user);
 
         // Save final onboarding data - explicitly set the complete flag
         await updateOnboardingData(
           {
             preferences: state.preferences,
-            walletAddress: publicKey?.toBase58(),
+            // walletAddress: publicKey?.toBase58(),
           },
           true // This explicitly marks onboarding as complete
         );
@@ -173,9 +201,10 @@ const OnboardingFlow = ({ user }: { user: TwitterUserData }) => {
     // Save progress after each step
     if (state.currentStep === "email") {
       await updateOnboardingData({ email: state.email });
-    } else if (state.currentStep === "wallet-connect" && publicKey) {
-      await updateOnboardingData({ walletAddress: publicKey.toBase58() });
     }
+    // else if (state.currentStep === "wallet-connect" && publicKey) {
+    //   await updateOnboardingData({ walletAddress: publicKey.toBase58() });
+    // }
   };
 
   const updateEmail = (email: string) => {
@@ -266,7 +295,19 @@ const OnboardingFlow = ({ user }: { user: TwitterUserData }) => {
       case "wallet-connect":
         return (
           <div className="space-y-4">
-            <WalletMultiButton className="w-full !bg-blue-600 hover:!bg-blue-700" />
+            {/* Comment out the actual wallet button */}
+            {/* <WalletMultiButton className="w-full !bg-blue-600 hover:!bg-blue-700" /> */}
+            <div className="p-4 bg-gray-800 rounded-lg text-center">
+              <p>Wallet connection temporarily disabled</p>
+              <button
+                className="mt-4 px-4 py-2 bg-blue-600 rounded-lg"
+                onClick={() =>
+                  setState((prev) => ({ ...prev, currentStep: "preferences" }))
+                }
+              >
+                Skip this step
+              </button>
+            </div>
           </div>
         );
 
@@ -287,7 +328,8 @@ const OnboardingFlow = ({ user }: { user: TwitterUserData }) => {
       case "email-verification":
         return state.isEmailVerified;
       case "wallet-connect":
-        return connected;
+        // return connected;
+        return true;
       default:
         return true;
     }

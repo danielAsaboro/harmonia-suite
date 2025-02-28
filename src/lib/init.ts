@@ -1,7 +1,7 @@
 // /lib/init.ts
 import { startScheduler } from "./cron/scheduler";
 
-export function initializeServices() {
+export function initializeAppWideServices() {
   // Start the scheduler
   startScheduler();
 

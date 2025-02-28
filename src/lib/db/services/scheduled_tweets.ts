@@ -21,6 +21,7 @@ export class PrismaScheduledTweetsService {
       createdAt: tweet.createdAt,
       error: tweet.error || undefined,
       userId: tweet.userId,
+      teamId: tweet.teamId || undefined,
       userTokens: tweet.user
         ? {
             accessToken: tweet.user.accessToken,
@@ -46,6 +47,7 @@ export class PrismaScheduledTweetsService {
         createdAt: tweet.createdAt,
         error: tweet.error || null,
         userId: tweet.userId,
+        teamId: tweet.teamId || undefined,
       },
       create: {
         id: tweet.id,
@@ -58,6 +60,7 @@ export class PrismaScheduledTweetsService {
         createdAt: tweet.createdAt,
         error: tweet.error || null,
         userId: tweet.userId,
+        teamId: tweet.teamId || undefined,
       },
     });
   }

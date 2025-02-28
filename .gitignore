@@ -39,3 +39,5 @@ copyFiles.js
 collection_*/
 public/media_uploads/
 .env
+logs/
+/logs

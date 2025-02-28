@@ -1,9 +1,9 @@
 // /lib/twitter/publisher.ts
 import { ScheduledTweet, ScheduledThread, TokenData } from "../db/schema";
 import { TwitterApi } from "twitter-api-v2";
-import { getMediaFile } from "@/lib/storage/indexedDB";
 import { userTokensService } from "../services";
 import { getMediaIdsTuple } from "../twitter";
+import { fileStorage } from "../storage";
 
 async function refreshTokenIfNeeded(userTokens: TokenData): Promise<string> {
   const now = Date.now();
@@ -61,19 +61,16 @@ export async function publishTweet(tweet: ScheduledTweet) {
     if (tweet.media && tweet.media.mediaIds.length > 0) {
       mediaIds = await Promise.all(
         tweet.media.mediaIds.map(async (mediaId) => {
-          const mediaData = await getMediaFile(mediaId);
-          if (!mediaData) throw new Error(`Media not found: ${mediaId}`);
+          // Get media from fileStorage instead of IndexedDB
+          const mediaBuffer = await fileStorage.getFile(tweet.userId, mediaId);
 
-          // Remove data:image/jpeg;base64, prefix
-          const base64Data = mediaData.split(";base64,").pop() || "";
-          const buffer = Buffer.from(base64Data, "base64");
-
-          // Determine media type from the data URL
-          const mediaType = mediaData.split(";")[0].split("/")[1];
+          // Determine media type from file extension or stored metadata
+          const fileExtension = mediaId.split(".").pop()?.toLowerCase() || "";
+          const mimeType = getMimeType(fileExtension);
 
           // Upload to Twitter
-          const mediaResponse = await client.v1.uploadMedia(buffer, {
-            mimeType: `image/${mediaType}`,
+          const mediaResponse = await client.v1.uploadMedia(mediaBuffer, {
+            mimeType: mimeType,
           });
 
           // Add alt text if available
@@ -124,19 +121,19 @@ export async function publishThread(
       if (tweet.media && tweet.media.mediaIds.length > 0) {
         mediaIds = await Promise.all(
           tweet.media.mediaIds.map(async (mediaId) => {
-            const mediaData = await getMediaFile(mediaId);
-            if (!mediaData) throw new Error(`Media not found: ${mediaId}`);
+            // Get media from fileStorage instead of IndexedDB
+            const mediaBuffer = await fileStorage.getFile(
+              tweet.userId,
+              mediaId
+            );
 
-            // Remove data:image/jpeg;base64, prefix
-            const base64Data = mediaData.split(";base64,").pop() || "";
-            const buffer = Buffer.from(base64Data, "base64");
-
-            // Determine media type
-            const mediaType = mediaData.split(";")[0].split("/")[1];
+            // Determine media type from file extension or stored metadata
+            const fileExtension = mediaId.split(".").pop()?.toLowerCase() || "";
+            const mimeType = getMimeType(fileExtension);
 
             // Upload to Twitter
-            const mediaResponse = await client.v1.uploadMedia(buffer, {
-              mimeType: `image/${mediaType}`,
+            const mediaResponse = await client.v1.uploadMedia(mediaBuffer, {
+              mimeType: mimeType,
             });
 
             // Add alt text if available
@@ -174,3 +171,152 @@ export async function publishThread(
     throw error;
   }
 }
+
+// Helper function to determine MIME type from file extension
+function getMimeType(extension: string): string {
+  switch (extension) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "gif":
+      return "image/gif";
+    case "webp":
+      return "image/webp";
+    case "mp4":
+      return "video/mp4";
+    case "mov":
+      return "video/quicktime";
+    default:
+      return "application/octet-stream";
+  }
+}
+
+// export async function publishTweet(tweet: ScheduledTweet) {
+//   try {
+//     if (!tweet.userTokens) {
+//       throw new Error("No user tokens found for tweet");
+//     }
+
+//     const client = await getTwitterClient(tweet.userTokens);
+//     const v2Client = client.v2;
+
+//     // Upload media if present
+//     let mediaIds: string[] = [];
+//     if (tweet.media && tweet.media.mediaIds.length > 0) {
+//       mediaIds = await Promise.all(
+//         tweet.media.mediaIds.map(async (mediaId) => {
+//           const mediaData = await getMediaFile(mediaId);
+//           if (!mediaData) throw new Error(`Media not found: ${mediaId}`);
+
+//           // Remove data:image/jpeg;base64, prefix
+//           const base64Data = mediaData.split(";base64,").pop() || "";
+//           const buffer = Buffer.from(base64Data, "base64");
+
+//           // Determine media type from the data URL
+//           const mediaType = mediaData.split(";")[0].split("/")[1];
+
+//           // Upload to Twitter
+//           const mediaResponse = await client.v1.uploadMedia(buffer, {
+//             mimeType: `image/${mediaType}`,
+//           });
+
+//           // Add alt text if available
+//           if (tweet.media?.descriptions?.[mediaId]) {
+//             await client.v1.createMediaMetadata(mediaResponse, {
+//               alt_text: { text: tweet.media.descriptions[mediaId] },
+//             });
+//           }
+
+//           return mediaResponse;
+//         })
+//       );
+//     }
+
+//     // Post tweet
+//     const response = await v2Client.tweet(tweet.content, {
+//       media:
+//         mediaIds.length > 0
+//           ? getMediaIdsTuple(mediaIds.slice(0, 4))
+//           : undefined,
+//     });
+
+//     return response;
+//   } catch (error) {
+//     console.error("Error publishing tweet:", error);
+//     throw error;
+//   }
+// }
+
+// export async function publishThread(
+//   thread: ScheduledThread,
+//   tweets: ScheduledTweet[]
+// ) {
+//   try {
+//     if (!thread.userTokens) {
+//       throw new Error("No user tokens found for thread");
+//     }
+
+//     const client = await getTwitterClient(thread.userTokens);
+//     const v2Client = client.v2;
+//     let previousTweetId: string | undefined;
+//     const responses = [];
+
+//     // Post tweets sequentially
+//     for (const tweet of tweets) {
+//       // Upload media if present
+//       let mediaIds: string[] = [];
+//       if (tweet.media && tweet.media.mediaIds.length > 0) {
+//         mediaIds = await Promise.all(
+//           tweet.media.mediaIds.map(async (mediaId) => {
+//             const mediaData = await getMediaFile(mediaId);
+//             if (!mediaData) throw new Error(`Media not found: ${mediaId}`);
+
+//             // Remove data:image/jpeg;base64, prefix
+//             const base64Data = mediaData.split(";base64,").pop() || "";
+//             const buffer = Buffer.from(base64Data, "base64");
+
+//             // Determine media type
+//             const mediaType = mediaData.split(";")[0].split("/")[1];
+
+//             // Upload to Twitter
+//             const mediaResponse = await client.v1.uploadMedia(buffer, {
+//               mimeType: `image/${mediaType}`,
+//             });
+
+//             // Add alt text if available
+//             if (tweet.media?.descriptions?.[mediaId]) {
+//               await client.v1.createMediaMetadata(mediaResponse, {
+//                 alt_text: { text: tweet.media.descriptions[mediaId] },
+//               });
+//             }
+
+//             return mediaResponse;
+//           })
+//         );
+//       }
+
+//       // Post tweet
+//       const response = await v2Client.tweet(tweet.content, {
+//         media:
+//           mediaIds.length > 0
+//             ? getMediaIdsTuple(mediaIds.slice(0, 4))
+//             : undefined,
+//         reply: previousTweetId
+//           ? {
+//               in_reply_to_tweet_id: previousTweetId,
+//             }
+//           : undefined,
+//       });
+
+//       previousTweetId = response.data.id;
+//       responses.push(response);
+//     }
+
+//     return responses;
+//   } catch (error) {
+//     console.error("Error publishing thread:", error);
+//     throw error;
+//   }
+// }
