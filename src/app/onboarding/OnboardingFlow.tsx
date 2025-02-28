@@ -163,6 +163,7 @@ const OnboardingFlow = ({ user }: { user: TwitterUserData }) => {
         // transactionToast(signature);
 
         // Create team automatically
+        console.log(" when i got here");
         await createTeam(user);
 
         // Save final onboarding data - explicitly set the complete flag
