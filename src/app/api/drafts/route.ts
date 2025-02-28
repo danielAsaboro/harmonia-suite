@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ensure user tokens exist in the database
     await userTokensService.saveUserTokens({
       userId: userData.userId,
       accessToken: userData.tokens.accessToken,
@@ -32,13 +31,13 @@ export async function POST(req: NextRequest) {
     const { type, data } = body;
     const now = new Date().toISOString();
 
-    // console.dir(
-    //   {
-    //     type,
-    //     data,
-    //   },
-    //   { depth: null }
-    // );
+    console.dir(
+      {
+        type,
+        data,
+      },
+      { depth: null }
+    );
 
     if (type === "tweet") {
       const tweet = {
@@ -46,8 +45,9 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
-        teamId: data.teamId || null, // Include teamId
-        isSubmitted: data.isSubmitted || false, // Include submission status
+        teamId: data.teamId || null,
+        isSubmitted: data.isSubmitted || false,
+        media: data.media || null,
       };
 
       await draftTweetsService.saveDraftTweet(tweet);
@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
-        teamId: data.tweets[0].teamId || null, // Include teamId
-        isSubmitted: data.isSubmitted || false, // Include submission status
+        teamId: data.tweets[0].teamId || null,
+        isSubmitted: data.isSubmitted || false,
       };
 
       const tweets = data.tweets.map((tweet: any) => ({
@@ -69,9 +69,11 @@ export async function POST(req: NextRequest) {
         userId: userData.userId,
         createdAt: tweet.createdAt || now,
         updatedAt: now,
-        position: tweet.position + 1,
-        teamId: data.teamId || null, // Include teamId
-        isSubmitted: data.isSubmitted || false, // Include submission status
+        position: tweet.position,
+        teamId: data.teamId || null,
+        isSubmitted: data.isSubmitted || false,
+        // Only include media, no mediaIds
+        media: tweet.media || null,
       }));
 
       await draftThreadsService.saveDraftThread(thread, tweets);
@@ -87,7 +89,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
 // Update the GET handler to filter by team
 export async function GET(req: NextRequest) {
   try {
@@ -178,9 +179,6 @@ export async function DELETE(req: NextRequest) {
     const type = searchParams.get("type");
     const id = searchParams.get("id");
     const cleanup = searchParams.get("cleanup") === "true";
-    // const cleanup = true;
-
-    console.log("clean up is activated ", cleanup);
 
     if (!type || !id) {
       return NextResponse.json(
@@ -197,11 +195,10 @@ export async function DELETE(req: NextRequest) {
           userData.userId
         );
 
-        if (tweet && tweet.mediaIds) {
-          // Delete media files|
+        if (tweet && tweet.media?.mediaIds) {
+          // Delete media files
           await Promise.allSettled(
-            // JSON.parse(tweet.mediaIds)
-            tweet.mediaIds.map(
+            tweet.media?.mediaIds.map(
               async (mediaId: string) =>
                 await fileStorage.deleteFile(userData.userId, mediaId)
             )
@@ -217,9 +214,9 @@ export async function DELETE(req: NextRequest) {
           userData.userId
         );
         if (threadData) {
-          const mediaIds = threadData.tweets
-            .map((tweet) => JSON.stringify(tweet.mediaIds || "[]"))
-            .flat();
+          const mediaIds = threadData.tweets.flatMap(
+            (tweet) => tweet.media?.mediaIds || []
+          );
 
           // Delete all media files
           await Promise.allSettled(

@@ -6,6 +6,7 @@ import {
   Thread,
   UnifiedTweetComposerProps,
   TweetStatus,
+  TaggedUser,
 } from "@/types/tweet";
 import MediaUpload from "./media/MediaUpload";
 import MediaPreview from "./media/MediaPreview";
@@ -45,9 +46,10 @@ const DEFAULT_TEXTAREA_HEIGHT = "60px";
 //  helper function
 const repurposeTweet = (tweet: Tweet): Tweet => {
   return {
+    ...tweet,
+    isSubmitted: false,
+    scheduledFor: undefined,
     id: `tweet-${uuidv4()}`,
-    content: tweet.content,
-    mediaIds: [...(tweet.mediaIds || [])],
     createdAt: new Date(),
     status: "draft",
   };
@@ -66,13 +68,13 @@ const repurposeThread = (
   };
 
   const newTweets = tweets.map((tweet, index) => ({
+    ...tweet,
+    isSubmitted: false,
+    scheduledFor: undefined,
     id: `tweet-${uuidv4()}`,
-    content: tweet.content,
-    mediaIds: [...(tweet.mediaIds || [])],
     createdAt: new Date(),
     status: "draft" as const,
     threadId: newThreadId,
-    position: index,
   }));
 
   newThread.tweetIds = newTweets.map((t) => t.id);
@@ -109,6 +111,7 @@ const cleanupMediaAndDeleteTweet = async (
   }
 };
 
+// For cleanupMediaAndDeleteThread
 const cleanupMediaAndDeleteThread = async (threadId: string) => {
   try {
     // Delete from backend API
@@ -128,7 +131,7 @@ const cleanupMediaAndDeleteThread = async (threadId: string) => {
     if (thread) {
       await Promise.allSettled(
         thread.tweets
-          .flatMap((tweet) => tweet.mediaIds || [])
+          .flatMap((tweet) => tweet.media?.mediaIds || [])
           .map((mediaId) => removeMediaFile(mediaId))
       );
     }
@@ -182,6 +185,13 @@ export default function PlayGround({
     isProcessing: false,
   });
   const { selectedTeamId, isTeamAdmin } = useTeam();
+
+  const [mediaTaggedUsers, setMediaTaggedUsers] = useState<{
+    [mediaId: string]: TaggedUser[];
+  }>({});
+  const [mediaDescriptions, setMediaDescriptions] = useState<{
+    [mediaId: string]: string;
+  }>({});
 
   const [pageContent, setPageContent] = useState<PageContent>({
     isThread: false,
@@ -293,7 +303,7 @@ export default function PlayGround({
       const tweetToDelete = newTweets[index];
 
       // Track all media to delete
-      const mediaToDelete = tweetToDelete.mediaIds || [];
+      const mediaToDelete = tweetToDelete.media?.mediaIds || [];
 
       if (pageContent.tweets.length === 1) {
         // For the last tweet in any context (thread or standalone)
@@ -410,7 +420,10 @@ export default function PlayGround({
     }
 
     const newTweets = [...pageContent.tweets];
-    const currentMedia = newTweets[tweetIndex].mediaIds || [];
+    const tweet = newTweets[tweetIndex];
+
+    // Get current mediaIds from the media object or create empty array
+    const currentMedia = tweet.media?.mediaIds || [];
     const totalFiles = currentMedia.length + files.length;
 
     if (totalFiles > 4) {
@@ -422,11 +435,9 @@ export default function PlayGround({
       // Upload files to the backend and get their IDs
       const mediaIds = await Promise.all(
         files.map(async (file) => {
-          // Create form data for the file
           const formData = new FormData();
           formData.append("file", file);
 
-          // Upload to backend
           const response = await fetch("/api/media/upload", {
             method: "POST",
             body: formData,
@@ -437,19 +448,20 @@ export default function PlayGround({
           }
 
           const data = await response.json();
-          // console.log(" data id ", data.id);
-
-          // Store in IndexedDB for local caching
           await storeMediaFile(data.id, file);
 
           return data.id;
         })
       );
 
-      // Update the tweet's media array
+      // Update the tweet's media object
       newTweets[tweetIndex] = {
         ...newTweets[tweetIndex],
-        mediaIds: [...currentMedia, ...mediaIds],
+        media: {
+          mediaIds: [...currentMedia, ...mediaIds],
+          taggedUsers: tweet.media?.taggedUsers || {},
+          descriptions: tweet.media?.descriptions || {},
+        },
       };
 
       // Save the updated tweets
@@ -488,27 +500,48 @@ export default function PlayGround({
     }
 
     const newTweets = [...pageContent.tweets];
-    const currentMedia = newTweets[tweetIndex].mediaIds || [];
-    const mediaId = currentMedia[mediaIndex];
+    const tweet = newTweets[tweetIndex];
 
-    if (mediaId) {
+    if (!tweet.media || !tweet.media.mediaIds.length) return;
+
+    const mediaIdToRemove = tweet.media.mediaIds[mediaIndex];
+
+    if (mediaIdToRemove) {
       try {
         // Remove from backend
-        const response = await fetch(`/api/media/upload?id=${mediaId}`, {
-          method: "DELETE",
-        });
+        const response = await fetch(
+          `/api/media/upload?id=${mediaIdToRemove}`,
+          {
+            method: "DELETE",
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Failed to delete media from server");
         }
 
         // Remove from IndexedDB
-        await removeMediaFile(mediaId);
+        await removeMediaFile(mediaIdToRemove);
 
-        // Update tweet's media array
-        newTweets[tweetIndex].mediaIds = currentMedia.filter(
+        // Create a new media object with the removed ID filtered out
+        const updatedMediaIds = tweet.media.mediaIds.filter(
           (_, i) => i !== mediaIndex
         );
+
+        // Clean up associated metadata
+        const { [mediaIdToRemove]: _, ...remainingTaggedUsers } =
+          tweet.media.taggedUsers || {};
+        const { [mediaIdToRemove]: __, ...remainingDescriptions } =
+          tweet.media.descriptions || {};
+
+        newTweets[tweetIndex] = {
+          ...newTweets[tweetIndex],
+          media: {
+            mediaIds: updatedMediaIds,
+            taggedUsers: remainingTaggedUsers,
+            descriptions: remainingDescriptions,
+          },
+        };
 
         setPageContent((prev) => ({
           isThread: prev.isThread,
@@ -663,9 +696,9 @@ export default function PlayGround({
       const userData = await response.json();
       const userId = userData.id;
 
-      // Save scheduled tweets to both localStorage and SQLite
+      // Save scheduled tweets to both localStorage and Server
       if (pageContent.isThread && pageContent.threadId) {
-        // Prepare thread data for SQLite
+        // Prepare thread data for Server
         const threadData = {
           id: pageContent.threadId,
           tweetIds: pageContent.tweets.map((t) => t.id),
@@ -675,11 +708,12 @@ export default function PlayGround({
           userId,
         };
 
-        // Prepare tweets data for SQLite
         const tweetsData = pageContent.tweets.map((tweet) => ({
           id: tweet.id,
           content: tweet.content,
-          mediaIds: tweet.mediaIds || [],
+          media: {
+            mediaIds: [...(tweet.media?.mediaIds || [])],
+          },
           scheduledFor: scheduledDate.toISOString(),
           threadId: pageContent.threadId,
           position: tweet.position,
@@ -726,7 +760,7 @@ export default function PlayGround({
         const tweetData = {
           id: pageContent.tweets[0].id,
           content: pageContent.tweets[0].content,
-          mediaIds: pageContent.tweets[0].mediaIds || [],
+          mediaIds: pageContent.tweets[0].media?.mediaIds || [],
           scheduledFor: scheduledDate.toISOString(),
           status: "scheduled" as const,
           createdAt: new Date().toISOString(),
@@ -783,9 +817,9 @@ export default function PlayGround({
       const tweetsWithMedia = await Promise.all(
         pageContent.tweets.map(async (tweet) => {
           let mediaContent: string[] = [];
-          if (tweet.mediaIds && tweet.mediaIds.length > 0) {
+          if (tweet.media?.mediaIds && tweet.media?.mediaIds.length > 0) {
             mediaContent = await Promise.all(
-              tweet.mediaIds.map(async (mediaId) => {
+              tweet.media?.mediaIds.map(async (mediaId) => {
                 const mediaData = await getMediaFile(mediaId);
                 return mediaData || "";
               })
@@ -793,7 +827,8 @@ export default function PlayGround({
           }
           return {
             content: tweet.content,
-            mediaContent: mediaContent,
+            mediaContent,
+            media: tweet.media,
           };
         })
       );
@@ -976,7 +1011,9 @@ export default function PlayGround({
           const newTweet: Tweet = {
             id: `tweet-${uuidv4()}`,
             content: "",
-            mediaIds: [],
+            media: {
+              mediaIds: [],
+            },
             tags: [],
             createdAt: new Date(),
             status: "draft",
@@ -1214,7 +1251,8 @@ export default function PlayGround({
           e.preventDefault();
 
           // Check media limit
-          const currentMedia = pageContent.tweets[textareaIndex].mediaIds || [];
+          const currentMedia =
+            pageContent.tweets[textareaIndex].media?.mediaIds || [];
           const totalFiles = currentMedia.length + imageFiles.length;
 
           if (totalFiles > 4) {
@@ -1249,7 +1287,7 @@ export default function PlayGround({
       }
 
       const newTweets = [...pageContent.tweets];
-      const currentMedia = newTweets[tweetIndex].mediaIds || [];
+      const currentMedia = newTweets[tweetIndex].media?.mediaIds || [];
       const totalFiles = currentMedia.length + files.length;
 
       if (totalFiles > 4) {
@@ -1289,7 +1327,9 @@ export default function PlayGround({
           // Update the tweet's media array
           newTweets[tweetIndex] = {
             ...newTweets[tweetIndex],
-            mediaIds: [...currentMedia, ...mediaIds],
+            media: {
+              mediaIds: [...currentMedia, ...mediaIds],
+            },
           };
 
           // Save the updated tweets
@@ -1352,7 +1392,9 @@ export default function PlayGround({
     const newTweet: Tweet = {
       id: newTweetId,
       content: afterCursor,
-      mediaIds: [],
+      media: {
+        mediaIds: [],
+      },
       createdAt: new Date(),
       status: "draft" as TweetStatus,
       threadId: pageContent.threadId,
@@ -1546,6 +1588,90 @@ export default function PlayGround({
     }, 0);
 
     refreshSidebar();
+  };
+
+  const handleUpdateTaggedUsers = (mediaId: string, users: TaggedUser[]) => {
+    setMediaTaggedUsers((prev) => ({
+      ...prev,
+      [mediaId]: users,
+    }));
+
+    // Update the tweet with the new tagged users
+    const newTweets = [...pageContent.tweets];
+    const tweetIndex = currentlyEditedTweet;
+
+    newTweets[tweetIndex] = {
+      ...newTweets[tweetIndex],
+      media: {
+        mediaIds: newTweets[tweetIndex].media?.mediaIds || [],
+        taggedUsers: {
+          ...(newTweets[tweetIndex].media?.taggedUsers || {}),
+          [mediaId]: users,
+        },
+        descriptions: newTweets[tweetIndex].media?.descriptions || {},
+      },
+    };
+
+    setPageContent((prev) => ({
+      ...prev,
+      tweets: newTweets,
+    }));
+
+    // Save to storage
+    if (pageContent.isThread && pageContent.threadId) {
+      const thread: Thread = {
+        id: pageContent.threadId,
+        tweetIds: newTweets.map((t) => t.id),
+        createdAt: new Date(),
+        status: "draft",
+      };
+      tweetStorage.saveThread(thread, newTweets, false);
+    } else {
+      tweetStorage.saveTweet(newTweets[0], false);
+    }
+  };
+
+  const handleUpdateDescriptions = (descriptions: {
+    [mediaId: string]: string;
+  }) => {
+    setMediaDescriptions((prev) => ({
+      ...prev,
+      ...descriptions,
+    }));
+
+    // Update the tweet with the new descriptions
+    const newTweets = [...pageContent.tweets];
+    const tweetIndex = currentlyEditedTweet;
+
+    newTweets[tweetIndex] = {
+      ...newTweets[tweetIndex],
+      media: {
+        mediaIds: newTweets[tweetIndex].media?.mediaIds || [],
+        taggedUsers: newTweets[tweetIndex].media?.taggedUsers || {},
+        descriptions: {
+          ...(newTweets[tweetIndex].media?.descriptions || {}),
+          ...descriptions,
+        },
+      },
+    };
+
+    setPageContent((prev) => ({
+      ...prev,
+      tweets: newTweets,
+    }));
+
+    // Save to storage
+    if (pageContent.isThread && pageContent.threadId) {
+      const thread: Thread = {
+        id: pageContent.threadId,
+        tweetIds: newTweets.map((t) => t.id),
+        createdAt: new Date(),
+        status: "draft",
+      };
+      tweetStorage.saveThread(thread, newTweets, false);
+    } else {
+      tweetStorage.saveTweet(newTweets[0], false);
+    }
   };
 
   if (isLoading) {
@@ -1761,17 +1887,27 @@ export default function PlayGround({
                 />
 
                 {/* Media Preview with responsive grid */}
-                {tweet.mediaIds && tweet.mediaIds.length > 0 && (
+                {tweet.media && tweet.media.mediaIds.length > 0 && (
                   <div className="mt-2 w-full">
                     <MediaPreview
-                      mediaIds={tweet.mediaIds}
+                      mediaIds={tweet.media.mediaIds}
                       onRemove={(mediaIndex) => {
                         activeTab === "scheduled"
                           ? undefined
                           : handleRemoveMedia(index, mediaIndex);
                       }}
                       getMediaUrl={getMediaFile}
-                      isDraft={activeTab == "drafts"}
+                      isDraft={activeTab === "drafts" && !tweet.isSubmitted}
+                      onUpdateTaggedUsers={(mediaId, users) => {
+                        if (activeTab !== "drafts" || tweet.isSubmitted) return;
+                        handleUpdateTaggedUsers(mediaId, users);
+                      }}
+                      onUpdateDescriptions={(descriptions) => {
+                        if (activeTab !== "drafts" || tweet.isSubmitted) return;
+                        handleUpdateDescriptions(descriptions);
+                      }}
+                      taggedUsers={tweet.media.taggedUsers || {}}
+                      descriptions={tweet.media.descriptions || {}}
                     />
                   </div>
                 )}
@@ -1781,7 +1917,7 @@ export default function PlayGround({
                   {/* Media upload button - responsive sizing */}
                   <MediaUpload
                     onUpload={(files) => handleMediaUpload(index, files)}
-                    maxFiles={4 - (tweet.mediaIds?.length || 0)}
+                    maxFiles={4 - (tweet.media?.mediaIds?.length || 0)}
                     disabled={activeTab != "drafts" || tweet.isSubmitted}
                   />
 

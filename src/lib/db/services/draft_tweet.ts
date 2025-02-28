@@ -15,7 +15,7 @@ export class PrismaDraftTweetsService {
     return {
       id: tweet.id,
       content: tweet.content,
-      mediaIds: tweet.mediaIds ? JSON.parse(tweet.mediaIds) : [],
+      media: tweet.mediaMetadata ? JSON.parse(tweet.mediaMetadata) : undefined,
       createdAt: tweet.createdAt,
       updatedAt: tweet.updatedAt,
       status: tweet.status,
@@ -33,7 +33,7 @@ export class PrismaDraftTweetsService {
       where: { id: tweet.id },
       update: {
         content: tweet.content,
-        mediaIds: JSON.stringify(tweet.mediaIds || []),
+        mediaMetadata: tweet.media ? JSON.stringify(tweet.media) : null,
         createdAt: tweet.createdAt,
         updatedAt: tweet.updatedAt,
         status: tweet.status,
@@ -51,7 +51,7 @@ export class PrismaDraftTweetsService {
       create: {
         id: tweet.id,
         content: tweet.content,
-        mediaIds: JSON.stringify(tweet.mediaIds || []),
+        mediaMetadata: tweet.media ? JSON.stringify(tweet.media) : null,
         createdAt: tweet.createdAt,
         updatedAt: tweet.updatedAt,
         status: tweet.status,

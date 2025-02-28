@@ -3,6 +3,7 @@ import { ScheduledTweet, ScheduledThread, TokenData } from "../db/schema";
 import { TwitterApi } from "twitter-api-v2";
 import { getMediaFile } from "@/lib/storage/indexedDB";
 import { userTokensService } from "../services";
+import { getMediaIdsTuple } from "../twitter";
 
 async function refreshTokenIfNeeded(userTokens: TokenData): Promise<string> {
   const now = Date.now();
@@ -57,9 +58,9 @@ export async function publishTweet(tweet: ScheduledTweet) {
 
     // Upload media if present
     let mediaIds: string[] = [];
-    if (tweet.mediaIds.length > 0) {
+    if (tweet.media && tweet.media.mediaIds.length > 0) {
       mediaIds = await Promise.all(
-        tweet.mediaIds.map(async (mediaId) => {
+        tweet.media.mediaIds.map(async (mediaId) => {
           const mediaData = await getMediaFile(mediaId);
           if (!mediaData) throw new Error(`Media not found: ${mediaId}`);
 
@@ -75,32 +76,17 @@ export async function publishTweet(tweet: ScheduledTweet) {
             mimeType: `image/${mediaType}`,
           });
 
+          // Add alt text if available
+          if (tweet.media?.descriptions?.[mediaId]) {
+            await client.v1.createMediaMetadata(mediaResponse, {
+              alt_text: { text: tweet.media.descriptions[mediaId] },
+            });
+          }
+
           return mediaResponse;
         })
       );
     }
-
-    // Helper function to convert array to correct tuple type
-    const getMediaIdsTuple = (ids: string[]) => {
-      const mediaCount = ids.length;
-      if (mediaCount === 1) return { media_ids: [ids[0]] as [string] };
-      if (mediaCount === 2)
-        return { media_ids: [ids[0], ids[1]] as [string, string] };
-      if (mediaCount === 3)
-        return {
-          media_ids: [ids[0], ids[1], ids[2]] as [string, string, string],
-        };
-      if (mediaCount === 4)
-        return {
-          media_ids: [ids[0], ids[1], ids[2], ids[3]] as [
-            string,
-            string,
-            string,
-            string,
-          ],
-        };
-      return undefined;
-    };
 
     // Post tweet
     const response = await v2Client.tweet(tweet.content, {
@@ -135,9 +121,9 @@ export async function publishThread(
     for (const tweet of tweets) {
       // Upload media if present
       let mediaIds: string[] = [];
-      if (tweet.mediaIds.length > 0) {
+      if (tweet.media && tweet.media.mediaIds.length > 0) {
         mediaIds = await Promise.all(
-          tweet.mediaIds.map(async (mediaId) => {
+          tweet.media.mediaIds.map(async (mediaId) => {
             const mediaData = await getMediaFile(mediaId);
             if (!mediaData) throw new Error(`Media not found: ${mediaId}`);
 
@@ -153,32 +139,17 @@ export async function publishThread(
               mimeType: `image/${mediaType}`,
             });
 
+            // Add alt text if available
+            if (tweet.media?.descriptions?.[mediaId]) {
+              await client.v1.createMediaMetadata(mediaResponse, {
+                alt_text: { text: tweet.media.descriptions[mediaId] },
+              });
+            }
+
             return mediaResponse;
           })
         );
       }
-
-      // Helper function to convert array to correct tuple type
-      const getMediaIdsTuple = (ids: string[]) => {
-        const mediaCount = ids.length;
-        if (mediaCount === 1) return { media_ids: [ids[0]] as [string] };
-        if (mediaCount === 2)
-          return { media_ids: [ids[0], ids[1]] as [string, string] };
-        if (mediaCount === 3)
-          return {
-            media_ids: [ids[0], ids[1], ids[2]] as [string, string, string],
-          };
-        if (mediaCount === 4)
-          return {
-            media_ids: [ids[0], ids[1], ids[2], ids[3]] as [
-              string,
-              string,
-              string,
-              string,
-            ],
-          };
-        return undefined;
-      };
 
       // Post tweet
       const response = await v2Client.tweet(tweet.content, {

@@ -80,6 +80,8 @@ export default function SharedDraftPage() {
         const { authorName, authorHandle, authorProfileUrl, ...cleanDraft } =
           data.draft;
 
+        console.dir(cleanDraft, { depth: null });
+
         setDraft(cleanDraft);
         setComments(data.comments);
         setCanComment(data.canComment);

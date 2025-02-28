@@ -99,7 +99,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
           const newTweet: Tweet = {
             id: newId,
             content: "",
-            mediaIds: [],
+            media: {
+              mediaIds: [],
+            },
             tags: [],
             createdAt: new Date(),
             status: "draft",
@@ -229,135 +231,6 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // After returning the local draft, check for newer versions on the server
-    // const checkForNewerVersion = async () => {
-    //   try {
-    //     const response = await fetch(
-    //       `/api/drafts?type=${editorState.selectedDraftType}&id=${editorState.selectedDraftId}`
-    //     );
-
-    //     if (!response.ok) return;
-
-    //     const serverData = await response.json();
-
-    //     if (!serverData) return;
-
-    //     let shouldUpdate = false;
-
-    //     // For tweets, compare timestamps
-    //     if (editorState.selectedDraftType === "tweet" && localDraft) {
-    //       const serverTime = new Date(serverData.updatedAt).getTime();
-    //       const localTime = new Date(
-    //         localDraft.lastModified || localDraft.createdAt
-    //       ).getTime();
-
-    //       if (serverTime > localTime) {
-    //         shouldUpdate = true;
-
-    //         // Sync media files before saving the tweet
-    //         await syncMediaFiles(serverData.mediaIds || []);
-
-    //         tweetStorage.saveTweet(serverData, false);
-    //       }
-    //     }
-    //     // For threads, handle the thread and its tweets
-    //     else if (editorState.selectedDraftType === "thread" && localDraft) {
-    //       const serverTime = new Date(serverData.thread.updatedAt).getTime();
-    //       const localTime = new Date(
-    //         localDraft.lastModified || localDraft.createdAt
-    //       ).getTime();
-
-    //       if (serverTime > localTime) {
-    //         shouldUpdate = true;
-
-    //         // Collect all media IDs from all tweets in the thread
-    //         const allMediaIds = serverData.tweets.reduce(
-    //           (ids: string[], tweet: Tweet) => {
-    //             return ids.concat(tweet.mediaIds || []);
-    //           },
-    //           []
-    //         );
-
-    //         // Sync all media files before saving the thread
-    //         await syncMediaFiles(allMediaIds);
-
-    //         tweetStorage.saveThread(
-    //           serverData.thread,
-    //           serverData.tweets,
-    //           false
-    //         );
-    //       }
-    //     }
-
-    //     // If we updated local storage, refresh the sidebar
-    //     if (shouldUpdate) {
-    //       refreshSidebar();
-    //     }
-    //   } catch (error) {
-    //     console.error("Error checking for newer draft version:", error);
-    //   }
-    // };
-
-    // // Function to sync media files from server to IndexedDB
-    // const syncMediaFiles = async (mediaIds: string[]) => {
-    //   if (!mediaIds.length) return;
-
-    //   // For each media ID, check if it exists in IndexedDB
-    //   // If not, fetch it from the server and store it
-    //   const syncPromises = mediaIds.map(async (mediaId) => {
-    //     try {
-    //       // First check if media already exists in IndexedDB
-    //       const existingMedia = await getMediaFile(mediaId);
-
-    //       // Only fetch from server if we don't have it locally
-    //       if (!existingMedia) {
-    //         // Use a proper media fetch endpoint - NOT the upload endpoint
-    //         const response = await fetch(`/api/media/get?id=${mediaId}`);
-
-    //         if (!response.ok) {
-    //           throw new Error(`Failed to fetch media ${mediaId}`);
-    //         }
-
-    //         // Get the media as a blob
-    //         const blob = await response.blob();
-
-    //         // Create a proper File object with the media's MIME type
-    //         const file = new File([blob], mediaId, { type: blob.type });
-
-    //         try {
-    //           // First try to remove any existing entry to avoid constraint errors
-    //           await removeMediaFile(mediaId).catch(() => {
-    //             // Ignore errors here - it might not exist yet
-    //           });
-
-    //           // Then store the new file
-    //           await storeMediaFile(mediaId, file);
-    //           console.log(`Media ${mediaId} synced from server to IndexedDB`);
-    //         } catch (storageError) {
-    //           // If there's a constraint error, the file is already there
-    //           if ((storageError as Error).name === "ConstraintError") {
-    //             console.log(`Media ${mediaId} already exists in IndexedDB`);
-    //           } else {
-    //             throw storageError;
-    //           }
-    //         }
-    //       }
-    //     } catch (error) {
-    //       console.error(`Error syncing media ${mediaId}:`, error);
-    //       // Continue with other media files even if this one fails
-    //     }
-    //   });
-
-    //   // Wait for all media sync operations to complete
-    //   await Promise.allSettled(syncPromises);
-    // };
-
-    // Start the check but don't wait for it
-
-    // lol
-    // checkForNewerVersion();
-
-    // Return the local draft immediately
     return localDraft;
   }, [
     editorState.selectedDraftId,

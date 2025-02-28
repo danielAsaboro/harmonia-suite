@@ -38,18 +38,18 @@ model user_tokens {
 }
 
 model scheduled_tweets {
-  id           String             @id
-  content      String
-  mediaIds     String?
-  scheduledFor String
-  threadId     String?
-  position     Int?
-  status       String
-  createdAt    String
-  error        String?
-  userId       String
-  user         user_tokens        @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  thread       scheduled_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
+  id            String             @id
+  content       String
+  mediaMetadata String?
+  scheduledFor  String
+  threadId      String?
+  position      Int?
+  status        String
+  createdAt     String
+  error         String?
+  userId        String
+  user          user_tokens        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  thread        scheduled_threads? @relation(fields: [threadId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([scheduledFor])
@@ -73,7 +73,7 @@ model scheduled_threads {
 model draft_tweets {
   id              String         @id
   content         String
-  mediaIds        String?
+  mediaMetadata   String?
   createdAt       String
   updatedAt       String
   status          String

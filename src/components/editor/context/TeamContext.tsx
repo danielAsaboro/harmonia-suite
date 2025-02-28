@@ -26,21 +26,17 @@ export function TeamProvider({ children }: { children: React.ReactNode }) {
   // Transform teamMemberships to teams array
   useEffect(() => {
     if (userId && teamMemberships) {
-      // First, add user's personal account as a team
-      const userTeam: Team = {
-        id: userId,
-        name: "Personal", // Or use the name from userAccount
-        role: "admin", // User is always admin of their personal team
-      };
-
       // Map team memberships to team format
-      const memberTeams = teamMemberships.map((membership) => ({
-        id: membership.team.id,
-        name: membership.team.name,
-        role: membership.role,
-      }));
+      const memberTeams = teamMemberships.map((membership) => {
+        return {
+          id: membership.team.id,
+          name:
+            membership.team.id == userId ? "Personal" : membership.team.name,
+          role: membership.role,
+        };
+      });
 
-      setTeams([userTeam, ...memberTeams]);
+      setTeams([...memberTeams]);
 
       // Default to user's personal team if no team is selected
       if (!selectedTeamId) {

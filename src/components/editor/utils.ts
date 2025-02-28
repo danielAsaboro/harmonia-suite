@@ -1,5 +1,5 @@
 import { sha3_256 } from "js-sha3";
-import { Tweet, Thread } from "@/types/tweet";
+import { Tweet } from "@/types/tweet";
 
 // Add this function above handleSubmitForReview
 export const generateContentHash = (content: string): string => {
@@ -16,8 +16,8 @@ export const hashTweet = (tweet: Tweet): string | null => {
   // Create ordered object with only the content fields we want to hash
   const contentToHash = {
     content: generateContentHash(tweet.content),
-    mediaIds: Array.isArray(tweet.mediaIds)
-      ? [...tweet.mediaIds].sort().join(",")
+    mediaIds: Array.isArray(tweet.media?.mediaIds)
+      ? [...tweet.media?.mediaIds].sort().join(",")
       : "",
   };
 

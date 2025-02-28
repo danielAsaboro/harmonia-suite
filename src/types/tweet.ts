@@ -8,10 +8,22 @@ export type TweetStatus =
   | "scheduled"
   | "published";
 
+export interface TaggedUser {
+  id: string;
+  username: string;
+  name: string;
+  profileImageUrl?: string;
+}
+
+export interface TweetMedia {
+  mediaIds: string[];
+  taggedUsers?: { [mediaId: string]: TaggedUser[] };
+  descriptions?: { [mediaId: string]: string };
+}
+
 export interface Tweet {
   id: string;
   content: string;
-  mediaIds?: string[];
   createdAt: Date;
   status: TweetStatus;
   scheduledFor?: Date;
@@ -22,6 +34,7 @@ export interface Tweet {
   lastModified?: string;
   teamId?: string;
   isSubmitted?: boolean;
+  media?: TweetMedia;
 }
 
 export interface Thread {

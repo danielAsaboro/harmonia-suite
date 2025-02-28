@@ -9,7 +9,7 @@ import {
   Search,
   ChevronLeft,
   Calendar,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useUserAccount } from "./context/account";
@@ -39,7 +39,6 @@ export default function EditorSidebar() {
     name,
     handle,
     profileImageUrl,
-    teamMemberships,
     id: userId,
   } = useUserAccount();
   const { showSearch, setShowSearch } = useKeyboard();
@@ -148,50 +147,13 @@ export default function EditorSidebar() {
 
     loadItems();
   }, [activeTab, refreshCounter, selectedTeamId, isTeamAdmin]);
-  // useEffect(() => {
-  //   const loadItems = () => {
-  //     let filtered: (Tweet | Thread)[] = [];
-  //     const tweets = tweetStorage.getTweets();
-  //     const threads = tweetStorage.getThreads();
-
-  //     switch (activeTab) {
-  //       case "drafts":
-  //         filtered = [
-  //           ...tweets.filter((t) => t.status === "draft" && !t.threadId),
-  //           ...threads.filter((t) => t.status === "draft"),
-  //         ];
-  //         break;
-  //       case "scheduled":
-  //         filtered = [
-  //           ...tweets.filter((t) => t.status === "scheduled" && !t.threadId),
-  //           ...threads.filter((t) => t.status === "scheduled"),
-  //         ];
-  //         break;
-  //       case "published":
-  //         filtered = [
-  //           ...tweets.filter((t) => t.status === "published" && !t.threadId),
-  //           ...threads.filter((t) => t.status === "published"),
-  //         ];
-  //         break;
-  //     }
-
-  //     setItems(
-  //       filtered.sort(
-  //         (a, b) =>
-  //           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  //       )
-  //     );
-  //   };
-
-  //   loadItems();
-  // }, [activeTab, refreshCounter]);
 
   const createNewDraft = () => {
     const emptyDraft = items.find(
       (item) =>
         !("tweetIds" in item) &&
         !item.content?.trim() &&
-        (!item.mediaIds || item.mediaIds.length === 0)
+        (!item.media?.mediaIds || item.media?.mediaIds.length === 0)
     );
 
     if (emptyDraft) {
@@ -430,8 +392,8 @@ export default function EditorSidebar() {
                     currentDraft &&
                     !currentDraft.threadId &&
                     !currentDraft.content.trim() &&
-                    (!currentDraft.mediaIds ||
-                      currentDraft.mediaIds.length === 0)
+                    (!currentDraft.media?.mediaIds ||
+                      currentDraft.media?.mediaIds.length === 0)
                   ) {
                     showEditor(currentDraft?.id, "tweet");
                     return;

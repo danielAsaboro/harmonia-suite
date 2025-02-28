@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Tweet } from "@/types/tweet";
 import MediaPreview from "@/components/editor/media/MediaPreview";
-import DraftApproval from "@/app/shared/[token]/DraftApproval";
 
 interface ReadOnlyTweetViewerProps {
   tweets: Tweet[];
@@ -79,12 +78,13 @@ const ReadOnlyTweetViewer = ({
                   {tweet.content}
                 </div>
 
-                {tweet.mediaIds && tweet.mediaIds.length > 0 && (
+                {tweet.media?.mediaIds && tweet.media?.mediaIds.length > 0 && (
                   <div className="mt-2">
                     <MediaPreview
                       onRemove={() => undefined}
-                      mediaIds={tweet.mediaIds}
+                      mediaIds={tweet.media?.mediaIds}
                       getMediaUrl={async (mediaId: string) => {
+                        console.log(" the string i'm getting is :", mediaId)
                         return mediaId;
                       }}
                       isDraft={false}
@@ -99,7 +99,7 @@ const ReadOnlyTweetViewer = ({
                   }`}
                 >
                   <div className="text-gray-500">
-                    {tweet.mediaIds?.length || 0}/4 media
+                    {tweet.media?.mediaIds?.length || 0}/4 media
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-gray-500">

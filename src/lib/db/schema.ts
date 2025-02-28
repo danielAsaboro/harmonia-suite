@@ -1,5 +1,5 @@
 // /lib/db/schema.ts
-import { Tweet, Thread } from "@/types/tweet";
+import { Tweet, Thread, TaggedUser } from "@/types/tweet";
 
 export interface SharedDraft {
   id: string;
@@ -82,7 +82,11 @@ export interface TokenData {
 export interface ScheduledTweet {
   id: string;
   content: string;
-  mediaIds: string[];
+  media?: {
+    mediaIds: string[];
+    taggedUsers?: { [mediaId: string]: TaggedUser[] };
+    descriptions?: { [mediaId: string]: string };
+  };
   scheduledFor: string;
   threadId?: string;
   position?: number;

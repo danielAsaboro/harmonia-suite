@@ -1,5 +1,86 @@
-// components/editor/MentionInput.tsx
-import React, { useState, useEffect, forwardRef, JSX } from "react";
+// // components/editor/MentionInput.tsx
+import React, {
+  useState,
+  useEffect,
+  forwardRef,
+  JSX,
+  useRef,
+  useCallback,
+} from "react";
+import debounce from "lodash/debounce";
+
+// Mock user data to simulate API responses
+interface User {
+  id: string;
+  username: string;
+  name: string;
+  profileImageUrl?: string;
+}
+
+// Mock users for demonstration
+const MOCK_USERS: User[] = [
+  {
+    id: "1",
+    username: "elonmusk",
+    name: "Elon Musk",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "2",
+    username: "jack",
+    name: "Jack Dorsey",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "3",
+    username: "naval",
+    name: "Naval Ravikant",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "4",
+    username: "TaylorLorenz",
+    name: "Taylor Lorenz",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "5",
+    username: "lexfridman",
+    name: "Lex Fridman",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "6",
+    username: "tim_cook",
+    name: "Tim Cook",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "7",
+    username: "sundarpichai",
+    name: "Sundar Pichai",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+  {
+    id: "8",
+    username: "balajis",
+    name: "Balaji Srinivasan",
+    profileImageUrl: "https://placehold.co/40x40",
+  },
+];
+
+// Simulate API call to search users
+const searchUsers = async (query: string): Promise<User[]> => {
+  // Simulate network delay
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  // Filter users based on query (case insensitive)
+  return MOCK_USERS.filter(
+    (user) =>
+      user.username.toLowerCase().includes(query.toLowerCase()) ||
+      user.name.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 5); // Limit to 5 results
+};
 
 interface MentionInputProps {
   value: string;
@@ -15,6 +96,14 @@ interface MentionInputProps {
   onNavigateUp?: () => void;
   onNavigateDown?: () => void;
   onMergeWithPrevious?: () => void;
+}
+
+interface MentionPopup {
+  isVisible: boolean;
+  query: string;
+  position: { top: number; left: number };
+  users: User[];
+  selectedIndex: number;
 }
 
 const DEFAULT_TEXTAREA_HEIGHT = "60px";
@@ -42,6 +131,26 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
     const [formattedContent, setFormattedContent] = useState<
       (string | JSX.Element)[]
     >([]);
+    const [mentionPopup, setMentionPopup] = useState<MentionPopup>({
+      isVisible: false,
+      query: "",
+      position: { top: 0, left: 0 },
+      users: [],
+      selectedIndex: 0,
+    });
+
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+    // Combine forwarded ref with local ref
+    const setRefs = (element: HTMLTextAreaElement) => {
+      textareaRef.current = element;
+      if (typeof ref === "function") {
+        ref(element);
+      } else if (ref) {
+        ref.current = element;
+      }
+    };
 
     const isValidUsername = (username: string): boolean => {
       const name = username.startsWith("@") ? username.substring(1) : username;
@@ -134,6 +243,89 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
       setFormattedContent(formattedText);
     };
 
+    // Create a debounced search function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const debouncedSearch = useCallback(
+      debounce(async (query: string) => {
+        if (query.length > 0) {
+          const results = await searchUsers(query);
+          setMentionPopup((prev) => ({ ...prev, users: results }));
+        }
+      }, 300),
+      []
+    );
+
+    // Function to find the current mention query at cursor position
+    const getCurrentMentionQuery = (
+      text: string,
+      cursorPos: number
+    ): { query: string; startPos: number } | null => {
+      // Look backwards from cursor position to find @ symbol
+      let startPos = cursorPos - 1;
+      while (startPos >= 0) {
+        // If we hit a space or new line before finding @, there's no mention
+        if (text[startPos] === " " || text[startPos] === "\n") {
+          return null;
+        }
+
+        // If we find @, extract the query
+        if (text[startPos] === "@") {
+          const query = text.substring(startPos + 1, cursorPos);
+          return { query, startPos };
+        }
+
+        startPos--;
+      }
+
+      return null;
+    };
+
+    // Simple function that just returns fixed values for positioning
+    const getCursorPosition = (): { top: number; left: number } => {
+      return {
+        top: 30, // Fixed position that appears below the text
+        left: 0, // Align with the left edge of the textarea
+      };
+    };
+
+    // Function to insert mention at cursor
+    const insertMention = (username: string) => {
+      if (!textareaRef.current) return;
+
+      const textarea = textareaRef.current;
+      const cursorPos = textarea.selectionStart;
+      const mentionData = getCurrentMentionQuery(value, cursorPos);
+
+      if (!mentionData) return;
+
+      const { startPos } = mentionData;
+
+      // Replace the @query with @username
+      const newValue =
+        value.substring(0, startPos) +
+        `@${username}` +
+        value.substring(cursorPos);
+
+      // Update value and cursor position
+      onChange(newValue);
+
+      // Close popup
+      setMentionPopup((prev) => ({
+        ...prev,
+        isVisible: false,
+        query: "",
+      }));
+
+      // Set cursor position after the inserted mention
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = startPos + username.length + 1;
+          textareaRef.current.selectionStart = newCursorPos;
+          textareaRef.current.selectionEnd = newCursorPos;
+        }
+      }, 0);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
       onChange(newValue);
@@ -143,10 +335,76 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
       e.target.style.height = !newValue.trim()
         ? DEFAULT_TEXTAREA_HEIGHT
         : `${e.target.scrollHeight}px`;
+
+      // Check for mention popup
+      const cursorPos = e.target.selectionStart;
+      const mentionData = getCurrentMentionQuery(newValue, cursorPos);
+
+      if (mentionData) {
+        const { query } = mentionData;
+        // Update popup state
+        setMentionPopup((prev) => ({
+          ...prev,
+          isVisible: true,
+          query,
+          position: getCursorPosition(),
+          selectedIndex: 0,
+        }));
+
+        // Search for matching users (debounced)
+        debouncedSearch(query);
+      } else {
+        // Hide popup if no mention query found
+        setMentionPopup((prev) => ({
+          ...prev,
+          isVisible: false,
+          query: "",
+        }));
+      }
     };
 
     // New handler for keyboard navigation and content splitting
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Handle mention popup navigation
+      if (mentionPopup.isVisible && mentionPopup.users.length > 0) {
+        switch (e.key) {
+          case "ArrowDown":
+            e.preventDefault();
+            setMentionPopup((prev) => ({
+              ...prev,
+              selectedIndex: (prev.selectedIndex + 1) % prev.users.length,
+            }));
+            return;
+
+          case "ArrowUp":
+            e.preventDefault();
+            setMentionPopup((prev) => ({
+              ...prev,
+              selectedIndex:
+                (prev.selectedIndex - 1 + prev.users.length) %
+                prev.users.length,
+            }));
+            return;
+
+          case "Enter":
+          case "Tab":
+            e.preventDefault();
+            insertMention(
+              mentionPopup.users[mentionPopup.selectedIndex].username
+            );
+            return;
+
+          case "Escape":
+            e.preventDefault();
+            setMentionPopup((prev) => ({
+              ...prev,
+              isVisible: false,
+              query: "",
+            }));
+            return;
+        }
+      }
+
       // Call the original onKeyDown if provided
       if (onKeyDown) {
         onKeyDown(e);
@@ -171,7 +429,12 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
 
       // Handle arrow key navigation between inputs
       // Up arrow at beginning moves to previous input
-      if (e.key === "ArrowUp" && selectionStart === 0 && onNavigateUp) {
+      if (
+        e.key === "ArrowUp" &&
+        selectionStart === 0 &&
+        !mentionPopup.isVisible &&
+        onNavigateUp
+      ) {
         e.preventDefault();
         onNavigateUp();
         return;
@@ -181,6 +444,7 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
       if (
         e.key === "ArrowDown" &&
         selectionStart === text.length &&
+        !mentionPopup.isVisible &&
         onNavigateDown
       ) {
         e.preventDefault();
@@ -204,14 +468,38 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
       }
     };
 
+    // Handle click on mention suggestion
+    const handleMentionClick = (username: string) => {
+      insertMention(username);
+    };
+
     useEffect(() => {
       formatContent(value);
+
+      // Close mention popup when clicking outside
+      const handleClickOutside = (e: MouseEvent) => {
+        if (
+          wrapperRef.current &&
+          !wrapperRef.current.contains(e.target as Node)
+        ) {
+          setMentionPopup((prev) => ({
+            ...prev,
+            isVisible: false,
+            query: "",
+          }));
+        }
+      };
+
+      document.addEventListener("click", handleClickOutside);
+      return () => {
+        document.removeEventListener("click", handleClickOutside);
+      };
     }, [value]);
 
     return (
-      <div className="relative w-full">
+      <div className="relative w-full" ref={wrapperRef}>
         <textarea
-          ref={ref}
+          ref={setRefs}
           value={value}
           onChange={handleChange}
           onFocus={onFocus}
@@ -235,6 +523,47 @@ const MentionInput = forwardRef<HTMLTextAreaElement, MentionInputProps>(
             <span className="text-gray-400">{placeholder}</span>
           )}
         </div>
+
+        {/* Mention popup - simple fixed positioning below content */}
+        {mentionPopup.isVisible && mentionPopup.users.length > 0 && (
+          <div
+            className="absolute z-10 bg-black border border-gray-700 rounded-lg shadow-lg overflow-hidden"
+            style={{
+              top: "100%", // Position below the textarea
+              left: 0,
+              right: 0,
+              width: "100%",
+              maxHeight: "200px", // Limit height on mobile
+              marginTop: "4px", // Small gap between text and popup
+            }}
+          >
+            <ul className="py-1">
+              {mentionPopup.users.map((user, index) => (
+                <li
+                  key={user.id}
+                  className={`px-3 py-2 flex items-center cursor-pointer hover:bg-gray-800 ${
+                    index === mentionPopup.selectedIndex ? "bg-gray-800" : ""
+                  }`}
+                  onClick={() => handleMentionClick(user.username)}
+                >
+                  {user.profileImageUrl && (
+                    <img
+                      src={user.profileImageUrl}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full mr-2"
+                    />
+                  )}
+                  <div>
+                    <div className="font-medium">{user.name}</div>
+                    <div className="text-gray-400 text-sm">
+                      @{user.username}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     );
   }

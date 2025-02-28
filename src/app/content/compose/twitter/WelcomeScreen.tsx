@@ -19,7 +19,7 @@ export default function WelcomeScreen() {
   // Get the current team's name
   const getCurrentTeamName = () => {
     if (!selectedTeamId || !teams) return "Personal";
-    const team = teams.find(t => t.id === selectedTeamId);
+    const team = teams.find((t) => t.id === selectedTeamId);
     return team ? team.name : "Personal";
   };
 
@@ -40,12 +40,20 @@ export default function WelcomeScreen() {
     const allThreads = tweetStorage.getThreads();
 
     // Filter by team ID if selected
-    const teamTweets = selectedTeamId 
-      ? allTweets.filter(t => t.teamId === selectedTeamId || (!t.teamId && selectedTeamId === teams[0]?.id))
+    const teamTweets = selectedTeamId
+      ? allTweets.filter(
+          (t) =>
+            t.teamId === selectedTeamId ||
+            (!t.teamId && selectedTeamId === teams[0]?.id)
+        )
       : allTweets;
-    
+
     const teamThreads = selectedTeamId
-      ? allThreads.filter(t => t.teamId === selectedTeamId || (!t.teamId && selectedTeamId === teams[0]?.id))
+      ? allThreads.filter(
+          (t) =>
+            t.teamId === selectedTeamId ||
+            (!t.teamId && selectedTeamId === teams[0]?.id)
+        )
       : allThreads;
 
     // Count standalone draft tweets (not part of any thread)
@@ -54,7 +62,9 @@ export default function WelcomeScreen() {
     );
 
     // Get all draft threads
-    const threads = teamThreads.filter((t) => t.status === "draft" && !t.isSubmitted);
+    const threads = teamThreads.filter(
+      (t) => t.status === "draft" && !t.isSubmitted
+    );
 
     // Count scheduled items
     const scheduledTweets = teamTweets.filter(
@@ -74,13 +84,13 @@ export default function WelcomeScreen() {
       (t) => t.status === "pending_approval"
     ).length;
 
-    return { 
-      standaloneTweets, 
-      threads, 
-      scheduledTweets, 
+    return {
+      standaloneTweets,
+      threads,
+      scheduledTweets,
       scheduledThreads,
       pendingApprovalTweets,
-      pendingApprovalThreads
+      pendingApprovalThreads,
     };
   };
 
@@ -127,9 +137,9 @@ export default function WelcomeScreen() {
     scheduledTweets,
     scheduledThreads,
     pendingApprovalTweets,
-    pendingApprovalThreads
+    pendingApprovalThreads,
   } = getDraftsInfo();
-  
+
   const totalDrafts = standaloneTweets.length + threads.length;
   const totalScheduled = scheduledTweets + scheduledThreads;
   const totalPendingApproval = pendingApprovalTweets + pendingApprovalThreads;
@@ -140,14 +150,18 @@ export default function WelcomeScreen() {
   // Get welcome title based on team context and draft/scheduled count
   const getWelcomeTitle = () => {
     if (isTeamContext) {
-      if (totalDrafts === 0 && totalScheduled === 0 && totalPendingApproval === 0) {
+      if (
+        totalDrafts === 0 &&
+        totalScheduled === 0 &&
+        totalPendingApproval === 0
+      ) {
         return `Create Your First Draft for ${teamName}`;
       }
 
       if (totalPendingApproval > 0) {
         return totalPendingApproval === 1
-          ? `${teamName} Has 1 Item Pending Approval`
-          : `${teamName} Has ${totalPendingApproval} Items Pending Approval`;
+          ? `You have 1 Draft waiting for Approval from ${teamName}`
+          : `You have ${totalPendingApproval} Draft's waiting for Approval from ${teamName}`;
       }
 
       if (totalDrafts > 0) {
@@ -188,7 +202,11 @@ export default function WelcomeScreen() {
   // Get welcome description based on team context and draft/scheduled count
   const getWelcomeDescription = () => {
     if (isTeamContext) {
-      if (totalDrafts === 0 && totalScheduled === 0 && totalPendingApproval === 0) {
+      if (
+        totalDrafts === 0 &&
+        totalScheduled === 0 &&
+        totalPendingApproval === 0
+      ) {
         return `Start composing content for ${teamName}. Your drafts will be saved automatically.`;
       }
 
@@ -197,12 +215,12 @@ export default function WelcomeScreen() {
           return `${teamName} has ${pendingApprovalTweets} tweet${pendingApprovalTweets > 1 ? "s" : ""} and ${pendingApprovalThreads} thread${pendingApprovalThreads > 1 ? "s" : ""} waiting for approval.`;
         } else if (pendingApprovalTweets > 0) {
           return pendingApprovalTweets === 1
-            ? `${teamName} has a tweet waiting for approval.`
-            : `${teamName} has ${pendingApprovalTweets} tweets waiting for approval.`;
+            ? `${teamName} has a tweet from you waiting for approval.`
+            : `${teamName} has ${pendingApprovalTweets} tweets from you waiting for approval.`;
         } else {
           return pendingApprovalThreads === 1
-            ? `${teamName} has a thread waiting for approval.`
-            : `${teamName} has ${pendingApprovalThreads} threads waiting for approval.`;
+            ? `${teamName} has a thread from you waiting for approval.`
+            : `${teamName} has ${pendingApprovalThreads} threads from you waiting for approval.`;
         }
       }
 
@@ -294,19 +312,21 @@ export default function WelcomeScreen() {
         ) : (
           <PenSquare size={48} className="text-blue-400 mx-auto" />
         )}
-        
+
         <h1 className="text-2xl font-bold text-white">{getWelcomeTitle()}</h1>
         <p className="text-gray-400 text-sm sm:text-base">
           {getWelcomeDescription()}
         </p>
-        
+
         {(totalDrafts > 0 || totalScheduled === 0) && (
           <button
             onClick={handleCreateOrContinue}
             className="w-full sm:w-auto px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors font-medium"
           >
             {totalDrafts === 0 && totalScheduled === 0
-              ? isTeamContext ? `Create New ${teamName} Draft` : "Create New Draft"
+              ? isTeamContext
+                ? `Create New ${teamName} Draft`
+                : "Create New Draft"
               : "Continue Scribbling"}
           </button>
         )}

@@ -44,41 +44,69 @@ export async function GET(
         sharedDraft.draftId,
         sharedDraft.creatorId
       );
+
       if (draft) {
         // Add signed URLs for media if present
-        // console.log("   media ids", draft.mediaIds);
-        const mediaUrls = draft.mediaIds
-          ? await getMediaUrls(draft.mediaIds, sharedDraft.creatorId)
-          : [];
-        // console.log(" signed urls", mediaUrls);
-        draft = {
-          ...draft,
-          authorName: authorTokens.name,
-          authorHandle: `@${authorTokens.username}`,
-          authorProfileUrl: authorTokens.profileImageUrl,
-          mediaIds: mediaUrls, // Add the composed URLs
-        };
+        if (draft.media && draft.media.mediaIds.length > 0) {
+          const mediaUrls = await getMediaUrls(
+            draft.media.mediaIds,
+            sharedDraft.creatorId
+          );
+
+          // Replace mediaIds with signed URLs directly
+          draft = {
+            ...draft,
+            authorName: authorTokens.name,
+            authorHandle: `@${authorTokens.username}`,
+            authorProfileUrl: authorTokens.profileImageUrl,
+            media: {
+              ...draft.media,
+              mediaIds: mediaUrls, // Replace mediaIds with signed URLs
+            },
+          };
+        } else {
+          draft = {
+            ...draft,
+            authorName: authorTokens.name,
+            authorHandle: `@${authorTokens.username}`,
+            authorProfileUrl: authorTokens.profileImageUrl,
+          };
+        }
       }
     } else {
       const threadData = await draftThreadsService.getDraftThread(
         sharedDraft.draftId,
         sharedDraft.creatorId
       );
+
       if (threadData) {
         // Process media URLs for each tweet in the thread
         const tweetsWithAuthor = await Promise.all(
           threadData.tweets.map(async (tweet) => {
-            const mediaUrls = tweet.mediaIds
-              ? await getMediaUrls(tweet.mediaIds, sharedDraft.creatorId)
-              : [];
+            if (tweet.media && tweet.media.mediaIds.length > 0) {
+              const mediaUrls = await getMediaUrls(
+                tweet.media.mediaIds,
+                sharedDraft.creatorId
+              );
 
-            return {
-              ...tweet,
-              authorName: authorTokens.name,
-              authorHandle: `@${authorTokens.username}`,
-              authorProfileUrl: authorTokens.profileImageUrl,
-              mediaIds: mediaUrls,
-            };
+              return {
+                ...tweet,
+                authorName: authorTokens.name,
+                authorHandle: `@${authorTokens.username}`,
+                authorProfileUrl: authorTokens.profileImageUrl,
+                media: {
+                  ...tweet.media,
+                  mediaIds: mediaUrls, // Replace mediaIds with signed URLs
+                },
+              };
+            } else {
+              return {
+                ...tweet,
+                authorName: authorTokens.name,
+                authorHandle: `@${authorTokens.username}`,
+                authorProfileUrl: authorTokens.profileImageUrl,
+              };
+            }
           })
         );
 

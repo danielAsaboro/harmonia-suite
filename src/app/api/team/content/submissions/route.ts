@@ -153,7 +153,9 @@ export async function GET(req: NextRequest) {
       return {
         id: tweet.id,
         content: tweet.content,
-        mediaIds: tweet.mediaIds ? JSON.parse(tweet.mediaIds) : [],
+        media: tweet.mediaMetadata
+          ? JSON.parse(tweet.mediaMetadata)
+          : undefined,
         createdAt: tweet.createdAt,
         updatedAt: tweet.updatedAt,
         status: tweet.status,
@@ -194,7 +196,9 @@ export async function GET(req: NextRequest) {
         tweets: thread.tweets.map((tweet) => ({
           id: tweet.id,
           content: tweet.content,
-          mediaIds: tweet.mediaIds ? JSON.parse(tweet.mediaIds) : [],
+          media: tweet.mediaMetadata
+            ? JSON.parse(tweet.mediaMetadata)
+            : undefined,
           createdAt: tweet.createdAt,
           updatedAt: tweet.updatedAt,
           status: tweet.status,

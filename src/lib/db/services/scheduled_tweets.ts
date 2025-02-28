@@ -13,7 +13,7 @@ export class PrismaScheduledTweetsService {
     return {
       id: tweet.id,
       content: tweet.content,
-      mediaIds: tweet.mediaIds ? JSON.parse(tweet.mediaIds) : [],
+      media: tweet.mediaMetadata ? JSON.parse(tweet.mediaMetadata) : undefined,
       scheduledFor: tweet.scheduledFor,
       threadId: tweet.threadId || undefined,
       position: tweet.position || undefined,
@@ -38,7 +38,7 @@ export class PrismaScheduledTweetsService {
       where: { id: tweet.id },
       update: {
         content: tweet.content,
-        mediaIds: JSON.stringify(tweet.mediaIds || []),
+        mediaMetadata: tweet.media ? JSON.stringify(tweet.media) : null,
         scheduledFor: tweet.scheduledFor,
         threadId: tweet.threadId || null,
         position: tweet.position || null,
@@ -50,7 +50,7 @@ export class PrismaScheduledTweetsService {
       create: {
         id: tweet.id,
         content: tweet.content,
-        mediaIds: JSON.stringify(tweet.mediaIds || []),
+        mediaMetadata: tweet.media ? JSON.stringify(tweet.media) : null,
         scheduledFor: tweet.scheduledFor,
         threadId: tweet.threadId || null,
         position: tweet.position || null,

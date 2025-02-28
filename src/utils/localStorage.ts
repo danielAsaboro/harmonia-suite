@@ -139,7 +139,7 @@ export class TweetStorageService {
     return tweets[0] || null;
   }
 
-  saveTweet(tweet: Tweet, immediate: boolean = false) {
+  public saveTweet(tweet: Tweet, immediate: boolean = false) {
     try {
       const tweets = this.getTweets();
       const index = tweets.findIndex((t) => t.id === tweet.id);
@@ -148,7 +148,8 @@ export class TweetStorageService {
         tweets[index] = {
           ...tweets[index],
           ...tweet,
-          teamId: tweet.teamId || tweets[index].teamId,
+          // Make sure media is properly preserved and merged
+          media: tweet.media || tweets[index].media,
         };
       } else {
         tweets.push(tweet);
@@ -175,7 +176,11 @@ export class TweetStorageService {
     }
   }
 
-  saveThread(thread: Thread, tweets: Tweet[], immediate: boolean = false) {
+  public saveThread(
+    thread: Thread,
+    tweets: Tweet[],
+    immediate: boolean = false
+  ) {
     try {
       const threads = this.getThreads();
       const threadIndex = threads.findIndex((t) => t.id === thread.id);
@@ -197,14 +202,20 @@ export class TweetStorageService {
       );
       this.lastSave = Date.now();
 
-      // Save associated tweets to localStorage
+      // Save associated tweets to localStorage, preserving media metadata
       tweets.forEach((tweet) => {
+        // Get existing tweet to preserve any media metadata
+        const existingTweets = this.getTweets();
+        const existingTweet = existingTweets.find((t) => t.id === tweet.id);
+
         this.saveTweet(
           {
             ...tweet,
             threadId: thread.id,
             status: tweet.status,
             teamId: thread.teamId,
+            // Preserve media metadata
+            media: tweet.media || existingTweet?.media,
           },
           immediate
         );
