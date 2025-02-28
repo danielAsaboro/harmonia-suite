@@ -30,10 +30,13 @@ import {
   Mail,
   Loader2,
   Eye,
+  Copy,
+  Check,
 } from "lucide-react";
 import { InviteMemberModal } from "@/components/team/InviteMemberModal";
 import { TeamRole } from "@/types/team";
 import { EmailPreview } from "@/components/email/EmailPreview";
+import toast from "react-hot-toast";
 
 interface PendingInvite {
   id: string;
@@ -42,6 +45,8 @@ interface PendingInvite {
   sentAt: Date;
   expiresAt: Date;
   status: "pending" | "expired";
+  inviteLink?: string; // Added invite link property
+  token?: string; // Token to construct link
 }
 
 interface TeamMember {
@@ -209,6 +214,7 @@ export default function TeamManagementPage() {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isDeletingMember, setIsDeletingMember] = useState(false);
   const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -220,6 +226,23 @@ export default function TeamManagementPage() {
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+
+  // Function to copy invite link to clipboard
+  const copyInviteLink = async (inviteLink: string, inviteId: string) => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopiedLinkId(inviteId);
+      toast.success("Invite link copied to clipboard!");
+
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedLinkId(null);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toast.error("Failed to copy invite link. Please try again.");
+    }
+  };
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -265,6 +288,9 @@ export default function TeamManagementPage() {
             sentAt: new Date(invite.createdAt),
             expiresAt: new Date(invite.expiresAt),
             status: invite.status,
+            token: invite.token,
+            // Create the full invite link
+            inviteLink: `${window.location.origin}/team/join?token=${invite.token}`,
           })
         );
 
@@ -377,7 +403,7 @@ export default function TeamManagementPage() {
 
       if (data.success) {
         console.log(" data invite , ", data);
-        // Add to pending invites
+        // Add to pending invites with invite link
         setPendingInvites((prev) => [
           ...prev,
           {
@@ -387,6 +413,8 @@ export default function TeamManagementPage() {
             sentAt: new Date(),
             expiresAt: new Date(data.invite.expiresAt),
             status: "pending",
+            token: data.invite.token,
+            inviteLink: `${window.location.origin}/team/join?token=${data.invite.token}`,
           },
         ]);
         setShowInviteMember(false);
@@ -439,23 +467,24 @@ export default function TeamManagementPage() {
         onClose={() => setShowEmailPreview(false)}
       />
 
-      {/* Pending Invites Section */}
+      {/* Pending Invites Section - Updated with Invite Link column */}
       {pendingInvites.length > 0 && (
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold mb-4">Pending Invites</h2>
             <div className="rounded-lg border border-border">
-              <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
+              <div className="grid grid-cols-5 gap-4 p-4 bg-muted/50 border-b text-sm font-medium text-muted-foreground">
                 <div>Email</div>
                 <div>Role</div>
                 <div>Sent</div>
                 <div>Expires</div>
+                <div>Invite Link</div> {/* New column for invite link */}
               </div>
               <div className="divide-y divide-border">
                 {pendingInvites.map((invite) => (
                   <div
                     key={invite.id}
-                    className="grid grid-cols-4 gap-4 p-4 items-center hover:bg-gray-50/5"
+                    className="grid grid-cols-5 gap-4 p-4 items-center hover:bg-gray-50/5"
                   >
                     <div>{invite.email}</div>
                     <div>
@@ -472,6 +501,26 @@ export default function TeamManagementPage() {
                     </div>
                     <div className="text-sm text-gray-500">
                       {invite.expiresAt.toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center">
+                      <div className="relative flex-1 truncate text-xs font-mono bg-muted p-2 rounded mr-2">
+                        {invite.inviteLink}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          invite.inviteLink &&
+                          copyInviteLink(invite.inviteLink, invite.id)
+                        }
+                        className="flex-shrink-0"
+                      >
+                        {copiedLinkId === invite.id ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
                 ))}
