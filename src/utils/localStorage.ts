@@ -1,4 +1,4 @@
-// // // /utils/localStorage.ts
+// /utils/localStorage.ts
 
 import { draftSync } from "@/lib/sync/draftSync";
 import { Tweet, Thread, ThreadWithTweets } from "@/types/tweet";
@@ -23,7 +23,9 @@ export class TweetStorageService {
   private static instance: TweetStorageService;
   private readonly BASE_KEY = "helm_app";
   private readonly USER_KEY = `${this.BASE_KEY}_current_user_id`;
+  private readonly LOCK_KEY = `${this.BASE_KEY}_operation_lock`;
   private lastSave: number = Date.now();
+  private operationLocks: Map<string, boolean> = new Map();
 
   private constructor() {}
 
@@ -51,6 +53,34 @@ export class TweetStorageService {
       throw new Error("No user ID found. User must be logged in.");
     }
     return `${this.BASE_KEY}_${userId}_${key}`;
+  }
+
+  // Create a locking mechanism for critical operations
+  private async acquireLock(
+    operationKey: string,
+    timeoutMs: number = 5000
+  ): Promise<boolean> {
+    const lockKey = `${this.LOCK_KEY}_${operationKey}`;
+
+    // Check if the operation is already locked
+    if (this.operationLocks.get(lockKey)) {
+      return false;
+    }
+
+    // Set the lock
+    this.operationLocks.set(lockKey, true);
+
+    // Set a timeout to release the lock
+    setTimeout(() => {
+      this.operationLocks.delete(lockKey);
+    }, timeoutMs);
+
+    return true;
+  }
+
+  private releaseLock(operationKey: string): void {
+    const lockKey = `${this.LOCK_KEY}_${operationKey}`;
+    this.operationLocks.delete(lockKey);
   }
 
   getUserDetails(): TwitterUserDetails | null {
@@ -139,8 +169,24 @@ export class TweetStorageService {
     return tweets[0] || null;
   }
 
-  public async saveTweet(tweet: Tweet, immediate: boolean = false) {
+  public async saveTweet(
+    tweet: Tweet,
+    immediate: boolean = false
+  ): Promise<boolean> {
+    const lockKey = `save_tweet_${tweet.id}`;
+
     try {
+      // Acquire a lock for this operation
+      const lockAcquired = await this.acquireLock(lockKey);
+      if (!lockAcquired) {
+        console.warn(
+          `Concurrent operation detected for tweet ${tweet.id}, retrying...`
+        );
+        // Wait a bit and retry
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return this.saveTweet(tweet, immediate);
+      }
+
       const tweets = this.getTweets();
       const index = tweets.findIndex((t) => t.id === tweet.id);
 
@@ -162,17 +208,24 @@ export class TweetStorageService {
       );
       this.lastSave = Date.now();
 
-      // Queue for backend sync if it's a draft
-      if (tweet.status === "draft") {
+      // Queue for backend sync if it's a draft or if we need immediate sync
+      if (tweet.status === "draft" || immediate) {
         draftSync.queueForSync(tweet.id, "tweet");
 
         // Only force immediate sync if explicitly requested
         if (immediate) {
-          draftSync.forceSyncNow();
+          await draftSync.forceSyncNow();
         }
       }
+
+      return true;
     } catch (error) {
       console.error("Error saving tweet:", error);
+      return false;
+    } finally {
+      // Always release the lock
+      this.releaseLock(lockKey);
+      console.log(" hey, finally release this lock");
     }
   }
 
@@ -180,8 +233,21 @@ export class TweetStorageService {
     thread: Thread,
     tweets: Tweet[],
     immediate: boolean = false
-  ) {
+  ): Promise<boolean> {
+    const lockKey = `save_thread_${thread.id}`;
+
     try {
+      // Acquire a lock for this operation
+      const lockAcquired = await this.acquireLock(lockKey);
+      if (!lockAcquired) {
+        console.warn(
+          `Concurrent operation detected for thread ${thread.id}, retrying...`
+        );
+        // Wait a bit and retry
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return this.saveThread(thread, tweets, immediate);
+      }
+
       const threads = this.getThreads();
       const threadIndex = threads.findIndex((t) => t.id === thread.id);
 
@@ -202,13 +268,14 @@ export class TweetStorageService {
       );
       this.lastSave = Date.now();
 
-      // Save associated tweets to localStorage, preserving media metadata
-      tweets.forEach((tweet) => {
+      // Save associated tweets to localStorage,
+      // preserving media metadata
+      const savePromises = tweets.map(async (tweet) => {
         // Get existing tweet to preserve any media metadata
         const existingTweets = this.getTweets();
         const existingTweet = existingTweets.find((t) => t.id === tweet.id);
 
-        this.saveTweet(
+        return this.saveTweet(
           {
             ...tweet,
             threadId: thread.id,
@@ -216,12 +283,14 @@ export class TweetStorageService {
             teamId: thread.teamId,
             media: tweet.media || existingTweet?.media,
           },
-          immediate
+          false // Don't force immediate sync for individual tweets
         );
       });
 
-      // Queue thread for backend sync if it's a draft
-      if (thread.status === "draft") {
+      await Promise.all(savePromises);
+
+      // Queue thread for backend sync if needed
+      if (thread.status === "draft" || immediate) {
         draftSync.queueForSync(thread.id, "thread");
 
         // Only force immediate sync if explicitly requested
@@ -230,8 +299,14 @@ export class TweetStorageService {
           await draftSync.forceSyncNow();
         }
       }
+
+      return true;
     } catch (error) {
       console.error("Error saving thread:", error);
+      return false;
+    } finally {
+      // Always release the lock
+      this.releaseLock(lockKey);
     }
   }
 
@@ -267,8 +342,21 @@ export class TweetStorageService {
     }
   }
 
-  deleteTweet(tweetId: string) {
+  async deleteTweet(tweetId: string): Promise<boolean> {
+    const lockKey = `delete_tweet_${tweetId}`;
+
     try {
+      // Acquire a lock for this operation
+      const lockAcquired = await this.acquireLock(lockKey);
+      if (!lockAcquired) {
+        console.warn(
+          `Concurrent operation detected for tweet deletion ${tweetId}, retrying...`
+        );
+        // Wait a bit and retry
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return this.deleteTweet(tweetId);
+      }
+
       const tweets = this.getTweets().filter((t) => t.id !== tweetId);
       localStorage.setItem(
         this.getNamespacedKey("tweets"),
@@ -276,18 +364,40 @@ export class TweetStorageService {
       );
 
       // Send delete request to backend immediately
-      fetch(`/api/drafts?type=tweet&id=${tweetId}&cleanup=true`, {
-        method: "DELETE",
-      }).catch((error) => {
+      try {
+        await fetch(`/api/drafts?type=tweet&id=${tweetId}&cleanup=true`, {
+          method: "DELETE",
+        });
+      } catch (error) {
         console.error("Error deleting tweet from backend:", error);
-      });
+        // Continue anyway since we've already removed it locally
+      }
+
+      return true;
     } catch (error) {
       console.error("Error deleting tweet:", error);
+      return false;
+    } finally {
+      // Always release the lock
+      this.releaseLock(lockKey);
     }
   }
 
-  deleteThread(threadId: string) {
+  async deleteThread(threadId: string): Promise<boolean> {
+    const lockKey = `delete_thread_${threadId}`;
+
     try {
+      // Acquire a lock for this operation
+      const lockAcquired = await this.acquireLock(lockKey);
+      if (!lockAcquired) {
+        console.warn(
+          `Concurrent operation detected for thread deletion ${threadId}, retrying...`
+        );
+        // Wait a bit and retry
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        return this.deleteThread(threadId);
+      }
+
       const threads = this.getThreads().filter((t) => t.id !== threadId);
       localStorage.setItem(
         this.getNamespacedKey("threads"),
@@ -301,13 +411,22 @@ export class TweetStorageService {
       );
 
       // Send delete request to backend immediately
-      fetch(`/api/drafts?type=thread&id=${threadId}&cleanup=true`, {
-        method: "DELETE",
-      }).catch((error) => {
+      try {
+        await fetch(`/api/drafts?type=thread&id=${threadId}&cleanup=true`, {
+          method: "DELETE",
+        });
+      } catch (error) {
         console.error("Error deleting thread from backend:", error);
-      });
+        // Continue anyway since we've already removed it locally
+      }
+
+      return true;
     } catch (error) {
       console.error("Error deleting thread:", error);
+      return false;
+    } finally {
+      // Always release the lock
+      this.releaseLock(lockKey);
     }
   }
 

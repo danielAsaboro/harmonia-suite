@@ -24,6 +24,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
   const { id: userId } = useUserAccount();
   const { editorState, hideEditor, refreshSidebar } = useEditor();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentContent, setCurrentContent] = useState<{
     id: string | null;
     type: "tweet" | "thread" | null;
@@ -37,6 +38,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
   // Sync with editor state when modal opens
   useEffect(() => {
     if (isOpen) {
+      setError(null);
       // Get the current content from localStorage to ensure we're working with the most up-to-date state
       // This resolves issues where editorState might be stale
       const allTweets = tweetStorage.getTweets();
@@ -87,11 +89,12 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
   const handleSubmit = async () => {
     // Only allow submission if content is associated with a team
     if (!selectedTeamId || selectedTeamId === userId) {
-      alert("Please select a team to submit this content for approval.");
+      setError("Please select a team to submit this content for approval.");
       return;
     }
 
     setIsSubmitting(true);
+    setError(null);
 
     try {
       // Get content details from our synced state
@@ -104,17 +107,37 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
         throw new Error("No content selected for submission");
       }
 
-      // Get content for hashing
-      if (contentType === "thread" || currentContent.isThread) {
+      // Fix the type if thread is detected
+      if (currentContent.isThread) {
+        contentType = "thread";
+      }
+
+      // Prepare to submit but don't modify local storage yet
+      if (contentType === "thread") {
         const threadData = tweetStorage.getThreadWithTweets(contentId);
         if (!threadData) {
           throw new Error("Thread not found");
         }
 
+        // Hash the content for integrity checking
         contentHash = hashThread(threadData.tweets);
 
-        // Prepare to update local state
-        const thread = {
+        // Make the API call first without modifying local storage
+        const response = await fetch("/api/team/content/approval", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: contentType,
+            id: contentId,
+            teamId: selectedTeamId,
+            contentHash,
+          }),
+        });
+
+        // Create the updated thread object with pending_approval status
+        const updatedThread = {
           ...threadData,
           id: contentId,
           tweetIds: threadData.tweets.map((t) => t.id),
@@ -132,50 +155,39 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
           isSubmitted: true,
         }));
 
-        tweetStorage.saveThread(thread, updatedTweets, true);
-
-        // Submit to approval endpoint
-        const response = await fetch("/api/team/content/approval", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: contentType, // Force type to thread
-            id: contentId,
-            teamId: selectedTeamId,
-            contentHash,
-          }),
-        });
+        // Now save to local storage
+        await tweetStorage.saveThread(updatedThread, updatedTweets, true);
 
         if (!response.ok) {
           const errorData = await response.json();
-
-          // revert back to draft
-          if (!threadData) {
-            throw new Error("Thread not found");
-          }
-
-          const revertedThread = {
-            ...threadData,
-            id: contentId,
-            tweetIds: threadData.tweets.map((t) => t.id),
-            createdAt: threadData.createdAt || new Date(),
-            status: "draft" as TweetStatus,
-            teamId: selectedTeamId,
-            isSubmitted: false,
-          };
-
-          const revertedThreadTweets = threadData.tweets.map((tweet) => ({
-            ...tweet,
-            status: "draft" as TweetStatus,
-            teamId: selectedTeamId,
-            isSubmitted: false,
-          }));
-
-          tweetStorage.saveThread(revertedThread, revertedThreadTweets, true);
           throw new Error(errorData.error || "Failed to submit for approval");
         }
+
+        // API call succeeded, now update local storage
+        const responseData = await response.json();
+        console.log("Submission succeeded:", responseData);
+
+        // // Create the updated thread object with pending_approval status
+        // const updatedThread = {
+        //   ...threadData,
+        //   id: contentId,
+        //   tweetIds: threadData.tweets.map((t) => t.id),
+        //   createdAt: threadData.createdAt || new Date(),
+        //   status: "pending_approval" as TweetStatus,
+        //   teamId: selectedTeamId,
+        //   isSubmitted: true,
+        // };
+
+        // // Update tweets in thread
+        // const updatedTweets = threadData.tweets.map((tweet) => ({
+        //   ...tweet,
+        //   status: "pending_approval" as TweetStatus,
+        //   teamId: selectedTeamId,
+        //   isSubmitted: true,
+        // }));
+
+        // // Now save to local storage
+        // await tweetStorage.saveThread(updatedThread, updatedTweets, true);
       } else {
         // Handle single tweet
         const tweet = tweetStorage.getTweets().find((t) => t.id === contentId);
@@ -185,16 +197,7 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
 
         contentHash = hashTweet(tweet);
 
-        // Create an updated tweet object with teamId and isSubmitted
-        const updatedTweet = {
-          ...tweet,
-          status: "pending_approval" as TweetStatus,
-          teamId: selectedTeamId,
-          isSubmitted: true,
-        };
-        tweetStorage.saveTweet(updatedTweet, true);
-
-        // Submit to approval endpoint
+        // Make the API call first without modifying local storage
         const response = await fetch("/api/team/content/approval", {
           method: "POST",
           headers: {
@@ -208,29 +211,44 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
           }),
         });
 
+        // Create updated tweet object with pending_approval status
+        const updatedTweet = {
+          ...tweet,
+          status: "pending_approval" as TweetStatus,
+          teamId: selectedTeamId,
+          isSubmitted: true,
+        };
+
+        // Now save to local storage
+        await tweetStorage.saveTweet(updatedTweet, true);
+
         if (!response.ok) {
           const errorData = await response.json();
-
-          const revertedTweet = {
-            ...tweet,
-            status: "draft" as TweetStatus,
-            teamId: selectedTeamId,
-            isSubmitted: false,
-          };
-          // Update tweet in local storage with explicit teamId and isSubmitted
-          tweetStorage.saveTweet(revertedTweet, true);
           throw new Error(errorData.error || "Failed to submit for approval");
         }
+
+        // API call succeeded, now update local storage
+        const responseData = await response.json();
+        console.log("Submission succeeded:", responseData);
+
+        // // Create updated tweet object with pending_approval status
+        // const updatedTweet = {
+        //   ...tweet,
+        //   status: "pending_approval" as TweetStatus,
+        //   teamId: selectedTeamId,
+        //   isSubmitted: true,
+        // };
+
+        // // Now save to local storage
+        // await tweetStorage.saveTweet(updatedTweet, true);
       }
 
-      // After successful submission, call the original onProceed function
-      // which will close the modal, hide the editor, and refresh the sidebar
+      // After successful submission and local storage update, call onProceed
       onProceed();
     } catch (error) {
       console.error("Error submitting for review:", error);
-      alert(
-        "Failed to submit for review: " +
-          (error instanceof Error ? error.message : "Unknown error")
+      setError(
+        error instanceof Error ? error.message : "Unknown error occurred"
       );
     } finally {
       setIsSubmitting(false);
@@ -259,6 +277,12 @@ const SubmissionModal: React.FC<SubmissionModalProps> = ({
                 Once submitted, you won't be able to edit this content again
                 until the reviewers are done. Are you sure you want to proceed?
               </p>
+
+              {error && (
+                <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-md text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 justify-center">

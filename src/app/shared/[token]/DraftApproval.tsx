@@ -1,3 +1,4 @@
+// /app/shared/[token]/DraftApproval.tsx
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -11,79 +12,245 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { useAdmin, useContent, useHelm } from "@/hooks/helm";
-import { useWallet } from "@solana/wallet-adapter-react";
 
 interface DraftApprovalProps {
   draftId: string;
+  contentType: "tweet" | "thread";
 }
 
 type TxStatus = "idle" | "pending" | "success" | "error";
 type ActionType = "approve" | "reject" | null;
 
-const DraftApproval = ({ draftId }: DraftApprovalProps) => {
-  const [isAdmin, setIsAdmin] = useState(true);
+const DraftApproval = ({ draftId, contentType }: DraftApprovalProps) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [teamId, setTeamId] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [completedAction, setCompletedAction] = useState<ActionType>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState<string | null>(null);
 
-  const { isAdmin: checkIfAdmin } = useAdmin();
-  const { approveContent, rejectContent } = useContent();
-  const { publicKey } = useWallet();
+  // Get team details for the content and check admin status
+  useEffect(
+    () => {
+      const checkTeamAndApprovalStatus = async () => {
+        try {
+          setIsLoading(true);
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const adminStat = await checkIfAdmin(publicKey!);
-        // setIsAdmin(adminStat);
-      } catch (err) {
-        console.error("Error checking admin status:", err);
-        setIsAdmin(false);
-      }
-    };
+          // Get the shared draft token from the URL
+          const token = window.location.pathname.split("/").pop();
 
-    checkAdminStatus();
-  }, []);
+          // Get the shared draft data to extract the status and creator info
+          const sharedDraftResponse = await fetch(`/api/shared-draft/${token}`);
+          if (!sharedDraftResponse.ok) {
+            console.error(
+              "Failed to fetch shared draft:",
+              await sharedDraftResponse.text()
+            );
+            setIsAdmin(false);
+            setIsLoading(false);
+            return;
+          }
 
-  const handleTransaction = async (action: ActionType, reason?: string) => {
-    if (!action) return;
+          const sharedDraftData = await sharedDraftResponse.json();
+          console.log("Shared draft data:", sharedDraftData);
 
+          // Extract creator ID
+          const creatorId = sharedDraftData.draft.userId;
+
+          // Extract the status and teamId based on content type
+          if (contentType === "tweet") {
+            setStatus(sharedDraftData.draft.status);
+            setTeamId(sharedDraftData.draft.teamId || null);
+          } else if (contentType === "thread") {
+            setStatus(sharedDraftData.draft.status);
+            setTeamId(sharedDraftData.draft.teamId || null);
+          }
+
+          // Directly check if the user is a team admin using the members API
+          const membersResponse = await fetch(`/api/team/members`);
+          if (!membersResponse.ok) {
+            console.error(
+              "Failed to fetch team members:",
+              await membersResponse.text()
+            );
+            setIsAdmin(false);
+            setIsLoading(false);
+            return;
+          }
+
+          const membersData = await membersResponse.json();
+          console.log("Team membership data:", membersData);
+
+          // Check if the user is currently logged in
+          const userResponse = await fetch("/api/auth/twitter/user");
+          if (!userResponse.ok) {
+            console.error(
+              "Failed to fetch user data:",
+              await userResponse.text()
+            );
+            setIsAdmin(false);
+            setIsLoading(false);
+            return;
+          }
+
+          const userData = await userResponse.json();
+          console.log("Current user data:", userData);
+
+          // Only set isAdmin to true if:
+          // 1. The user is a team admin
+          // 2. The user is NOT the creator of the draft
+          const isUserAdmin = membersData.userRole === "admin";
+          const isCreator = userData.id === creatorId;
+
+          setIsAdmin(isUserAdmin && !isCreator);
+
+          console.log("Admin status check:", {
+            isUserAdmin,
+            isCreator,
+            canApprove: isUserAdmin && !isCreator,
+          });
+        } catch (err) {
+          console.error("Error checking team and approval status:", err);
+          setIsAdmin(false);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      checkTeamAndApprovalStatus();
+    },
+    [
+      // draftId, contentType
+    ]
+  );
+
+  // Function to approve content via backend API
+  const approveContent = async () => {
     try {
       setTxStatus("pending");
       setError(null);
 
-      // Simulate blockchain transaction
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call the backend API to approve content
+      const response = await fetch("/api/team/content/approval", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "approve",
+          contentId: draftId,
+          contentType: contentType,
+          teamId: teamId,
+        }),
+      });
 
-      if (action === "approve") {
-        await approveContent(draftId, publicKey!);
-      } else {
-        await rejectContent(draftId, publicKey!, reason || "");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to approve content");
       }
 
+      // Success
       setTxStatus("success");
-      setCompletedAction(action);
-      setRejectDialogOpen(false);
+      setCompletedAction("approve");
+      setStatus("approved");
     } catch (err) {
-      console.error("Transaction failed:", err);
-      setError(`Failed to ${action} draft. Please try again.`);
+      console.error("Approval failed:", err);
+      setError(
+        `Failed to approve draft: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
       setTxStatus("error");
     }
   };
 
-  const handleReject = () => {
+  // Function to reject content via backend API
+  const rejectContent = async (reason: string) => {
+    try {
+      setTxStatus("pending");
+      setError(null);
+
+      // Call the backend API to reject content
+      const response = await fetch("/api/team/content/approval", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "reject",
+          contentId: draftId,
+          contentType: contentType,
+          teamId: teamId,
+          rejectionReason: reason,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to reject content");
+      }
+
+      // Success
+      setTxStatus("success");
+      setCompletedAction("reject");
+      setRejectDialogOpen(false);
+      setStatus("rejected");
+    } catch (err) {
+      console.error("Rejection failed:", err);
+      setError(
+        `Failed to reject draft: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
+      setTxStatus("error");
+    }
+  };
+
+  const handleTransaction = async (action: ActionType) => {
+    if (!action) return;
+
+    if (action === "approve") {
+      await approveContent();
+    } else {
+      // Rejection happens in the handleReject function when dialog is confirmed
+      setRejectDialogOpen(true);
+    }
+  };
+
+  const handleReject = async () => {
     if (!rejectReason.trim()) {
       setError("Please provide a reason for rejection");
       return;
     }
-    handleTransaction("reject", rejectReason);
+
+    await rejectContent(rejectReason);
   };
 
-  if (!isAdmin) return null;
+  // Don't show anything while checking status
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 space-y-3">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <span className="text-sm text-muted-foreground animate-pulse">
+          Checking approval status...
+        </span>
+      </div>
+    );
+  }
 
+  // Don't show approval options if not an admin or if content isn't pending approval
+  // NOTE: We need to check for "pending_approval" specifically here
+  const showApprovalButtons = isAdmin && status === "pending_approval";
+
+  if (!showApprovalButtons) {
+    console.log("Not showing approval buttons:", {
+      isAdmin,
+      status,
+      showApprovalButtons,
+    });
+    return null;
+  }
+
+  // Show success message after approval/rejection
   if (txStatus === "success") {
     return (
       <Alert
@@ -98,8 +265,8 @@ const DraftApproval = ({ draftId }: DraftApprovalProps) => {
         </AlertTitle>
         <AlertDescription>
           {completedAction === "approve"
-            ? "The draft has been successfully approved on the blockchain."
-            : "The draft has been rejected and will be returned to the author."}
+            ? "The draft has been successfully approved and will be scheduled for publishing."
+            : "The draft has been rejected and will be returned to the author with your feedback."}
         </AlertDescription>
       </Alert>
     );
@@ -124,7 +291,7 @@ const DraftApproval = ({ draftId }: DraftApprovalProps) => {
             {txStatus === "pending" ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Confirming Transaction...
+                Processing Approval...
               </>
             ) : (
               "Approve Draft"
@@ -132,7 +299,7 @@ const DraftApproval = ({ draftId }: DraftApprovalProps) => {
           </Button>
 
           <Button
-            onClick={() => setRejectDialogOpen(true)}
+            onClick={() => handleTransaction("reject")}
             disabled={txStatus === "pending"}
             variant="outline"
             className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
@@ -140,7 +307,7 @@ const DraftApproval = ({ draftId }: DraftApprovalProps) => {
             {txStatus === "pending" ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Confirming Transaction...
+                Processing Rejection...
               </>
             ) : (
               "Reject Draft"
@@ -182,7 +349,7 @@ const DraftApproval = ({ draftId }: DraftApprovalProps) => {
               {txStatus === "pending" ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Confirming...
+                  Processing...
                 </>
               ) : (
                 "Confirm Rejection"

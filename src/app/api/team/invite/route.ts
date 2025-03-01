@@ -109,6 +109,7 @@ export async function POST(req: NextRequest) {
         email,
         role,
         expiresAt,
+        token: token,
       },
     });
   } catch (error) {

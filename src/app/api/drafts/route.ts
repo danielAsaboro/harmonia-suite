@@ -31,13 +31,13 @@ export async function POST(req: NextRequest) {
     const { type, data } = body;
     const now = new Date().toISOString();
 
-    console.dir(
-      {
-        type,
-        data,
-      },
-      { depth: null }
-    );
+    // console.dir(
+    //   {
+    //     type,
+    //     data,
+    //   },
+    //   { depth: null }
+    // );
 
     if (type === "tweet") {
       const tweet = {

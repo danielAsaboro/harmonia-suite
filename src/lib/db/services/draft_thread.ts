@@ -355,17 +355,33 @@ export class PrismaDraftThreadsService {
 
   // Add these methods as well for consistency with the tweet service
   async approveThread(id: string, userId: string): Promise<void> {
-    await this.prisma.draft_threads.update({
-      where: {
-        id,
-        userId,
-      },
-      data: {
-        status: "approved",
-        approvedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    try {
+      // First find the thread to get the correct userId
+      const thread = await this.prisma.draft_threads.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (!thread) {
+        throw new Error(`Thread with ID ${id} not found`);
+      }
+
+      // Now update using just the id without userId constraint
+      await this.prisma.draft_threads.update({
+        where: {
+          id,
+        },
+        data: {
+          status: "approved",
+          approvedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error(`Error approving thread ${id}:`, error);
+      throw error;
+    }
   }
 
   async rejectThread(
@@ -373,18 +389,34 @@ export class PrismaDraftThreadsService {
     userId: string,
     reason?: string
   ): Promise<void> {
-    await this.prisma.draft_threads.update({
-      where: {
-        id,
-        userId,
-      },
-      data: {
-        status: "rejected",
-        rejectedAt: new Date().toISOString(),
-        rejectionReason: reason || null,
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    try {
+      // First find the thread to get the correct userId
+      const thread = await this.prisma.draft_threads.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (!thread) {
+        throw new Error(`Thread with ID ${id} not found`);
+      }
+
+      // Now update using just the id without userId constraint
+      await this.prisma.draft_threads.update({
+        where: {
+          id,
+        },
+        data: {
+          status: "rejected",
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: reason || null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error(`Error rejecting thread ${id}:`, error);
+      throw error;
+    }
   }
 }
 

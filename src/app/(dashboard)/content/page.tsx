@@ -21,6 +21,8 @@ import {
   Plus,
   LucideIcon,
   Menu,
+  Signature,
+  BadgeCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -113,11 +115,11 @@ export default function ContentStudioPage() {
       href: "/content/compose/twitter",
     },
     {
-      title: "Response Templates",
-      description: "Manage Telegram responses",
-      icon: MessageCircle,
+      title: "Manage Content",
+      description: "Approve and Reject Submitted Content",
+      icon: BadgeCheck,
       color: "text-purple-500",
-      href: "/content/templates",
+      href: "/content/purgatory",
     },
     {
       title: "Content Calendar",

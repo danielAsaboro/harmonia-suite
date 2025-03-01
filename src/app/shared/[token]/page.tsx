@@ -231,15 +231,14 @@ export default function SharedDraftPage() {
           />
         )}
       </CardContent>
-      {/* Add the approval component at the bottom */}
+      {/* Pass both the draftId and contentType to DraftApproval */}
       <CardContent>
         <div className="px-4 pb-4">
           <DraftApproval
             draftId={
-              (isThread
-                ? (draft as ThreadWithTweets).tweets
-                : [draft as Tweet])[0].id
+              isThread ? (draft as ThreadWithTweets).id : (draft as Tweet).id
             }
+            contentType={isThread ? "thread" : "tweet"}
           />
         </div>
       </CardContent>

@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get("type");
 
     if (!contentId || !type) {
+      console.log("Missing required parameters: id and type");
       return NextResponse.json(
         { error: "Missing required parameters: id and type" },
         { status: 400 }
@@ -69,6 +70,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (!isOwner && !isTeamAdmin) {
+      // console.log( isOwner, " is ownerner")
+      // console.log( isTeamAdmin, " is teamadmin")
+      console.log("Content not found or you don't have permission to view it");
+
       return NextResponse.json(
         {
           error: "Content not found or you don't have permission to view it",
@@ -81,7 +86,9 @@ export async function GET(req: NextRequest) {
     const approval =
       await contentApprovalsService.getApprovalByContentId(contentId);
 
+    console.log(" can't find content");
     if (!approval) {
+      console.log("No approval record found for this content");
       return NextResponse.json(
         { error: "No approval record found for this content" },
         { status: 404 }

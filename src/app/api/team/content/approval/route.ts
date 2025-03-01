@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
         id,
         userData.userId
       );
+      console.log(" printing thread to drafts in approval stage: ", threadData);
       if (!threadData) {
         return NextResponse.json(
           { error: "Thread not found" },

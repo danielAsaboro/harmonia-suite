@@ -1,4 +1,4 @@
-// // src/lib/sync/draftSync.ts
+// /lib/sync/draftSync.ts
 
 import { Tweet, ThreadWithTweets } from "@/types/tweet";
 import { tweetStorage } from "@/utils/localStorage";
@@ -7,14 +7,16 @@ interface PendingSync {
   id: string;
   type: "tweet" | "thread";
   lastModified: Date;
+  priority: number; // Higher number means higher priority
 }
 
 class DraftSyncService {
   private static instance: DraftSyncService;
   private pendingSyncs: Map<string, PendingSync> = new Map();
   private syncInterval: NodeJS.Timeout | null = null;
-  private SYNC_INTERVAL = 15 * 1000; // 30 secs in milliseconds
+  private SYNC_INTERVAL = 15 * 1000; // 15 secs in milliseconds
   private isSyncing = false;
+  private syncQueue: Array<string> = []; // Queue of operation IDs
 
   private constructor() {
     this.startSyncInterval();
@@ -41,60 +43,84 @@ class DraftSyncService {
     if (this.isSyncing || this.pendingSyncs.size === 0) return;
 
     this.isSyncing = true;
-    const syncsArray = Array.from(this.pendingSyncs.values());
-    this.pendingSyncs.clear();
 
     try {
-      for (const sync of syncsArray) {
-        if (sync.type === "tweet") {
-          const tweet = tweetStorage.getTweets().find((t) => t.id === sync.id);
-          // Skip syncing if the tweet is submitted or pending approval
-          if (
-            tweet &&
-            !tweet.threadId &&
-            tweet.status !== "pending_approval" &&
-            !tweet.isSubmitted
-          ) {
-            // Only sync standalone tweets that aren't submitted or pending approval
-            await this.syncTweetToBackend(tweet);
-          } else if (tweet && tweet.threadId) {
-            // If it has a threadId, we should sync the entire thread instead
-            const thread = tweetStorage.getThreadWithTweets(tweet.threadId);
+      // Sort syncs by priority (descending)
+      const syncsArray = Array.from(this.pendingSyncs.values()).sort(
+        (a, b) => b.priority - a.priority
+      );
 
+      // Process high priority items first
+      for (const sync of syncsArray) {
+        const syncKey = `${sync.type}_${sync.id}`;
+
+        try {
+          // Add to sync queue to track ongoing operations
+          this.syncQueue.push(syncKey);
+
+          // Process based on type
+          if (sync.type === "tweet") {
+            const tweet = tweetStorage
+              .getTweets()
+              .find((t) => t.id === sync.id);
+
+            // Skip syncing if the tweet is submitted or pending approval
+            if (
+              tweet &&
+              !tweet.threadId &&
+              tweet.status !== "pending_approval" &&
+              !tweet.isSubmitted
+            ) {
+              // Only sync standalone tweets that aren't submitted or pending approval
+              await this.syncTweetToBackend(tweet);
+            } else if (tweet && tweet.threadId) {
+              // If it has a threadId, we should sync the entire thread instead
+              const thread = tweetStorage.getThreadWithTweets(tweet.threadId);
+
+              if (
+                thread &&
+                thread.status !== "pending_approval" &&
+                !thread.isSubmitted
+              ) {
+                // Only sync if the thread isn't submitted or pending approval
+                await this.syncThreadToBackend(thread);
+                console.log("finished syncing thread to backend 1");
+              }
+            }
+          } else {
+            const thread = tweetStorage
+              .getThreads()
+              .find((t) => t.id === sync.id);
+
+            // Skip syncing if the thread is submitted or pending approval
             if (
               thread &&
               thread.status !== "pending_approval" &&
               !thread.isSubmitted
             ) {
-              // Only sync if the thread isn't submitted or pending approval
-              await this.syncThreadToBackend(thread);
-              console.log("finished syncing thread to backend 1");
+              const threadWithTweets = tweetStorage.getThreadWithTweets(
+                thread.id
+              );
+              if (threadWithTweets) {
+                await this.syncThreadToBackend(threadWithTweets);
+                console.log("finished syncing thread to backend 2");
+              }
             }
           }
-        } else {
-          const thread = tweetStorage
-            .getThreads()
-            .find((t) => t.id === sync.id);
-          // Skip syncing if the thread is submitted or pending approval
-          if (
-            thread &&
-            thread.status !== "pending_approval" &&
-            !thread.isSubmitted
-          ) {
-            const threadWithTweets = tweetStorage.getThreadWithTweets(
-              thread.id
-            );
-            if (threadWithTweets) {
-              await this.syncThreadToBackend(threadWithTweets);
-              console.log("finished syncing thread to backend 2");
-            }
-          }
+
+          // Remove from pending syncs after successful processing
+          this.pendingSyncs.delete(syncKey);
+        } catch (error) {
+          console.error(`Error syncing ${sync.type} ${sync.id}:`, error);
+          // Do not remove from pending syncs - will retry next cycle
+        } finally {
+          // Always remove from sync queue
+          const index = this.syncQueue.indexOf(syncKey);
+          if (index !== -1) this.syncQueue.splice(index, 1);
         }
       }
     } catch (error) {
-      console.error("Error syncing drafts:", error);
-      // Re-add failed syncs to the queue
-      syncsArray.forEach((sync) => this.pendingSyncs.set(sync.id, sync));
+      console.error("Error in sync process:", error);
     } finally {
       this.isSyncing = false;
     }
@@ -116,6 +142,8 @@ class DraftSyncService {
       if (!response.ok) {
         throw new Error(`Failed to sync tweet: ${response.statusText}`);
       }
+
+      return true;
     } catch (error) {
       console.error("Error syncing tweet to backend:", error);
       throw error;
@@ -146,6 +174,8 @@ class DraftSyncService {
       if (!response.ok) {
         throw new Error(`Failed to sync thread: ${response.statusText}`);
       }
+
+      return true;
     } catch (error) {
       console.error("Error syncing thread to backend:", error);
       throw error;
@@ -220,15 +250,7 @@ class DraftSyncService {
     }
   }
 
-  // queueForSync(id: string, type: "tweet" | "thread") {
-  //   this.pendingSyncs.set(id, {
-  //     id,
-  //     type,
-  //     lastModified: new Date(),
-  //   });
-  // }
-
-  queueForSync(id: string, type: "tweet" | "thread") {
+  queueForSync(id: string, type: "tweet" | "thread", priority: number = 0) {
     // Don't queue for sync if it's pending approval or submitted
     if (type === "tweet") {
       const tweet = tweetStorage.getTweets().find((t) => t.id === id);
@@ -247,15 +269,35 @@ class DraftSyncService {
       }
     }
 
-    this.pendingSyncs.set(id, {
+    const syncKey = `${type}_${id}`;
+
+    // If already in queue, update the priority if the new one is higher
+    const existingSync = this.pendingSyncs.get(syncKey);
+    if (existingSync && existingSync.priority >= priority) {
+      return;
+    }
+
+    this.pendingSyncs.set(syncKey, {
       id,
       type,
       lastModified: new Date(),
+      priority,
     });
   }
 
-  async forceSyncNow() {
-    await this.syncPendingDrafts();
+  async forceSyncNow(): Promise<void> {
+    // If already syncing, wait a bit for it to complete
+    if (this.isSyncing) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return this.forceSyncNow();
+    }
+
+    return this.syncPendingDrafts();
+  }
+
+  isCurrentlySyncing(id: string, type: "tweet" | "thread"): boolean {
+    const syncKey = `${type}_${id}`;
+    return this.syncQueue.includes(syncKey);
   }
 
   destroy() {

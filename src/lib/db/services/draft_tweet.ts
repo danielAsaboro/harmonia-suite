@@ -180,17 +180,33 @@ export class PrismaDraftTweetsService {
 
   // Add methods for handling approval outcomes
   async approveTweet(id: string, userId: string): Promise<void> {
-    await this.prisma.draft_tweets.update({
-      where: {
-        id,
-        userId,
-      },
-      data: {
-        status: "approved",
-        approvedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    try {
+      // First find the tweet to make sure it exists
+      const tweet = await this.prisma.draft_tweets.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (!tweet) {
+        throw new Error(`Tweet with ID ${id} not found`);
+      }
+
+      // Now update using just the id without userId constraint
+      await this.prisma.draft_tweets.update({
+        where: {
+          id,
+        },
+        data: {
+          status: "approved",
+          approvedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error(`Error approving tweet ${id}:`, error);
+      throw error;
+    }
   }
 
   async rejectTweet(
@@ -198,18 +214,34 @@ export class PrismaDraftTweetsService {
     userId: string,
     reason?: string
   ): Promise<void> {
-    await this.prisma.draft_tweets.update({
-      where: {
-        id,
-        userId,
-      },
-      data: {
-        status: "rejected",
-        rejectedAt: new Date().toISOString(),
-        rejectionReason: reason || null,
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    try {
+      // First find the tweet to make sure it exists
+      const tweet = await this.prisma.draft_tweets.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if (!tweet) {
+        throw new Error(`Tweet with ID ${id} not found`);
+      }
+
+      // Now update using just the id without userId constraint
+      await this.prisma.draft_tweets.update({
+        where: {
+          id,
+        },
+        data: {
+          status: "rejected",
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: reason || null,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error(`Error rejecting tweet ${id}:`, error);
+      throw error;
+    }
   }
 }
 
