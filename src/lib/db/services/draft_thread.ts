@@ -100,7 +100,7 @@ export class PrismaDraftThreadsService {
             updatedAt: tweet.updatedAt,
             status: tweet.status,
             threadId: thread.id,
-            position: tweet.position || null,
+            position: tweet.position !== undefined ? tweet.position : null,
             tags: JSON.stringify(tweet.tags || []),
             userId: tweet.userId,
             teamId: thread.teamId || null, // Use thread's teamId
@@ -114,7 +114,7 @@ export class PrismaDraftThreadsService {
             updatedAt: tweet.updatedAt,
             status: tweet.status,
             threadId: thread.id,
-            position: tweet.position || null,
+            position: tweet.position !== undefined ? tweet.position : null,
             tags: JSON.stringify(tweet.tags || []),
             userId: tweet.userId,
             teamId: thread.teamId || null, // Use thread's teamId

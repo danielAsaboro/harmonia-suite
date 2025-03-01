@@ -38,7 +38,7 @@ export class PrismaDraftTweetsService {
         updatedAt: tweet.updatedAt,
         status: tweet.status,
         threadId: tweet.threadId || null,
-        position: tweet.position || null,
+        position: tweet.position !== undefined ? tweet.position : null,
         tags: JSON.stringify(tweet.tags || []),
         userId: tweet.userId,
         teamId: tweet.teamId || null,
