@@ -30,11 +30,12 @@ export interface Tweet {
   threadId?: string;
   position?: number;
   lastSaved?: string;
-  tags?: string[];
+  tags?: Tag[];
   lastModified?: string;
   teamId?: string;
   isSubmitted?: boolean;
   media?: TweetMedia;
+  checklist?: ChecklistItem[];
 }
 
 export interface Thread {
@@ -43,10 +44,18 @@ export interface Thread {
   createdAt: Date;
   status: TweetStatus;
   scheduledFor?: Date;
-  tags?: string[];
+  tags?: Tag[];
   lastModified?: string;
   teamId?: string;
   isSubmitted?: boolean;
+  checklist?: ChecklistItem[];
+}
+
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: number;
 }
 
 export interface ThreadWithTweets extends Thread {
@@ -122,6 +131,7 @@ export interface Tag {
   id: string;
   name: string;
   color?: string;
+  emoji?: string;
 }
 
 export interface DraftStats {

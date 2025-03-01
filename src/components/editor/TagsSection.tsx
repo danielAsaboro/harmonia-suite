@@ -1,19 +1,18 @@
+// src/components/editor/TagsSection.tsx
+
 import React, { useEffect, useRef, useState } from "react";
 import Tagify from "@yaireo/tagify";
 import "@yaireo/tagify/dist/tagify.css";
+import { Tag } from "@/types/tweet";
+import { useEditor } from "./context/Editor";
+import { tweetStorage } from "@/utils/localStorage";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 // Define our custom tag data structure
 interface CustomTagData extends Tagify.TagData {
   emoji?: string;
   color?: string;
   class?: string;
-}
-
-interface Tag {
-  id: string;
-  name: string;
-  color?: string;
-  emoji?: string;
 }
 
 interface TagsInputProps {
@@ -41,7 +40,7 @@ const TagsInput: React.FC<TagsInputProps> = ({ tags, onChange }) => {
     { value: "SEO", emoji: "🔍" },
     { value: "Analytics", emoji: "📊" },
 
-    // Development related
+    // Development relatedcallbacks:
     { value: "Web Development", emoji: "💻" },
     { value: "API Integration", emoji: "🔌" },
     { value: "Mobile App", emoji: "📱" },
@@ -115,9 +114,7 @@ const TagsInput: React.FC<TagsInputProps> = ({ tags, onChange }) => {
         >
           <x title='remove tag' class='tagify__tag__removeBtn'></x>
           <div>
-            <span class='tagify__tag-text'>${tagData.emoji} ${
-        tagData.value
-      }</span>
+            <span class='tagify__tag-text'>${tagData.emoji} ${tagData.value}</span>
           </div>
         </tag>
       `;
@@ -125,14 +122,14 @@ const TagsInput: React.FC<TagsInputProps> = ({ tags, onChange }) => {
 
     // Initialize Tagify with enhanced settings
     tagifyRef.current = new Tagify(inputRef.current, {
-      maxTags: 10,
+      maxTags: 5,
       enforceWhitelist: false,
       skipInvalid: true,
       dropdown: {
         enabled: 1,
         maxItems: 10,
         classname: "tags-dropdown",
-        closeOnSelect: false,
+        closeOnSelect: true,
         searchKeys: ["value", "emoji"],
         position: "text",
         highlightFirst: true,
@@ -180,6 +177,7 @@ const TagsInput: React.FC<TagsInputProps> = ({ tags, onChange }) => {
             }))
           );
         },
+       
       },
     });
 
@@ -198,14 +196,13 @@ const TagsInput: React.FC<TagsInputProps> = ({ tags, onChange }) => {
     return () => {
       tagifyRef.current?.destroy();
     };
-  }, []);
+  }, [tags]); // Added tags to dependency array so it refreshes when tags change
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-gray-500">Tags</p>
       <input
         ref={inputRef}
-        className="w-full bg-transparent"
+        className="w-full bg-transparent border-none rounded-lg"
         placeholder="Type to add tags..."
       />
     </div>
@@ -215,11 +212,9 @@ const TagsInput: React.FC<TagsInputProps> = ({ tags, onChange }) => {
 // Enhanced styles with focus/hover states and dropdown styling
 const tagifyStyles = `
   .tagify {
-    --tags-border-color: transparent;
     --tags-hover-border-color: rgb(55 65 81);
     --tags-focus-border-color: rgb(59 130 246);
     --tag-bg: transparent;
-    --tag-hover: transparent;
     --tag-text-color: inherit;
     --tag-text-color--edit: inherit;
     --tag-pad: 0.5em 0.75em;
@@ -227,16 +222,18 @@ const tagifyStyles = `
     --tag-border-radius: 9999px;
     background: transparent;
     transition: all 0.2s ease;
+    border-radius: 0.5rem; /* Add this for rounded corners */
+    border-color: rgba(75, 85, 99, 0.2); /* Make border very faint */
   }
 
   .tagify:hover {
-    --tags-border-color: rgb(55 65 81);
-  }
+  --tags-border-color: rgba(75, 85, 99, 0.3);
+}
 
   .tagify.tagify--focus {
-    --tags-border-color: rgb(59 130 246);
-    box-shadow: 0 0 0 1px rgb(59 130 246);
-  }
+  --tags-border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4);
+}
 
   .tagify__tag {
     margin: 2px 4px 2px 0;
@@ -314,11 +311,68 @@ const tagifyStyles = `
 `;
 
 const TagsSection: React.FC = () => {
-  const [localTags, setLocalTags] = useState<Tag[]>([
-    { id: "1", name: "Affiliate Marketing" },
-    { id: "2", name: "Build In Public" },
-    { id: "3", name: "Copywriting" },
-  ]);
+  const { editorState, loadDraft, activeTab, refreshSidebar } = useEditor();
+  const [contentTags, setContentTags] = React.useState<Tag[]>([]);
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  // Load tags from the current content
+  useEffect(() => {
+    const loadContentTags = async () => {
+      // Only attempt to load if we have a selected draft
+      if (editorState.selectedDraftId) {
+        try {
+          const content = await loadDraft();
+
+          if (!content) return;
+
+          // Check if it's a thread or single tweet
+          if ("tweets" in content) {
+            // It's a thread
+            const tags =
+              (content.tags
+                ?.map((tagName, idx) => {
+                  // Convert string tag to Tag object if needed
+                  if (typeof tagName === "string") {
+                    return {
+                      id: `tag-${idx}-${Date.now()}`,
+                      name: tagName,
+                    };
+                  } else if (typeof tagName === "object") {
+                    return tagName as Tag;
+                  }
+                  return null;
+                })
+                .filter(Boolean) as Tag[]) || [];
+
+            setContentTags(tags);
+          } else {
+            // It's a single tweet
+            const tags =
+              (content.tags
+                ?.map((tagName, idx) => {
+                  // Convert string tag to Tag object if needed
+                  if (typeof tagName === "string") {
+                    return {
+                      id: `tag-${idx}-${Date.now()}`,
+                      name: tagName,
+                    };
+                  } else if (typeof tagName === "object") {
+                    return tagName as Tag;
+                  }
+                  return null;
+                })
+                .filter(Boolean) as Tag[]) || [];
+
+            setContentTags(tags);
+          }
+        } catch (error) {
+          console.error("Error loading tags:", error);
+        }
+      }
+    };
+
+    loadContentTags();
+  }, [editorState.selectedDraftId, loadDraft, activeTab]);
 
   useEffect(() => {
     const styleEl = document.createElement("style");
@@ -330,14 +384,61 @@ const TagsSection: React.FC = () => {
     };
   }, []);
 
-  const handleTagsChange = (newTags: Tag[]) => {
-    setLocalTags(newTags);
-    // Add any additional logic for saving tags
+  const handleTagsChange = async (newTags: Tag[]) => {
+    setContentTags(newTags);
+
+    // Save the updated tags to the content
+    if (editorState.selectedDraftId) {
+      try {
+        const content = loadDraft();
+
+        if (!content) return;
+
+        if ("tweets" in content) {
+          // It's a thread - update thread tags
+          const thread = {
+            ...content,
+            tags: newTags,
+          };
+
+          tweetStorage.saveThread(thread, content.tweets, true);
+        } else {
+          // It's a single tweet - update tweet tags
+          const tweet = {
+            ...content,
+            tags: newTags,
+          };
+
+          tweetStorage.saveTweet(tweet, true);
+        }
+
+        // Refresh sidebar to show updated tags
+        refreshSidebar();
+      } catch (error) {
+        console.error("Error saving tags:", error);
+      }
+    }
   };
 
   return (
-    <div className="p-4 border-b border-gray-800">
-      <TagsInput tags={localTags} onChange={handleTagsChange} />
+    <div className="border-b border-gray-800">
+      <div
+        className="flex items-center justify-between p-4 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <h3 className="text-sm font-medium text-gray-400">Tags</h3>
+        {isExpanded ? (
+          <ChevronDown size={16} className="text-gray-400" />
+        ) : (
+          <ChevronRight size={16} className="text-gray-400" />
+        )}
+      </div>
+
+      {isExpanded && (
+        <div className="px-4 pb-4">
+          <TagsInput tags={contentTags} onChange={handleTagsChange} />
+        </div>
+      )}
     </div>
   );
 };
