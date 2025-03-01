@@ -21,6 +21,8 @@ import {
   X,
   Search,
   Info,
+  Trash2,
+  Sparkles,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { SaveStatus } from "./storage/SaveStatus";
@@ -1809,7 +1811,7 @@ export default function PlayGround({
               <div className="flex-1 min-w-0">
                 {/* User info header with improved responsive behavior */}
                 <div className="flex items-start sm:items-center justify-between">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 text-gray-400">
+                  <div className="flex flex-col sm:flex-row sm:items-center text-gray-400">
                     <div className="flex items-center">
                       <span
                         className={cn(
@@ -1846,7 +1848,7 @@ export default function PlayGround({
                         className="p-1.5 sm:p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-red-500"
                         aria-label="Delete tweet"
                       >
-                        <X size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        <Trash2 className="sm:w-[12px] sm:h-[12px]" />
                       </button>
                     )}
                 </div>
@@ -1923,14 +1925,7 @@ export default function PlayGround({
                 )}
 
                 {/* Extra Options - made responsive */}
-                <div className="mt-3 sm:mt-4 flex items-center justify-between">
-                  {/* Media upload button - responsive sizing */}
-                  <MediaUpload
-                    onUpload={(files) => handleMediaUpload(index, files)}
-                    maxFiles={4 - (tweet.media?.mediaIds?.length || 0)}
-                    disabled={activeTab != "drafts" || tweet.isSubmitted}
-                  />
-
+                <div className="mt-3 sm:mt-4 flex items-center justify-end">
                   {/* Right side controls - responsively shown/hidden */}
                   <div
                     className={
@@ -1939,11 +1934,18 @@ export default function PlayGround({
                         : "hidden"
                     }
                   >
-                    <CharacterCount content={tweet.content} />
                     <ThreadPosition
                       position={index + 1}
                       totalTweets={pageContent.tweets.length}
                     />
+                    <CharacterCount content={tweet.content} />
+                    {/* Media upload button - responsive sizing */}
+                    <MediaUpload
+                      onUpload={(files) => handleMediaUpload(index, files)}
+                      maxFiles={4 - (tweet.media?.mediaIds?.length || 0)}
+                      disabled={activeTab != "drafts" || tweet.isSubmitted}
+                    />
+
                     {activeTab === "drafts" && (
                       <div
                         className={
@@ -1955,6 +1957,9 @@ export default function PlayGround({
                         />
                       </div>
                     )}
+                    <button>
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                    </button>
                   </div>
                 </div>
               </div>
