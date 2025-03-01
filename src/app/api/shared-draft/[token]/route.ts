@@ -82,32 +82,45 @@ export async function GET(
       if (threadData) {
         // Process media URLs for each tweet in the thread
         const tweetsWithAuthor = await Promise.all(
-          threadData.tweets.map(async (tweet) => {
-            if (tweet.media && tweet.media.mediaIds.length > 0) {
-              const mediaUrls = await getMediaUrls(
-                tweet.media.mediaIds,
-                sharedDraft.creatorId
-              );
+          threadData.tweets
+            .sort((a, b) => {
+              // Handle null or undefined positions
+              const posA =
+                a.position === null || a.position === undefined
+                  ? 0
+                  : a.position;
+              const posB =
+                b.position === null || b.position === undefined
+                  ? 0
+                  : b.position;
+              return posA - posB;
+            })
+            .map(async (tweet) => {
+              if (tweet.media && tweet.media.mediaIds.length > 0) {
+                const mediaUrls = await getMediaUrls(
+                  tweet.media.mediaIds,
+                  sharedDraft.creatorId
+                );
 
-              return {
-                ...tweet,
-                authorName: authorTokens.name,
-                authorHandle: `@${authorTokens.username}`,
-                authorProfileUrl: authorTokens.profileImageUrl,
-                media: {
-                  ...tweet.media,
-                  mediaIds: mediaUrls, // Replace mediaIds with signed URLs
-                },
-              };
-            } else {
-              return {
-                ...tweet,
-                authorName: authorTokens.name,
-                authorHandle: `@${authorTokens.username}`,
-                authorProfileUrl: authorTokens.profileImageUrl,
-              };
-            }
-          })
+                return {
+                  ...tweet,
+                  authorName: authorTokens.name,
+                  authorHandle: `@${authorTokens.username}`,
+                  authorProfileUrl: authorTokens.profileImageUrl,
+                  media: {
+                    ...tweet.media,
+                    mediaIds: mediaUrls, // Replace mediaIds with signed URLs
+                  },
+                };
+              } else {
+                return {
+                  ...tweet,
+                  authorName: authorTokens.name,
+                  authorHandle: `@${authorTokens.username}`,
+                  authorProfileUrl: authorTokens.profileImageUrl,
+                };
+              }
+            })
         );
 
         draft = {
