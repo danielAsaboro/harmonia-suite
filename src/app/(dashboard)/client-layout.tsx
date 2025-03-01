@@ -1,4 +1,3 @@
-// /app/(dashboard)/client-layout.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,43 +31,45 @@ function ApplicationContainer({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <>
+    <div className="flex h-screen overflow-hidden">
       {/* Mobile Sidebar - When Open */}
-      <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden transition-opacity duration-200 ${
-          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={() => setSidebarOpen(false)}
-      />
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="fixed inset-0 bg-gray-600 bg-opacity-75"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 flex flex-col z-40 w-64 bg-white overflow-y-auto">
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
 
-      {/* Sidebar for both mobile and desktop */}
-      <nav
-        className={`fixed top-0 bottom-0 left-0 z-30 w-64 transform transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
-      >
+      {/* Desktop Sidebar - Always visible on lg screens */}
+      <div className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 bg-white overflow-y-auto">
         <Sidebar onClose={() => setSidebarOpen(false)} />
-      </nav>
+      </div>
 
-      <main className="flex-1 min-w-0 bg-background">
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 lg:pl-64">
+        {/* Header */}
         <Header
           userName={userAccount.name}
           profile_image_url={userAccount.profileImageUrl}
           className="sticky top-0 z-10 w-full bg-card border-b border-border bg-background"
           onMenuClick={() => setSidebarOpen(true)}
         />
-        <div className="p-4 md:p-6">{children}</div>
-      </main>
-    </>
+        {/* Main Content with its own scrolling */}
+        <main className="flex-1 overflow-y-auto">{children}</main>
+      </div>
+    </div>
   );
 }
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-background">
-      <UserAccountProvider>
-        <ApplicationContainer>{children}</ApplicationContainer>
-      </UserAccountProvider>
-    </div>
+    <UserAccountProvider>
+      <ApplicationContainer>{children}</ApplicationContainer>
+    </UserAccountProvider>
   );
 }

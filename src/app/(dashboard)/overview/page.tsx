@@ -87,7 +87,7 @@ export default function OverviewPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+    <div className="max-h-screen p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

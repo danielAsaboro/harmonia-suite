@@ -92,8 +92,8 @@ export default function PendingApprovalsView() {
           Pending Approvals
         </h1>
         <p className="text-gray-400">
-          Content waiting for approval before publishing. Click column headers
-          to sort.
+          Content waiting for approval before publishing or Scheduling. Click
+          column headers to sort.
         </p>
       </div>
 

@@ -25,26 +25,26 @@ const navigationItems = [
     icon: LayoutGrid,
     href: "/overview",
   },
-  {
-    title: "Members Management",
-    icon: LineChart,
-    href: "/members",
-  },
-  {
-    title: "Knowledge Base",
-    icon: BookOpen,
-    href: "/knowledge",
-  },
+  // {
+  //   title: "Members Management",
+  //   icon: LineChart,
+  //   href: "/members",
+  // },
+  // {
+  //   title: "Knowledge Base",
+  //   icon: BookOpen,
+  //   href: "/knowledge",
+  // },
   {
     title: "Content Studio",
     icon: Trophy,
     href: "/content",
   },
-  {
-    title: "System Config",
-    icon: Target,
-    href: "/system-config",
-  },
+  // {
+  //   title: "System Config",
+  //   icon: Target,
+  //   href: "/system-config",
+  // },
 ];
 
 const bottomNavigationItems = [
@@ -102,7 +102,7 @@ const Sidebar = ({ className, onClose }: SidebarProps) => {
 
   return (
     <div
-      className={cn("flex h-full w-64 flex-col bg-slate-800 p-4", className)}
+      className={cn("flex min-h-screen w-64 flex-col bg-slate-800 p-4", className)}
     >
       <div className="mb-8 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2">
