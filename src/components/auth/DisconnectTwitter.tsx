@@ -3,9 +3,10 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Twitter, Check, X } from "lucide-react";
+import { Twitter, Check, X, Loader2 } from "lucide-react";
 import { useUserAccount } from "@/components/editor/context/account";
 import Image from "next/image";
+import { cn } from "@/utils/ts-merge";
 
 interface DisconnectTwitterProps {
   onDisconnectSuccess?: () => void;
@@ -52,7 +53,7 @@ export function DisconnectTwitter({
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
+    <div className="flex items-center justify-between p-4 bg-neutral-900 rounded-lg border border-neutral-800 relative">
       <div className="flex items-center space-x-4">
         {profileImageUrl ? (
           <Image
@@ -67,15 +68,15 @@ export function DisconnectTwitter({
         )}
         <div>
           <p className="font-semibold text-white">{name}</p>
-          <p className="text-gray-400">{handle}</p>
+          <p className="text-neutral-400">@{handle}</p>
         </div>
       </div>
 
       {!showConfirmation ? (
         <Button
-          variant="destructive"
           onClick={() => setShowConfirmation(true)}
-          className="bg-red-500 hover:bg-red-600 text-white"
+          className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors rounded-full"
+          variant="outline"
         >
           Disconnect
         </Button>
@@ -85,29 +86,34 @@ export function DisconnectTwitter({
             variant="outline"
             onClick={() => setShowConfirmation(false)}
             disabled={isLoading}
-            className="border-gray-700 text-gray-300 hover:text-white"
+            className="border-neutral-700 bg-black text-neutral-300 hover:bg-neutral-900 hover:text-white transition-colors rounded-full"
           >
             <X className="mr-2 h-4 w-4" /> Cancel
           </Button>
           <Button
-            variant="destructive"
             onClick={handleDisconnect}
             disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className={cn(
+              "bg-red-500 hover:bg-red-600 text-white transition-colors rounded-full",
+              "focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+            )}
           >
             {isLoading ? (
-              "Disconnecting..."
+              <span className="flex items-center">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                Disconnecting...
+              </span>
             ) : (
-              <>
-                <Check className="mr-2 h-4 w-4" /> Confirm Disconnect
-              </>
+              <span className="flex items-center">
+                <Check className="mr-2 h-4 w-4" /> Confirm
+              </span>
             )}
           </Button>
         </div>
       )}
 
       {disconnectError && (
-        <div className="absolute bottom-0 left-0 right-0 p-2 bg-red-500/10 text-red-500 text-center">
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-red-500/10 text-red-500 text-sm text-center rounded-b-lg">
           {disconnectError}
         </div>
       )}

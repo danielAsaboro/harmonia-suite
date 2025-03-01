@@ -1,5 +1,6 @@
 // /overview/page.tsx
-// /overview/page.tsx
+"use client";
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   ArrowDown,
   Menu,
 } from "lucide-react";
+import { cn } from "@/utils/ts-merge";
 
 export default function OverviewPage() {
   const systemStatus = {
@@ -70,11 +72,11 @@ export default function OverviewPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "operational":
-        return "text-green-500 bg-green-50 dark:bg-green-500/10";
+        return "text-green-500 bg-green-500/10";
       case "degraded":
-        return "text-yellow-500 bg-yellow-50 dark:bg-yellow-500/10";
+        return "text-yellow-500 bg-yellow-500/10";
       default:
-        return "text-red-500 bg-red-50 dark:bg-red-500/10";
+        return "text-red-500 bg-red-500/10";
     }
   };
 
@@ -87,26 +89,26 @@ export default function OverviewPage() {
   };
 
   return (
-    <div className="max-h-screen p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto bg-black text-white">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl md:text-3xl font-semibold text-white">
             System Overview
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-neutral-400 mt-1">
             Real-time monitoring and system status
           </p>
         </div>
         <div className="flex gap-2 md:gap-4 w-full sm:w-auto">
           <Button
             variant="outline"
-            className="gap-2 text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+            className="gap-2 text-xs sm:text-sm flex-1 sm:flex-initial justify-center border-neutral-700 bg-black text-neutral-300 hover:bg-neutral-900 hover:text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black"
           >
             <FileText className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden xs:inline">Upload</span> Document
           </Button>
-          <Button className="gap-2 text-xs sm:text-sm flex-1 sm:flex-initial justify-center">
+          <Button className="gap-2 text-xs sm:text-sm flex-1 sm:flex-initial justify-center bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black rounded-full">
             <Twitter className="w-3 h-3 md:w-4 md:h-4" />
             New Tweet
           </Button>
@@ -114,28 +116,28 @@ export default function OverviewPage() {
       </div>
 
       {/* System Status Section */}
-      <Card variant="glass" className="border-none">
+      {/* <Card className="border-neutral-800 bg-black shadow-lg">
         <CardHeader className="pb-2 md:pb-4">
-          <CardTitle className="text-base">System Status</CardTitle>
+          <CardTitle className="text-base text-white">System Status</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
           {Object.entries(systemStatus).map(([key, status]) => (
             <div
               key={key}
-              className="flex items-center justify-between p-3 md:p-4 rounded-xl bg-white/50 dark:bg-zinc-800/50"
+              className="flex items-center justify-between p-3 md:p-4 rounded-xl bg-neutral-900 border border-neutral-800"
             >
               <div className="flex items-center gap-2 md:gap-3">
                 {key === "llm" && (
-                  <ActivitySquare className="w-4 h-4 md:w-5 md:h-5 text-zinc-500" />
+                  <ActivitySquare className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
                 )}
                 {key === "telegram" && (
-                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-zinc-500" />
+                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
                 )}
                 {key === "twitter" && (
-                  <Twitter className="w-4 h-4 md:w-5 md:h-5 text-zinc-500" />
+                  <Twitter className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
                 )}
                 <div>
-                  <p className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <p className="text-xs md:text-sm font-medium text-neutral-300">
                     {key.toUpperCase()}
                   </p>
                   <div
@@ -159,32 +161,32 @@ export default function OverviewPage() {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {Object.entries(quickStats).map(([key, data]) => (
-          <Card key={key} variant="elevated" className="border-none">
+          <Card key={key} className="border-neutral-800 bg-black shadow-lg">
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-xs md:text-sm font-medium flex items-center gap-2 text-neutral-300">
                 {key === "activeDocuments" && (
-                  <FileText className="w-3 h-3 md:w-4 md:h-4" />
+                  <FileText className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                 )}
                 {key === "pendingTweets" && (
-                  <Twitter className="w-3 h-3 md:w-4 md:h-4" />
+                  <Twitter className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                 )}
                 {key === "recentQueries" && (
-                  <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
+                  <MessageCircle className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                 )}
                 {key === "activeUsers" && (
-                  <Users className="w-3 h-3 md:w-4 md:h-4" />
+                  <Users className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                 )}
                 {key.split(/(?=[A-Z])/).join(" ")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline justify-between">
-                <span className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+                <span className="text-xl md:text-2xl font-semibold text-white">
                   {data.value}
                 </span>
                 <div className="flex items-center gap-1 text-xs md:text-sm">
@@ -204,9 +206,9 @@ export default function OverviewPage() {
       </div>
 
       {/* Recent Activity Feed */}
-      <Card variant="default" className="border-none">
+      <Card className="border-neutral-800 bg-black shadow-lg">
         <CardHeader className="pb-2 md:pb-4">
-          <CardTitle className="text-base md:text-lg">
+          <CardTitle className="text-base md:text-lg text-white">
             Recent Activity
           </CardTitle>
         </CardHeader>
@@ -217,16 +219,16 @@ export default function OverviewPage() {
               return (
                 <div
                   key={index}
-                  className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-lg transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-lg transition-colors hover:bg-neutral-900 border border-transparent hover:border-neutral-800"
                 >
-                  <div className="p-1.5 md:p-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <Icon className="w-3 h-3 md:w-4 md:h-4 text-zinc-500" />
+                  <div className="p-1.5 md:p-2 rounded-full bg-neutral-800">
+                    <Icon className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs md:text-sm text-zinc-900 dark:text-zinc-100">
+                    <p className="text-xs md:text-sm text-neutral-200">
                       {activity.message}
                     </p>
-                    <p className="text-xs text-zinc-500 mt-1">
+                    <p className="text-xs text-neutral-500 mt-1">
                       {activity.time}
                     </p>
                   </div>
@@ -239,16 +241,3 @@ export default function OverviewPage() {
     </div>
   );
 }
-
-// Dashboard (Main Overview)
-
-// System Status (LLM, Telegram Bot, Twitter API)
-// Recent Interactions
-// Content Queue
-// Performance Metrics
-// Primary workspace for all operations. Single-page layout with:
-
-// Quick stats: Active documents, pending tweets, recent queries
-// Action buttons for main functions
-// Recent activity feed
-// System status indicator (LLM availability)
