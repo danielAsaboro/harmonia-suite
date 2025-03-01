@@ -1848,7 +1848,7 @@ export default function PlayGround({
                         className="p-1.5 sm:p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-red-500"
                         aria-label="Delete tweet"
                       >
-                        <Trash2 className="sm:w-[12px] sm:h-[12px]" />
+                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8" />
                       </button>
                     )}
                 </div>

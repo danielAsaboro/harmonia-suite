@@ -35,12 +35,7 @@ export default function EditorSidebar() {
   const [items, setItems] = useState<(Tweet | Thread)[]>([]);
   const [currentDraft, setCurrentDraft] = useState<Tweet | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const {
-    name,
-    handle,
-    profileImageUrl,
-    id: userId,
-  } = useUserAccount();
+  const { name, handle, profileImageUrl, id: userId } = useUserAccount();
   const { showSearch, setShowSearch } = useKeyboard();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -365,7 +360,7 @@ export default function EditorSidebar() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 px-4 py-2 font-medium text-center ${
+                className={`flex-1 py-2 font-medium text-center justify-evenly overflow-x-hidden  ${
                   activeTab === tab
                     ? "text-blue-400 border-b-2 border-blue-400 rounded-none"
                     : "text-gray-400 hover:text-gray-300"
