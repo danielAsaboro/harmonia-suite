@@ -1,5 +1,6 @@
-// /app/submissions/page.tsx
+// /app/content/submissions/page.tsx
 import SubmissionsView from "@/components/purgatory/submissions-view";
+import { divide } from "lodash";
 
 export const metadata = {
   title: "My Submissions | Content Management",
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function SubmissionsPage() {
-  return <SubmissionsView />;
+  return (
+    <div className="px-8">
+      <SubmissionsView />
+    </div>
+  );
 }

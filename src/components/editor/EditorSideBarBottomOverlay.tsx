@@ -1,9 +1,7 @@
 // // src/components/editor/EditorSideBarBottomOverlay.tsx
 
-import { IconChecklist } from "@tabler/icons-react";
 import {
   Calendar,
-  Check,
   ClipboardCheck,
   HelpCircle,
   LayoutDashboardIcon,

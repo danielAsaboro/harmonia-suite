@@ -23,6 +23,7 @@ import {
   Menu,
   Signature,
   BadgeCheck,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -198,10 +199,12 @@ export default function ContentStudioPage() {
           <Button
             variant="outline"
             className="flex items-center gap-2 text-xs md:text-sm flex-1 sm:flex-auto justify-center"
+            onClick={() => router.push("/content/submissions")}
+
           >
-            <Plus className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="hidden xs:inline">New Template</span>
-            <span className="xs:hidden">Template</span>
+            <Send className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="hidden xs:inline">My Submissions</span>
+            <span className="xs:hidden">Submissions</span>
           </Button>
           <Button
             onClick={() => router.push("/content/compose/twitter")}
