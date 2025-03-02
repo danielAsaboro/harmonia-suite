@@ -34,7 +34,7 @@ export default function EditorSideBarBottomOverlay({
         className={`
           w-full flex items-center justify-between py-3 px-6 
           border-b border-gray-800 text-gray-400 
-          hover:text-blue-400 transition-colors
+          hover:text-blue-400 transition-colors rounded-none
           ${isExpanded ? "" : ""}
         `}
       >
@@ -60,11 +60,11 @@ export default function EditorSideBarBottomOverlay({
         className={`
           overflow-hidden transition-all duration-300
           ${!isVisible ? "hidden" : "block"}
-          ${isExpanded ? "h-96 md:h-72" : "lg:h-4 h-32"}
+          ${isExpanded ? "h-96 md:h-72 mb-4 md:mb-0" : "lg:h-4 h-32"}
         `}
       >
         <Link
-          href="/dashboard"
+          href="/content/calendar"
           className="flex items-center py-4 px-6 border-b border-gray-800 text-gray-400 hover:text-blue-400 transition-colors"
         >
           <Calendar className="mr-4"></Calendar>

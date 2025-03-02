@@ -2048,7 +2048,7 @@ export default function PlayGround({
               >
                 <Info
                   size={16}
-                  className="hidden sm:inline sm:w-[18px] sm:h-[18px]"
+                  className="hidden md:inline sm:w-[18px] sm:h-[18px]"
                 />
               </button>
             </>
@@ -2269,11 +2269,11 @@ export default function PlayGround({
       <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-3 sm:gap-0">
         <button
           onClick={() => setShowPreview(true)}
-          className="flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-blue-400 
+          className="flex btn-outline items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-blue-400 
     hover:bg-gray-800 rounded-full text-sm sm:text-base w-full sm:w-auto"
         >
           <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />
-          <span>Preview</span>
+          <span>Preview</span> 
         </button>
 
         {activeTab === "drafts" ? (
