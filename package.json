@@ -16,6 +16,7 @@
     "@aws-sdk/client-s3": "^3.749.0",
     "@aws-sdk/s3-request-presigner": "^3.749.0",
     "@coral-xyz/anchor": "0.30.1",
+    "@jest/globals": "^29.7.0",
     "@prisma/client": "6.4.1",
     "@radix-ui/react-checkbox": "^1.1.3",
     "@radix-ui/react-dialog": "^1.1.6",
