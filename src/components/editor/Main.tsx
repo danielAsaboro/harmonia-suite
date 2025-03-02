@@ -565,85 +565,6 @@ export default function PlayGround({
       alert("Some media files failed to upload");
     }
   };
-  // const handleMediaUpload = async (tweetIndex: number, files: File[]) => {
-  //   if (pageContent.tweets[tweetIndex].isSubmitted) {
-  //     alert(
-  //       "This content has been submitted for approval and cannot be edited."
-  //     );
-  //     return;
-  //   }
-
-  //   const newTweets = [...pageContent.tweets];
-  //   const tweet = newTweets[tweetIndex];
-
-  //   // Get current mediaIds from the media object or create empty array
-  //   const currentMedia = tweet.media?.mediaIds || [];
-  //   const totalFiles = currentMedia.length + files.length;
-
-  //   if (totalFiles > 4) {
-  //     alert("Maximum 4 media files per tweet");
-  //     return;
-  //   }
-
-  //   try {
-  //     // Upload files to the backend and get their IDs
-  //     const mediaIds = await Promise.all(
-  //       files.map(async (file) => {
-  //         const formData = new FormData();
-  //         formData.append("file", file);
-
-  //         const response = await fetch("/api/media/upload", {
-  //           method: "POST",
-  //           body: formData,
-  //         });
-
-  //         if (!response.ok) {
-  //           throw new Error("Failed to upload media");
-  //         }
-
-  //         const data = await response.json();
-  //         await storeMediaFile(data.id, file);
-
-  //         return data.id;
-  //       })
-  //     );
-
-  //     // Update the tweet's media object
-  //     newTweets[tweetIndex] = {
-  //       ...newTweets[tweetIndex],
-  //       media: {
-  //         mediaIds: [...currentMedia, ...mediaIds],
-  //         taggedUsers: tweet.media?.taggedUsers || {},
-  //         descriptions: tweet.media?.descriptions || {},
-  //       },
-  //     };
-
-  //     // Save the updated tweets
-  //     setPageContent((prev) => ({
-  //       isThread: prev.isThread,
-  //       threadId: prev.threadId,
-  //       tweets: newTweets,
-  //     }));
-  //     setContentChanged(true);
-
-  //     // If it's a thread, save with thread context
-  //     if (pageContent.isThread && pageContent.threadId) {
-  //       const thread: Thread = {
-  //         id: pageContent.threadId,
-  //         tweetIds: newTweets.map((t) => t.id),
-  //         createdAt: new Date(),
-  //         status: "draft",
-  //       };
-  //       tweetStorage.saveThread(thread, newTweets, true);
-  //     } else {
-  //       // For single tweet
-  //       tweetStorage.saveTweet(newTweets[0], true);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error uploading media:", error);
-  //     alert("Failed to upload media");
-  //   }
-  // };
 
   const handleRemoveMedia = async (tweetIndex: number, mediaIndex: number) => {
     if (pageContent.tweets[tweetIndex].isSubmitted) {
@@ -2382,7 +2303,6 @@ export default function PlayGround({
       )}
       <PublishingModal
         isOpen={publishingStatus !== null}
-        // isOpen={true}
         onClose={() => {
           setPublishingStatus(null);
           setPublishingError(null);
@@ -2396,10 +2316,10 @@ export default function PlayGround({
         onClose={() => setSubmitModalOpen(false)}
         onProceed={() => {
           // Close the modal
-          setSubmitModalOpen(false);
           // Hide the editor
-          hideEditor();
           // Refresh the sidebar to show updated content
+          setSubmitModalOpen(false);
+          hideEditor();
           refreshSidebar();
         }}
       />
