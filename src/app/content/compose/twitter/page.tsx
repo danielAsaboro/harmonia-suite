@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X, Settings, ChevronLeft, Info } from "lucide-react";
+import { Menu, X, Info } from "lucide-react";
 import {
   UserAccountProvider,
   useUserAccount,

@@ -200,6 +200,9 @@ export default function PlayGround({
     tweets: [],
     threadId: undefined,
   });
+  const [mediaUploadStatus, setMediaUploadStatus] = useState<{
+    [key: string]: "uploading" | "success" | "error";
+  }>({});
 
   const textareaRefs = useRef<HTMLTextAreaElement[]>([]);
   const [currentlyEditedTweet, setCurrentlyEditedTweet] = useState<number>(0);
@@ -433,44 +436,114 @@ export default function PlayGround({
       return;
     }
 
+    // Create temporary local IDs for optimistic UI updates
+    const tempMediaIds = files.map(() => `temp-${uuidv4()}`);
+
+    // Update UI optimistically with temporary media
+    const optimisticMediaIds = [...currentMedia, ...tempMediaIds];
+    newTweets[tweetIndex] = {
+      ...newTweets[tweetIndex],
+      media: {
+        mediaIds: optimisticMediaIds,
+        taggedUsers: tweet.media?.taggedUsers || {},
+        descriptions: tweet.media?.descriptions || {},
+      },
+    };
+
+    // Mark all new uploads as 'uploading'
+    const newUploadStatus = { ...mediaUploadStatus };
+    tempMediaIds.forEach((id) => {
+      newUploadStatus[id] = "uploading";
+    });
+    setMediaUploadStatus(newUploadStatus);
+
+    // Update state with optimistic data
+    setPageContent((prev) => ({
+      isThread: prev.isThread,
+      threadId: prev.threadId,
+      tweets: newTweets,
+    }));
+
     try {
       // Upload files to the backend and get their IDs
       const mediaIds = await Promise.all(
-        files.map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
+        files.map(async (file, index) => {
+          const tempId = tempMediaIds[index];
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
 
-          const response = await fetch("/api/media/upload", {
-            method: "POST",
-            body: formData,
-          });
+            const response = await fetch("/api/media/upload", {
+              method: "POST",
+              body: formData,
+            });
 
-          if (!response.ok) {
-            throw new Error("Failed to upload media");
+            if (!response.ok) {
+              throw new Error("Failed to upload media");
+            }
+
+            const data = await response.json();
+            await storeMediaFile(data.id, file);
+
+            // Update upload status to success
+            setMediaUploadStatus((prev) => ({
+              ...prev,
+              [tempId]: "success",
+            }));
+
+            return { tempId, realId: data.id };
+          } catch (error) {
+            console.error("Error uploading media:", error);
+            setMediaUploadStatus((prev) => ({
+              ...prev,
+              [tempId]: "error",
+            }));
+            return { tempId, error: true };
           }
-
-          const data = await response.json();
-          await storeMediaFile(data.id, file);
-
-          return data.id;
         })
       );
 
-      // Update the tweet's media object
-      newTweets[tweetIndex] = {
-        ...newTweets[tweetIndex],
+      // Update tweet with real media IDs for successful uploads
+      const realMediaIds = currentMedia.slice();
+      const errorIds = [];
+
+      mediaIds.forEach(({ tempId, realId, error }) => {
+        if (!error && realId) {
+          realMediaIds.push(realId);
+        } else {
+          errorIds.push(tempId);
+        }
+      });
+
+      // Don't filter out error IDs - keep them in the UI with error state
+      const finalTweets = [...pageContent.tweets];
+      // Instead of filtering out errors, keep all IDs in place
+      const finalMediaIds = optimisticMediaIds.map((id) => {
+        const match = mediaIds.find((item) => item.tempId === id);
+        return match && match.realId && !match.error ? match.realId : id;
+      });
+
+      finalTweets[tweetIndex] = {
+        ...finalTweets[tweetIndex],
         media: {
-          mediaIds: [...currentMedia, ...mediaIds],
+          mediaIds: finalMediaIds,
           taggedUsers: tweet.media?.taggedUsers || {},
           descriptions: tweet.media?.descriptions || {},
         },
       };
 
+      // If any uploads failed, inform the user
+      if (errorIds.length > 0) {
+        alert(
+          `${errorIds.length} out of ${files.length} media uploads failed. You can retry or delete the failed uploads.`
+        );
+      }
+
       // Save the updated tweets
       setPageContent((prev) => ({
         isThread: prev.isThread,
         threadId: prev.threadId,
-        tweets: newTweets,
+        tweets: finalTweets,
       }));
       setContentChanged(true);
 
@@ -478,20 +551,99 @@ export default function PlayGround({
       if (pageContent.isThread && pageContent.threadId) {
         const thread: Thread = {
           id: pageContent.threadId,
-          tweetIds: newTweets.map((t) => t.id),
+          tweetIds: finalTweets.map((t) => t.id),
           createdAt: new Date(),
           status: "draft",
         };
-        tweetStorage.saveThread(thread, newTweets, true);
+        tweetStorage.saveThread(thread, finalTweets, true);
       } else {
         // For single tweet
-        tweetStorage.saveTweet(newTweets[0], true);
+        tweetStorage.saveTweet(finalTweets[0], true);
       }
     } catch (error) {
-      console.error("Error uploading media:", error);
-      alert("Failed to upload media");
+      console.error("Error handling uploads:", error);
+      alert("Some media files failed to upload");
     }
   };
+  // const handleMediaUpload = async (tweetIndex: number, files: File[]) => {
+  //   if (pageContent.tweets[tweetIndex].isSubmitted) {
+  //     alert(
+  //       "This content has been submitted for approval and cannot be edited."
+  //     );
+  //     return;
+  //   }
+
+  //   const newTweets = [...pageContent.tweets];
+  //   const tweet = newTweets[tweetIndex];
+
+  //   // Get current mediaIds from the media object or create empty array
+  //   const currentMedia = tweet.media?.mediaIds || [];
+  //   const totalFiles = currentMedia.length + files.length;
+
+  //   if (totalFiles > 4) {
+  //     alert("Maximum 4 media files per tweet");
+  //     return;
+  //   }
+
+  //   try {
+  //     // Upload files to the backend and get their IDs
+  //     const mediaIds = await Promise.all(
+  //       files.map(async (file) => {
+  //         const formData = new FormData();
+  //         formData.append("file", file);
+
+  //         const response = await fetch("/api/media/upload", {
+  //           method: "POST",
+  //           body: formData,
+  //         });
+
+  //         if (!response.ok) {
+  //           throw new Error("Failed to upload media");
+  //         }
+
+  //         const data = await response.json();
+  //         await storeMediaFile(data.id, file);
+
+  //         return data.id;
+  //       })
+  //     );
+
+  //     // Update the tweet's media object
+  //     newTweets[tweetIndex] = {
+  //       ...newTweets[tweetIndex],
+  //       media: {
+  //         mediaIds: [...currentMedia, ...mediaIds],
+  //         taggedUsers: tweet.media?.taggedUsers || {},
+  //         descriptions: tweet.media?.descriptions || {},
+  //       },
+  //     };
+
+  //     // Save the updated tweets
+  //     setPageContent((prev) => ({
+  //       isThread: prev.isThread,
+  //       threadId: prev.threadId,
+  //       tweets: newTweets,
+  //     }));
+  //     setContentChanged(true);
+
+  //     // If it's a thread, save with thread context
+  //     if (pageContent.isThread && pageContent.threadId) {
+  //       const thread: Thread = {
+  //         id: pageContent.threadId,
+  //         tweetIds: newTweets.map((t) => t.id),
+  //         createdAt: new Date(),
+  //         status: "draft",
+  //       };
+  //       tweetStorage.saveThread(thread, newTweets, true);
+  //     } else {
+  //       // For single tweet
+  //       tweetStorage.saveTweet(newTweets[0], true);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error uploading media:", error);
+  //     alert("Failed to upload media");
+  //   }
+  // };
 
   const handleRemoveMedia = async (tweetIndex: number, mediaIndex: number) => {
     if (pageContent.tweets[tweetIndex].isSubmitted) {
@@ -508,6 +660,55 @@ export default function PlayGround({
 
     const mediaIdToRemove = tweet.media.mediaIds[mediaIndex];
 
+    // Check if this is a temp ID (failed upload)
+    if (mediaIdToRemove.startsWith("temp-")) {
+      // For temp IDs, we just need to remove it from our local state
+      // No need to delete from server or IndexedDB since it was never uploaded
+
+      // Update the media IDs array by removing the temp ID
+      const updatedMediaIds = tweet.media.mediaIds.filter(
+        (_, i) => i !== mediaIndex
+      );
+
+      // Update the tweet with the filtered media IDs
+      newTweets[tweetIndex] = {
+        ...newTweets[tweetIndex],
+        media: {
+          ...tweet.media,
+          mediaIds: updatedMediaIds,
+        },
+      };
+
+      // Update state
+      setPageContent((prev) => ({
+        isThread: prev.isThread,
+        threadId: prev.threadId,
+        tweets: newTweets,
+      }));
+
+      // Clear the upload status for this temp ID
+      setMediaUploadStatus((prev) => {
+        const newStatus = { ...prev };
+        delete newStatus[mediaIdToRemove];
+        return newStatus;
+      });
+
+      // Save the updated state
+      if (pageContent.isThread && pageContent.threadId) {
+        const thread: Thread = {
+          id: pageContent.threadId,
+          tweetIds: newTweets.map((t) => t.id),
+          createdAt: new Date(),
+          status: "draft",
+        };
+        tweetStorage.saveThread(thread, newTweets, true);
+      } else {
+        tweetStorage.saveTweet(newTweets[0], true);
+      }
+
+      return;
+    }
+    
     if (mediaIdToRemove) {
       try {
         // Remove from backend
@@ -1686,6 +1887,95 @@ export default function PlayGround({
     }
   };
 
+  const handleRetryUpload = async (tweetIndex: number, mediaIndex: number) => {
+    const mediaId = pageContent.tweets[tweetIndex].media?.mediaIds[mediaIndex];
+    if (!mediaId || !mediaId.startsWith("temp-")) return;
+
+    // Get the file if we still have it in memory
+    // In a real implementation, you might store these temporarily
+    // For now, we'll need to ask the user to reselect the file
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*,video/*";
+
+    fileInput.onchange = async (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || []);
+      if (files.length !== 1) return;
+
+      // Mark as uploading again
+      setMediaUploadStatus((prev) => ({
+        ...prev,
+        [mediaId]: "uploading",
+      }));
+
+      try {
+        const formData = new FormData();
+        formData.append("file", files[0]);
+
+        const response = await fetch("/api/media/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload media");
+        }
+
+        const data = await response.json();
+        await storeMediaFile(data.id, files[0]);
+
+        // Update with real ID
+        const newTweets = [...pageContent.tweets];
+        const newMediaIds = [...newTweets[tweetIndex].media!.mediaIds];
+        newMediaIds[mediaIndex] = data.id;
+
+        newTweets[tweetIndex] = {
+          ...newTweets[tweetIndex],
+          media: {
+            ...newTweets[tweetIndex].media!,
+            mediaIds: newMediaIds,
+          },
+        };
+
+        // Update status to success
+        setMediaUploadStatus((prev) => {
+          const newStatus = { ...prev };
+          delete newStatus[mediaId]; // Remove temp ID status
+          return newStatus;
+        });
+
+        // Update state
+        setPageContent((prev) => ({
+          ...prev,
+          tweets: newTweets,
+        }));
+
+        // Save to storage
+        if (pageContent.isThread && pageContent.threadId) {
+          const thread: Thread = {
+            id: pageContent.threadId,
+            tweetIds: newTweets.map((t) => t.id),
+            createdAt: new Date(),
+            status: "draft",
+          };
+          tweetStorage.saveThread(thread, newTweets, true);
+        } else {
+          tweetStorage.saveTweet(newTweets[0], true);
+        }
+      } catch (error) {
+        console.error("Error retrying upload:", error);
+        setMediaUploadStatus((prev) => ({
+          ...prev,
+          [mediaId]: "error",
+        }));
+        alert("Failed to upload media. Please try again.");
+      }
+    };
+
+    fileInput.click();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1756,7 +2046,10 @@ export default function PlayGround({
                 onClick={toggleMetadataTab}
                 aria-label="Show metadata"
               >
-                <Info size={16} className="hidden sm:inline sm:w-[18px] sm:h-[18px]" />
+                <Info
+                  size={16}
+                  className="hidden sm:inline sm:w-[18px] sm:h-[18px]"
+                />
               </button>
             </>
           )}
@@ -1920,6 +2213,10 @@ export default function PlayGround({
                       }}
                       taggedUsers={tweet.media.taggedUsers || {}}
                       descriptions={tweet.media.descriptions || {}}
+                      uploadStatus={mediaUploadStatus}
+                      onRetryUpload={(mediaIndex) =>
+                        handleRetryUpload(index, mediaIndex)
+                      }
                     />
                   </div>
                 )}

@@ -22,6 +22,8 @@ interface Props {
   onUpdateDescriptions?: (descriptions: { [mediaId: string]: string }) => void;
   taggedUsers?: { [mediaId: string]: User[] };
   descriptions?: { [mediaId: string]: string };
+  uploadStatus?: { [mediaId: string]: "uploading" | "success" | "error" };
+  onRetryUpload?: (mediaIndex: number) => void;
 }
 
 export default function MediaPreview({
@@ -33,6 +35,8 @@ export default function MediaPreview({
   onUpdateDescriptions,
   taggedUsers = {},
   descriptions = {},
+  uploadStatus,
+  onRetryUpload,
 }: Props) {
   const [mediaUrls, setMediaUrls] = useState<(string | null)[]>([]);
   const [fullscreenMedia, setFullscreenMedia] = useState<string | null>(null);
@@ -158,10 +162,14 @@ export default function MediaPreview({
     <>
       <div className={`grid gap-2 ${getGridClasses()}`}>
         {mediaUrls.map((url, index) => {
-          if (!url) return null;
+          if (!url && !uploadStatus?.[mediaIds[index]]) return null;
           const mediaId = mediaIds[index];
           const hasDescription = descriptions[mediaId];
           const taggedCount = taggedUsers[mediaId]?.length || 0;
+          const status = uploadStatus?.[mediaId];
+          const isUploading = status === "uploading";
+          const isError = status === "error";
+          const isTempId = mediaId.startsWith("temp-");
 
           // Special case for first item when there are 3 images
           const isFirstOfThree =
@@ -173,21 +181,87 @@ export default function MediaPreview({
               className={`relative group ${isFirstOfThree ? "col-span-2" : ""}`}
             >
               <div
-                className="relative rounded-lg overflow-hidden cursor-pointer aspect-square w-full"
-                onClick={() => handleMediaClick(url, index)}
+                className={`relative rounded-lg overflow-hidden cursor-pointer aspect-square w-full ${
+                  isUploading || isError || isTempId ? "opacity-60" : ""
+                }`}
+                onClick={() =>
+                  !isUploading &&
+                  !isError &&
+                  url &&
+                  handleMediaClick(url, index)
+                }
               >
-                {isImageUrl(url) ? (
+                {url && isImageUrl(url) ? (
                   <img
                     src={url}
                     alt={descriptions[mediaId] || `Media ${index + 1}`}
                     className="object-cover w-full h-full"
                   />
-                ) : (
+                ) : url ? (
                   <video
                     src={url}
                     className="w-full h-full object-cover"
                     controls={false}
                   />
+                ) : (
+                  // Placeholder for uploading/error states when no URL yet
+                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                    {isUploading && <span>Uploading...</span>}
+                    {isError && <span>Upload failed</span>}
+                  </div>
+                )}
+
+                {/* Uploading overlay */}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <svg
+                      className="animate-spin h-8 w-8 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </div>
+                )}
+
+                {/* Error overlay */}
+                {isError && (
+                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center z-10">
+                    <div className="text-red-400 mb-2">Upload Failed</div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemove(index);
+                        }}
+                        className="px-2 py-1 bg-red-900/70 text-white rounded-md text-sm hover:bg-red-900"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        className="px-2 py-1 bg-blue-900/70 text-white rounded-md text-sm hover:bg-blue-900"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRetryUpload?.(index);
+                        }}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {/* Indicator badges for descriptions and tags */}
@@ -204,8 +278,8 @@ export default function MediaPreview({
                   )}
                 </div>
 
-                {/* Action buttons - visible on hover */}
-                {isDraft && (
+                {/* Action buttons - visible on hover, but only for successfully uploaded media */}
+                {isDraft && !isUploading && !isError && (
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
                       onClick={(e) => {
