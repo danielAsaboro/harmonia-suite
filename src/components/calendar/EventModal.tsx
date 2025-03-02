@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Card, CardHeader, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { CalendarEvent } from "./calendar";
+import { CalendarEvent } from "@/types/calendar";
 
 interface EventModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 // /components/calendar/hooks/useMousePosition.ts
+import { DragPosition } from "@/types/calendar";
 import { useState, useEffect } from "react";
-import { DragPosition } from "../calendar";
 
 export const useMousePosition = (): DragPosition => {
   const [position, setPosition] = useState<DragPosition>({ x: 0, y: 0 });

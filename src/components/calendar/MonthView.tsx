@@ -11,7 +11,7 @@ import {
   startOfWeek,
   endOfWeek,
 } from "date-fns";
-import { CalendarEvent, CalendarEventType, DragPosition } from "./calendar";
+import { CalendarEvent, CalendarEventType, DragPosition } from "@/types/calendar";
 import { Card } from "../ui/card";
 import { cn } from "@/utils/ts-merge";
 import { useMousePosition } from "./hooks/useMousePosition";

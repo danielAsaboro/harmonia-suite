@@ -9,7 +9,6 @@ import {
   Globe,
   ArrowLeft,
 } from "lucide-react";
-import { CalendarEvent, CalendarViewProps, CalendarViewType } from "./calendar";
 import {
   addMonths,
   addWeeks,
@@ -26,6 +25,11 @@ import { Button } from "../ui/button";
 import ConfirmDialog from "../editor/ConfirmDialog";
 import KeyboardShortcutsDialog from "@/components/keyboard/KeyboardShortcutsDialog";
 import { useKeyboard } from "@/contexts/keyboard-context";
+import {
+  CalendarEvent,
+  CalendarViewProps,
+  CalendarViewType,
+} from "@/types/calendar";
 
 interface Props
   extends Omit<
