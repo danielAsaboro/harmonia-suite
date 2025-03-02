@@ -2,6 +2,7 @@
 import { TwitterApi } from "twitter-api-v2";
 import { getSession } from "./session";
 import { NextRequest, NextResponse } from "next/server";
+import { userTokensService } from "./services";
 
 interface TwitterTokens {
   accessToken: string;
@@ -22,68 +23,109 @@ export async function getTwitterClient(
   req?: NextRequest
 ): Promise<{ v1Client: TwitterApi; v2Client: TwitterApi }> {
   try {
-    const { tokens } = JSON.parse(sessionData) as TwitterSessionData;
+    // Parse session data
+    const parsedSession = JSON.parse(sessionData);
+    const { tokens, userData } = parsedSession as TwitterSessionData;
 
-    // Initialize OAuth 1.0a client if tokens exist
-    let v1Client: TwitterApi | null = null;
+    // Check if the token needs refresh
+    const now = Date.now();
+    const tokenExpiresAt = new Date(tokens.expiresAt!).getTime();
+
+    // If token is expired or will expire in less than 5 minutes, refresh it
+    if (tokenExpiresAt - now < 5 * 60 * 1000) {
+      // Try to refresh from database first
+      const dbTokens = await userTokensService.getUserTokens(userData.id);
+
+      if (dbTokens && new Date(dbTokens.expiresAt).getTime() > now) {
+        // Use the fresh tokens from database if they're valid
+        const v2Client = new TwitterApi(dbTokens.accessToken);
+
+        // Update session if request is provided
+        if (req) {
+          const session = await getSession(req);
+          parsedSession.tokens.accessToken = dbTokens.accessToken;
+          parsedSession.tokens.expiresAt = dbTokens.expiresAt;
+          await session.update(
+            "twitter_session",
+            JSON.stringify(parsedSession)
+          );
+        }
+
+        // Use OAuth 1.0a for v1 endpoints if available
+        let v1Client = v2Client;
+        if (tokens.oauth1AccessToken && tokens.oauth1AccessSecret) {
+          v1Client = new TwitterApi({
+            appKey: process.env.TWITTER_API_KEY!,
+            appSecret: process.env.TWITTER_API_SECRET!,
+            accessToken: tokens.oauth1AccessToken,
+            accessSecret: tokens.oauth1AccessSecret,
+          });
+        }
+
+        return { v1Client, v2Client };
+      } else {
+        // Refresh the token using refresh token
+        try {
+          const client = new TwitterApi({
+            clientId: process.env.TWITTER_CLIENT_ID!,
+            clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+          });
+
+          const { accessToken, refreshToken, expiresIn } =
+            await client.refreshOAuth2Token(tokens.refreshToken!);
+
+          // Update tokens in both session and database
+          if (req) {
+            const session = await getSession(req);
+            parsedSession.tokens.accessToken = accessToken;
+            parsedSession.tokens.refreshToken = refreshToken;
+            parsedSession.tokens.expiresAt = Date.now() + expiresIn * 1000;
+            await session.update(
+              "twitter_session",
+              JSON.stringify(parsedSession)
+            );
+          }
+
+          await userTokensService.updateUserTokens(
+            userData.id,
+            accessToken,
+            new Date(Date.now() + expiresIn * 1000).toISOString()
+          );
+
+          const v2Client = new TwitterApi(accessToken);
+
+          // Use OAuth 1.0a for v1 endpoints if available
+          let v1Client = v2Client;
+          if (tokens.oauth1AccessToken && tokens.oauth1AccessSecret) {
+            v1Client = new TwitterApi({
+              appKey: process.env.TWITTER_API_KEY!,
+              appSecret: process.env.TWITTER_API_SECRET!,
+              accessToken: tokens.oauth1AccessToken,
+              accessSecret: tokens.oauth1AccessSecret,
+            });
+          }
+
+          return { v1Client, v2Client };
+        } catch (refreshError) {
+          console.error("Error refreshing token:", refreshError);
+          throw new Error(
+            "Failed to refresh Twitter token. Please log out and log in again."
+          );
+        }
+      }
+    }
+
+    // Token is valid, use it directly
+    const v2Client = new TwitterApi(tokens.accessToken);
+
+    // Use OAuth 1.0a for v1 endpoints if available
+    let v1Client = v2Client;
     if (tokens.oauth1AccessToken && tokens.oauth1AccessSecret) {
       v1Client = new TwitterApi({
         appKey: process.env.TWITTER_API_KEY!,
         appSecret: process.env.TWITTER_API_SECRET!,
         accessToken: tokens.oauth1AccessToken,
         accessSecret: tokens.oauth1AccessSecret,
-      });
-    }
-
-    // Check if OAuth 2.0 token needs refresh
-    let v2AccessToken = tokens.accessToken;
-    if (
-      tokens.expiresAt &&
-      Date.now() >= tokens.expiresAt &&
-      tokens.refreshToken
-    ) {
-      const tempClient = new TwitterApi({
-        clientId: process.env.TWITTER_CLIENT_ID!,
-        clientSecret: process.env.TWITTER_CLIENT_SECRET!,
-      });
-
-      const {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-        expiresIn,
-      } = await tempClient.refreshOAuth2Token(tokens.refreshToken);
-
-      // Create updated session data
-      const updatedSessionData: TwitterSessionData = {
-        tokens: {
-          ...tokens,
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-          expiresAt: Date.now() + expiresIn * 1000,
-        },
-        userData: JSON.parse(sessionData).userData,
-      };
-
-      // Update session if request is provided
-      if (req) {
-        const session = await getSession(req);
-        await session.update(
-          "twitter_session",
-          JSON.stringify(updatedSessionData)
-        );
-      }
-
-      v2AccessToken = newAccessToken;
-    }
-
-    // Create OAuth 2.0 client
-    const v2Client = new TwitterApi(v2AccessToken);
-
-    // If no OAuth 1.0a client exists, create a read-only one for media uploads
-    if (!v1Client) {
-      v1Client = new TwitterApi({
-        appKey: process.env.TWITTER_API_KEY!,
-        appSecret: process.env.TWITTER_API_SECRET!,
       });
     }
 
@@ -94,7 +136,85 @@ export async function getTwitterClient(
   }
 }
 
+// export async function getTwitterClient(
+//   sessionData: string,
+//   req?: NextRequest
+// ): Promise<{ v1Client: TwitterApi; v2Client: TwitterApi }> {
+//   try {
+//     const { tokens } = JSON.parse(sessionData) as TwitterSessionData;
+
+//     // Initialize OAuth 1.0a client if tokens exist
+//     let v1Client: TwitterApi | null = null;
+//     if (tokens.oauth1AccessToken && tokens.oauth1AccessSecret) {
+//       v1Client = new TwitterApi({
+//         appKey: process.env.TWITTER_API_KEY!,
+//         appSecret: process.env.TWITTER_API_SECRET!,
+//         accessToken: tokens.oauth1AccessToken,
+//         accessSecret: tokens.oauth1AccessSecret,
+//       });
+//     }
+
+//     // Check if OAuth 2.0 token needs refresh
+//     let v2AccessToken = tokens.accessToken;
+//     if (
+//       tokens.expiresAt &&
+//       Date.now() >= tokens.expiresAt &&
+//       tokens.refreshToken
+//     ) {
+//       const tempClient = new TwitterApi({
+//         clientId: process.env.TWITTER_CLIENT_ID!,
+//         clientSecret: process.env.TWITTER_CLIENT_SECRET!,
+//       });
+
+//       const {
+//         accessToken: newAccessToken,
+//         refreshToken: newRefreshToken,
+//         expiresIn,
+//       } = await tempClient.refreshOAuth2Token(tokens.refreshToken);
+
+//       // Create updated session data
+//       const updatedSessionData: TwitterSessionData = {
+//         tokens: {
+//           ...tokens,
+//           accessToken: newAccessToken,
+//           refreshToken: newRefreshToken,
+//           expiresAt: Date.now() + expiresIn * 1000,
+//         },
+//         userData: JSON.parse(sessionData).userData,
+//       };
+
+//       // Update session if request is provided
+//       if (req) {
+//         const session = await getSession(req);
+//         await session.update(
+//           "twitter_session",
+//           JSON.stringify(updatedSessionData)
+//         );
+//       }
+
+//       v2AccessToken = newAccessToken;
+//     }
+
+//     // Create OAuth 2.0 client
+//     const v2Client = new TwitterApi(v2AccessToken);
+
+//     // If no OAuth 1.0a client exists, create a read-only one for media uploads
+//     if (!v1Client) {
+//       v1Client = new TwitterApi({
+//         appKey: process.env.TWITTER_API_KEY!,
+//         appSecret: process.env.TWITTER_API_SECRET!,
+//       });
+//     }
+
+//     return { v1Client, v2Client };
+//   } catch (error) {
+//     console.error("Error getting Twitter client:", error);
+//     throw new Error("Failed to initialize Twitter client");
+//   }
+// }
+
 // Helper function to handle media uploads
+
 export async function uploadTwitterMedia(
   client: TwitterApi,
   mediaData: string
@@ -136,7 +256,7 @@ export const getMediaIdsTuple = (ids: string[]) => {
         string,
         string,
         string,
-        string
+        string,
       ],
     };
   return undefined;

@@ -48,10 +48,11 @@ interface UserAccountType {
   error?: string;
   reloadUserData?: () => void;
   getAvatar: () => JSX.Element;
+  logout: () => Promise<void>;
 }
 
 // Define a separate type for state without the getAvatar function
-type UserAccountState = Omit<UserAccountType, "getAvatar">;
+type UserAccountState = Omit<UserAccountType, "getAvatar" | "logout">;
 
 const UserAccountContext = createContext<UserAccountType | undefined>(
   undefined
@@ -218,6 +219,48 @@ export function UserAccountProvider({
     }
   }, []);
 
+  const logout = useCallback(async () => {
+    try {
+      // Call the logout endpoint
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+
+      // Clear local storage auth data
+      const userId = localStorage.getItem("helm_app_current_user_id");
+      if (userId) {
+        const userDetailsKey = `helm_app_${userId}_user_details`;
+        localStorage.removeItem(userDetailsKey);
+        localStorage.removeItem("helm_app_current_user_id");
+      }
+
+      // Reset user account state
+      setUserAccount({
+        id: "",
+        name: "",
+        handle: "",
+        profileImageUrl: "",
+        verified: false,
+        verifiedType: null,
+        isLoading: false,
+        teamMemberships: [],
+      });
+
+      // Navigate to homepage - you may need to import useRouter or handle this in the component
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error logging out:", error);
+      throw error;
+    }
+  }, []);
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
@@ -273,6 +316,7 @@ export function UserAccountProvider({
     ...userAccount,
     reloadUserData: forceReloadUserData,
     getAvatar,
+    logout,
   };
 
   return (

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Check, Send, X } from "lucide-react";
+import { useUserAccount } from "./context/account";
 
 interface PublishingModalProps {
   isOpen: boolean;
@@ -68,6 +69,7 @@ const PublishingModal: React.FC<PublishingModalProps> = ({
   isThread = false,
 }) => {
   const [progress, setProgress] = useState(0);
+  const { logout } = useUserAccount();
 
   useEffect(() => {
     if (status === "publishing") {
@@ -157,14 +159,27 @@ const PublishingModal: React.FC<PublishingModalProps> = ({
             </div>
 
             {/* Action Button - Only show for error state */}
-            {status === "error" && (
-              <button
-                onClick={onClose}
-                className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Try Again
-              </button>
-            )}
+
+            <div className="flex gap-4 justify-between">
+              {status === "error" && (
+                <button
+                  onClick={onClose}
+                  className="mt-4 px-6 py-2 outline text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Try Again
+                </button>
+              )}
+              {status === "error" && (
+                <button
+                  onClick={async () => {
+                    await logout();
+                  }}
+                  className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Log out
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>

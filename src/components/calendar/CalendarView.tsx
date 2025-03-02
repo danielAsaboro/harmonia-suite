@@ -233,6 +233,7 @@ export default function CalendarView({
               border-neutral-800
               shadow-sm
               hover:shadow-md
+              cursor pointer-events-auto
             "
           >
             Today

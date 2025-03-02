@@ -6,7 +6,6 @@ import { tweetStorage } from "@/utils/localStorage";
 import { KeyboardProvider } from "@/contexts/keyboard-context";
 import { CalendarEvent } from "@/types/calendar";
 import { Loader2 } from "lucide-react";
-import { useSlotTypes } from "@/components/calendar/hooks/useSlotTypes";
 import { Tweet, Thread } from "@/types/tweet";
 import { Toast } from "@/components/ui/toast";
 
@@ -17,7 +16,6 @@ export default function CalendarPage() {
     message: string;
     type: "success" | "error" | "warning";
   } | null>(null);
-  const slotTypeManager = useSlotTypes();
   const refreshInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Load scheduled content and set up auto-refresh
@@ -263,7 +261,6 @@ export default function CalendarPage() {
             onEventDrop={handleEventDrop}
             onEventDelete={handleEventDelete}
             timezone={userTimezone}
-            // slotTypeManager={slotTypeManager}
           />
         )}
 

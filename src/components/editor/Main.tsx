@@ -1062,11 +1062,12 @@ export default function PlayGround({
       });
 
       if (!response.ok) {
-        console.log(response.body);
-        throw new Error("Failed to post to Twitter");
-      }
+        console.log(await response.json());
 
-      // await new Promise((resolve) => setTimeout(resolve, 5000));
+        throw new Error(
+          "Failed to post to Twitter/X. Please log out and log in again. Your tweets are saved"
+        );
+      }
 
       // Update local storage
       if (pageContent.isThread && pageContent.threadId) {
