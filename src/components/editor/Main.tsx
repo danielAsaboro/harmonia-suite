@@ -708,7 +708,7 @@ export default function PlayGround({
 
       return;
     }
-    
+
     if (mediaIdToRemove) {
       try {
         // Remove from backend
@@ -900,15 +900,18 @@ export default function PlayGround({
       const userData = await response.json();
       const userId = userData.id;
 
+      console.log(" page content");
+      console.dir(pageContent, { depth: null });
+
       // Save scheduled tweets to both localStorage and Server
       if (pageContent.isThread && pageContent.threadId) {
         // Prepare thread data for Server
         const threadData = {
           id: pageContent.threadId,
           tweetIds: pageContent.tweets.map((t) => t.id),
-          scheduledFor: scheduledDate.toISOString(),
+          scheduledFor: scheduledDate,
           status: "scheduled" as const,
-          createdAt: new Date().toISOString(),
+          createdAt: pageContent.tweets[0].createdAt,
           userId,
         };
 
@@ -916,7 +919,7 @@ export default function PlayGround({
           id: tweet.id,
           content: tweet.content,
           media: tweet.media,
-          scheduledFor: scheduledDate.toISOString(),
+          scheduledFor: scheduledDate,
           threadId: pageContent.threadId,
           position: tweet.position,
           status: "scheduled" as const,
@@ -967,16 +970,18 @@ export default function PlayGround({
           throw new Error("Failed to schedule thread");
         }
       } else {
-        // Prepare single tweet data for SQLite
-        const tweetData = {
-          id: pageContent.tweets[0].id,
-          content: pageContent.tweets[0].content,
-          media: pageContent.tweets[0].media,
-          scheduledFor: scheduledDate.toISOString(),
-          status: "scheduled" as const,
-          createdAt: new Date().toISOString(),
-          userId,
+        // Prepare single tweet data
+        // backend storage
+
+        const singleTweet = pageContent.tweets[0];
+        const tweetData: Tweet = {
+          ...singleTweet,
+          scheduledFor: scheduledDate,
+          status: "scheduled",
+          createdAt: new Date(),
         };
+
+        await tweetStorage.saveTweet(tweetData, true);
 
         // Save to SQLite via API
         const scheduleResponse = await fetch("/api/scheduler/schedule", {
@@ -988,6 +993,8 @@ export default function PlayGround({
             teamId: selectedTeamId,
           }),
         });
+
+        console.log(scheduleResponse);
 
         if (!scheduleResponse.ok) {
           // Save to localStorage for UI
@@ -2273,7 +2280,7 @@ export default function PlayGround({
     hover:bg-gray-800 rounded-full text-sm sm:text-base w-full sm:w-auto"
         >
           <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />
-          <span>Preview</span> 
+          <span>Preview</span>
         </button>
 
         {activeTab === "drafts" ? (

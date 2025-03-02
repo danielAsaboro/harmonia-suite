@@ -1,5 +1,5 @@
 // /components/calendar/CalendarView.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Settings,
@@ -30,6 +30,8 @@ import {
   CalendarViewProps,
   CalendarViewType,
 } from "@/types/calendar";
+import { useSlotTypes } from "./hooks/useSlotTypes";
+import CurrentTimeIndicator from "./CurrentTimeIndicator";
 
 interface Props
   extends Omit<
@@ -55,9 +57,13 @@ export default function CalendarView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { showShortcuts, setShowShortcuts } = useKeyboard();
 
+  const slotTypeManager = useSlotTypes();
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+
   const [selectedEvent, setSelectedEvent] = useState<
     CalendarEvent | undefined
   >();
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
   const handleViewChange = (newView: CalendarViewType) => {
@@ -180,9 +186,9 @@ export default function CalendarView({
   }, [handleViewChange, handleToday, handlePrevious, handleNext]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-100">
+    <div className="flex flex-col h-full bg-black text-gray-100">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="flex items-center justify-between p-4 border-b border-neutral-800">
         {/* Back to Editor Link */}
         <Link
           href="/content/compose/twitter"
@@ -214,9 +220,9 @@ export default function CalendarView({
             onClick={handleToday}
             className="
               rounded-full 
-              bg-slate-800 
+              bg-neutral-900 
               text-gray-300 
-              hover:bg-slate-700 
+              hover:bg-neutral-800 
               hover:text-white 
               transition-all 
               px-4 
@@ -224,7 +230,7 @@ export default function CalendarView({
               text-sm 
               font-medium
               border 
-              border-slate-700
+              border-neutral-800
               shadow-sm
               hover:shadow-md
             "
@@ -232,11 +238,11 @@ export default function CalendarView({
             Today
           </Button>
 
-          <div className="flex items-center rounded-lg border border-gray-700">
+          <div className="flex items-center rounded-lg border border-neutral-800">
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-r-none hover:bg-gray-800"
+              className="rounded-r-none hover:bg-neutral-900 text-neutral-400"
               onClick={handlePrevious}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -244,7 +250,7 @@ export default function CalendarView({
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-l-none hover:bg-gray-800"
+              className="rounded-l-none hover:bg-neutral-900 text-neutral-400"
               onClick={handleNext}
             >
               <ChevronRight className="h-4 w-4" />
@@ -253,7 +259,7 @@ export default function CalendarView({
         </div>
 
         {/* View Switcher */}
-        <div className="flex rounded-lg border border-gray-700 overflow-hidden">
+        <div className="flex rounded-lg border border-neutral-800 overflow-hidden">
           {(["week", "month"] as const).map((view) => (
             <button
               key={view}
@@ -262,8 +268,8 @@ export default function CalendarView({
                 px-4 py-2 text-sm font-medium transition-colors 
                 ${
                   viewType === view
-                    ? "bg-green-500 text-white"
-                    : "text-gray-300 hover:bg-gray-800"
+                    ? "bg-[#1D9BF0] text-white"
+                    : "text-gray-300 hover:bg-neutral-900"
                 }
               `}
             >
@@ -273,7 +279,7 @@ export default function CalendarView({
         </div>
 
         <button
-          className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+          className="p-2.5 rounded-full hover:bg-neutral-900 transition-colors"
           aria-label="Calendar Settings"
         >
           <Settings className="w-5 h-5 text-gray-400 hover:text-white" />
@@ -281,7 +287,11 @@ export default function CalendarView({
       </div>
 
       {/* Calendar Grid */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative" ref={calendarContainerRef}>
+        {viewType === "week" && (
+          <CurrentTimeIndicator containerRef={calendarContainerRef} />
+        )}
+
         {viewType === "week" ? (
           <WeekView
             events={events}
@@ -290,6 +300,7 @@ export default function CalendarView({
             onEventDrop={onEventDrop}
             onSlotClick={handleSlotClick}
             timezone={timezone}
+            slotTypeManager={slotTypeManager}
           />
         ) : (
           <MonthView
@@ -299,8 +310,10 @@ export default function CalendarView({
             onEventDrop={onEventDrop}
             onSlotClick={handleSlotClick}
             timezone={timezone}
+            slotTypeManager={slotTypeManager}
           />
         )}
+
         <EventModal
           isOpen={showEventModal}
           onClose={() => {
@@ -312,6 +325,7 @@ export default function CalendarView({
           onDelete={onEventDelete ? handleDeleteEvent : undefined}
           event={selectedEvent}
           defaultDate={selectedDate}
+          slotTypeManager={slotTypeManager}
         />
 
         {/* Deletion Confirmation Dialog */}

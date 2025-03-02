@@ -58,7 +58,7 @@ export default function EditorSideBarBottomOverlay({
         className={`
           overflow-hidden transition-all duration-300
           ${!isVisible ? "hidden" : "block"}
-          ${isExpanded ? "h-96 md:h-72 mb-6 md:mb-0" : "lg:h-4 h-32"}
+          ${isExpanded ? "h-96 md:h-72 mb-6 md:mb-0" : "md:h-4 h-32"}
         `}
       >
         <Link

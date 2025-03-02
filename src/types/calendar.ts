@@ -1,5 +1,7 @@
 // /types/calendar.ts
 
+import { TweetStatus } from "./tweet";
+
 export type CalendarViewType = "week" | "month";
 
 export interface CalendarEvent {
@@ -60,6 +62,8 @@ export interface CalendarEvent {
   type: CalendarEventType;
   tags?: string[];
   isEmptySlot?: boolean;
+  isDeletable?: boolean;
+  status?: TweetStatus
 }
 
 export interface DragPosition {
