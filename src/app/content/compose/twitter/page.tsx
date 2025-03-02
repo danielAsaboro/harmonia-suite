@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X, Settings, ChevronLeft } from "lucide-react";
+import { Menu, X, Settings, ChevronLeft, Info } from "lucide-react";
 import {
   UserAccountProvider,
   useUserAccount,
@@ -93,7 +93,7 @@ function TwitterEditorContent() {
                 {isMetadataTabVisible ? (
                   <X className="w-6 h-6" />
                 ) : (
-                  <Settings className="w-6 h-6" />
+                  <Info className="w-6 h-6" />
                 )}
               </button>
             </div>

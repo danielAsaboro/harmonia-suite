@@ -16,9 +16,11 @@ import {
   ArrowDown,
   Menu,
 } from "lucide-react";
-import { cn } from "@/utils/ts-merge";
+
+import { useRouter } from "next/navigation";
 
 export default function OverviewPage() {
+  const router = useRouter();
   const systemStatus = {
     llm: "operational",
     telegram: "operational",
@@ -108,7 +110,10 @@ export default function OverviewPage() {
             <FileText className="w-3 h-3 md:w-4 md:h-4" />
             <span className="hidden xs:inline">Upload</span> Document
           </Button>
-          <Button className="gap-2 text-xs sm:text-sm flex-1 sm:flex-initial justify-center bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black rounded-full">
+          <Button
+            onClick={() => router.push("/content/compose/twitter")}
+            className="gap-2 text-xs sm:text-sm flex-1 sm:flex-initial justify-center bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black rounded-full"
+          >
             <Twitter className="w-3 h-3 md:w-4 md:h-4" />
             New Tweet
           </Button>

@@ -1698,7 +1698,7 @@ export default function PlayGround({
     <div className="w-full max-w-2xl mx-auto ">
       {/* Header Controls */}
       {/* Header Controls - Responsive Version */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0">
+      <div className="flex sm:flex-row justify-between items-center mb-4 gap-2 sm:gap-0">
         <div className="flex items-center gap-2">
           <button
             onClick={hideEditor}
@@ -1709,7 +1709,7 @@ export default function PlayGround({
         </div>
 
         {/* Show different controls based on tab */}
-        <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap justify-end items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {activeTab === "drafts" && (
             <>
               <SaveStatus saveState={saveState} />
@@ -1756,7 +1756,7 @@ export default function PlayGround({
                 onClick={toggleMetadataTab}
                 aria-label="Show metadata"
               >
-                <Info size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <Info size={16} className="hidden sm:inline sm:w-[18px] sm:h-[18px]" />
               </button>
             </>
           )}
